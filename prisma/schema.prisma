@@ -1,0 +1,482 @@
+// CIAR Cars - Enterprise Car Platform Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============ USER & AUTH ============
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String?
+  name          String?
+  phone         String?
+  avatar        String?
+  role          String    @default("user") // guest, user, seller, admin, super_admin
+  emailVerified DateTime?
+  isActive      Boolean   @default(true)
+  isBanned      Boolean   @default(false)
+  bannedReason  String?
+  
+  // Wallet
+  walletBalance Float    @default(0)
+  
+  // Profile
+  bio           String?
+  city          String?
+  country       String?
+  address       String?
+  
+  // Seller specific
+  businessName  String?
+  businessLicense String?
+  rating        Float     @default(0)
+  totalReviews  Int       @default(0)
+  
+  // Stats
+  totalListings Int       @default(0)
+  totalSales    Int       @default(0)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  cars           Car[]
+  rentals        RentalBooking[]
+  sentMessages   ChatMessage[] @relation("SentMessages")
+  receivedMessages ChatMessage[] @relation("ReceivedMessages")
+  chatRooms      ChatRoomUser[]
+  savedSearches  SavedSearch[]
+  reviews        Review[]
+  notifications  Notification[]
+  walletTransactions WalletTransaction[]
+  payments       Payment[]
+
+  @@index([role])
+  @@index([city])
+  @@index([isActive])
+}
+
+// ============ CAR SYSTEM ============
+
+model Car {
+  id              String    @id @default(cuid())
+  title           String
+  slug            String    @unique
+  description     String?
+  
+  // Basic Info
+  brand           String
+  model           String
+  year            Int
+  condition       String    @default("used") // new, used
+  mileage         Float?
+  exteriorColor   String?
+  interiorColor   String?
+  
+  // Specs
+  fuelType        String?   // petrol, diesel, electric, hybrid
+  transmission    String?   // automatic, manual, cvt
+  engineSize      String?
+  horsepower      Int?
+  drivetrain      String?   // fwd, rwd, awd, 4wd
+  bodyType        String?   // sedan, suv, coupe, truck, van, convertible, hatchback, wagon
+  doors           Int?
+  seats           Int?
+  
+  // Location
+  city            String
+  country         String    @default("Egypt")
+  address         String?
+  latitude        Float?
+  longitude       Float?
+  
+  // Pricing
+  price           Float     @default(0)
+  currency        String    @default("EGP")
+  isNegotiable    Boolean   @default(false)
+  
+  // Status
+  status          String    @default("active") // active, pending, sold, archived
+  isFeatured      Boolean   @default(false)
+  isBoosted       Boolean   @default(false)
+  featuredUntil   DateTime?
+  boostedUntil    DateTime?
+  
+  // Inspection
+  inspectionStatus String?  // none, pending, passed, failed
+  inspectionReport String?
+  inspectedAt     DateTime?
+  
+  // Rental
+  isAvailableForRent Boolean @default(false)
+  rentalPriceDaily  Float?
+  rentalPriceWeekly Float?
+  rentalPriceMonthly Float?
+  
+  // Ownership
+  ownerId         String
+  ownershipCount  Int       @default(1)
+  
+  // Stats
+  viewsCount      Int       @default(0)
+  inquiriesCount  Int       @default(0)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  owner           User      @relation(fields: [ownerId], references: [id])
+  images          CarImage[]
+  specifications  CarSpecification[]
+  rentalBookings  RentalBooking[]
+  reviews         Review[]
+  blockedDates    RentalBlockedDate[]
+
+  @@index([brand])
+  @@index([model])
+  @@index([year])
+  @@index([condition])
+  @@index([fuelType])
+  @@index([transmission])
+  @@index([price])
+  @@index([city])
+  @@index([status])
+  @@index([isFeatured])
+  @@index([isAvailableForRent])
+  @@index([ownerId])
+}
+
+model CarImage {
+  id        String   @id @default(cuid())
+  carId     String
+  url       String
+  alt       String?
+  isPrimary Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  @@index([carId])
+}
+
+model CarSpecification {
+  id     String @id @default(cuid())
+  carId  String
+  key    String
+  value  String
+  group  String? // Performance, Safety, Interior, Exterior, etc.
+
+  car    Car    @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  @@index([carId])
+  @@index([group])
+}
+
+// ============ RENTAL SYSTEM ============
+
+model RentalBooking {
+  id              String    @id @default(cuid())
+  carId           String
+  userId          String
+  startDate       DateTime
+  endDate         DateTime
+  totalDays       Int
+  totalPrice      Float
+  status          String    @default("pending") // pending, confirmed, active, completed, cancelled, rejected
+  cancellationReason String?
+  
+  // Pricing breakdown
+  dailyPrice      Float
+  platformFee     Float     @default(0)
+  ownerEarnings   Float
+  
+  // Delivery
+  deliveryAddress String?
+  deliveryFee     Float     @default(0)
+  
+  // Payment
+  paymentStatus   String    @default("pending") // pending, paid, refunded, partial_refund
+  paymentId       String?
+  
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  car             Car       @relation(fields: [carId], references: [id])
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@index([carId])
+  @@index([userId])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+model RentalBlockedDate {
+  id        String   @id @default(cuid())
+  carId     String
+  date      DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  @@unique([carId, date])
+  @@index([carId])
+  @@index([date])
+}
+
+// ============ CHAT SYSTEM ============
+
+model ChatRoom {
+  id        String   @id @default(cuid())
+  carId     String?
+  type      String   @default("private") // private, support
+  
+  // Metadata
+  lastMessageAt DateTime?
+  lastMessage   String?
+  isArchived    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ChatRoomUser[]
+  messages     ChatMessage[]
+
+  @@index([carId])
+  @@index([lastMessageAt])
+}
+
+model ChatRoomUser {
+  id         String   @id @default(cuid())
+  roomId     String
+  userId     String
+  lastReadAt DateTime?
+  isMuted    Boolean  @default(false)
+
+  room       ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  roomId     String
+  senderId   String
+  receiverId String?
+  content    String
+  type       String   @default("text") // text, image, file, system
+  imageUrl   String?
+  isRead     Boolean  @default(false)
+  readAt     DateTime?
+
+  createdAt  DateTime @default(now())
+
+  room       ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User?    @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@index([isRead])
+}
+
+// ============ PAYMENT & WALLET ============
+
+model Payment {
+  id              String    @id @default(cuid())
+  userId          String
+  amount          Float
+  currency        String    @default("EGP")
+  type            String    // listing_fee, boost_fee, rental, wallet_topup, featured_fee
+  status          String    @default("pending") // pending, completed, failed, refunded
+  method          String?   // stripe, wallet, bank_transfer
+  
+  // Stripe
+  stripeSessionId String?
+  stripePaymentIntentId String?
+  
+  // Related entities
+  carId           String?
+  bookingId       String?
+  
+  description     String?
+  metadata        String?   // JSON string for extra data
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model WalletTransaction {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String    // topup, purchase, refund, earning, withdrawal
+  amount      Float
+  balance     Float     @default(0)
+  description String?
+  referenceId String?   // Payment ID or related entity ID
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ============ REVIEWS ============
+
+model Review {
+  id        String   @id @default(cuid())
+  carId     String
+  userId    String
+  rating    Int      // 1-5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  car       Car      @relation(fields: [carId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([carId, userId])
+  @@index([carId])
+  @@index([userId])
+}
+
+// ============ SAVED SEARCHES ============
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String?
+  filters   String   // JSON string of search filters
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+// ============ NOTIFICATIONS ============
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // booking, message, payment, system, review
+  title     String
+  message   String
+  data      String?  // JSON string for extra data
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// ============ CMS & SETTINGS ============
+
+model SiteSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  type  String @default("string") // string, json, number, boolean
+
+  @@index([key])
+}
+
+model HomepageSection {
+  id        String   @id @default(cuid())
+  type      String   // hero, featured_cars, categories, banner, testimonials, stats, cta
+  title     String?
+  subtitle  String?
+  content   String?  // JSON string for section-specific data
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([order])
+  @@index([isActive])
+}
+
+model Banner {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String?
+  imageUrl  String
+  linkUrl   String?
+  position  String   @default("home") // home, listing, detail
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([position])
+  @@index([isActive])
+}
+
+model NavigationItem {
+  id        String   @id @default(cuid())
+  label     String
+  url       String?
+  parentId  String?
+  icon      String?
+  order     Int      @default(0)
+  isOpen    Boolean  @default(false) // Opens in new tab
+  position  String   @default("navbar") // navbar, footer
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  parent    NavigationItem?  @relation("NavTree", fields: [parentId], references: [id])
+  children  NavigationItem[] @relation("NavTree")
+
+  @@index([position])
+  @@index([isActive])
+  @@index([order])
+}
+
+// ============ AUDIT LOG ============
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String?
+  entityId  String?
+  details   String?  // JSON string
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+}
