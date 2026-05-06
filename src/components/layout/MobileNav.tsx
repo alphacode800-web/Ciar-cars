@@ -151,7 +151,7 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
                     {item.label}
                     {item.label === 'Wallet' && (
                       <Badge variant="secondary" className="ml-auto text-[10px]">
-                        E£{(user.walletBalance ?? 0).toLocaleString()}
+                        ${(user.walletBalance ?? 0).toLocaleString()}
                       </Badge>
                     )}
                   </button>

@@ -7,8 +7,8 @@ const es: TranslationDictionary = {
   common: {
     appName: "CIAR Cars",
     appNameShort: "CIAR",
-    tagline: "El mercado de autos líder de Egipto",
-    description: "Compra, vende y alquila autos con confianza",
+    tagline: "La plataforma de autos líder a nivel mundial",
+    description: "Compra, vende y alquila autos con confianza en la plataforma automotriz más confiable del mundo.",
     loading: "Cargando...",
     error: "Algo salió mal",
     retry: "Intentar de nuevo",
@@ -35,7 +35,7 @@ const es: TranslationDictionary = {
     close: "Cerrar",
     yes: "Sí",
     no: "No",
-    currency: "EGP",
+    currency: "USD",
     and: "y",
     or: "o",
   },
@@ -69,11 +69,11 @@ const es: TranslationDictionary = {
   // ---------------------------------------------------------------------------
   hero: {
     title: "Encuentra tu auto ideal",
-    subtitle: "Explora la mayor selección de autos nuevos y usados de Egipto",
+    subtitle: "Explora la mayor selección de vehículos nuevos y usados del mundo",
     searchPlaceholder: "Buscar por marca, modelo o palabra clave...",
     searchButton: "Buscar autos",
     popularSearches: "Búsquedas populares",
-    stats: "20 000+ Autos publicados | 15 000+ Clientes satisfechos | 500+ Concesionarios verificados",
+    stats: "100 000+ Autos publicados | 50 000+ Clientes satisfechos | 5 000+ Concesionarios verificados | 80+ Países",
     browseCategories: "Explorar categorías",
   },
 
@@ -108,12 +108,12 @@ const es: TranslationDictionary = {
   // Stats / Trust Bar
   // ---------------------------------------------------------------------------
   stats: {
-    title: "Respaldado por miles",
-    subtitle: "Cifras que hablan por sí solas",
+    title: "Respaldado mundialmente",
+    subtitle: "Cifras que cruzan fronteras",
     carsListed: "Autos publicados",
     happyCustomers: "Clientes satisfechos",
     verifiedDealers: "Concesionarios verificados",
-    citiesCovered: "Ciudades cubiertas",
+    citiesCovered: "Países",
   },
 
   // ---------------------------------------------------------------------------
@@ -130,7 +130,7 @@ const es: TranslationDictionary = {
   cta: {
     title: "¿Listo para vender tu auto?",
     subtitle:
-      "Únete a miles de vendedores en el mercado de autos más grande de Egipto. Publica tu auto en minutos y llega a millones de posibles compradores.",
+      "Únete a miles de vendedores en el mercado de autos más grande del mundo. Publica tu auto en minutos y llega a millones de posibles compradores.",
     buttonText: "Publica tu auto",
     browseButton: "Explorar autos",
   },
@@ -140,7 +140,7 @@ const es: TranslationDictionary = {
   // ---------------------------------------------------------------------------
   footer: {
     description:
-      "El mercado automotriz más confiable de Egipto. Compra, vende y alquila autos con confianza.",
+      "La plataforma automotriz más confiable del mundo.",
     quickLinks: "Enlaces rápidos",
     company: "Empresa",
     support: "Soporte",
@@ -375,10 +375,10 @@ const es: TranslationDictionary = {
     title: "Acerca de CIAR Cars",
     mission: "Nuestra misión",
     missionText:
-      "Revolucionar el mercado automotriz de Egipto brindando una plataforma transparente, confiable y eficiente para comprar, vender y alquilar vehículos.",
+      "Revolucionar el mercado automotriz mundial brindando una plataforma transparente, confiable y eficiente para comprar, vender y alquilar vehículos.",
     vision: "Nuestra visión",
     visionText:
-      "Convertirnos en la plataforma automotriz líder en Medio Oriente y Norte de África, conectando a millones de entusiastas de autos con los vehículos de sus sueños.",
+      "Convertirnos en la plataforma automotriz líder a nivel mundial, conectando a millones de entusiastas de autos con los vehículos de sus sueños.",
     values: "Nuestros valores",
     transparency: "Transparencia",
     transparencyText: "Historial completo del vehículo y anuncios honestos",
@@ -401,10 +401,10 @@ const es: TranslationDictionary = {
     subject: "Asunto",
     message: "Mensaje",
     sendMessage: "Enviar mensaje",
-    officeAddress: "Dirección de la oficina",
+    officeAddress: "Sede Global: Dubái, EAU",
     phoneNumber: "Número de teléfono",
     emailAddress: "Correo electrónico",
-    workingHours: "Horario de atención",
+    workingHours: "Mon-Fri: 9AM-6PM (GMT+4)",
     faqTitle: "Preguntas frecuentes",
   },
 };

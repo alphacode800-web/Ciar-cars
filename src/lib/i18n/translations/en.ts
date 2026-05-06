@@ -7,8 +7,8 @@ const en: TranslationDictionary = {
   common: {
     appName: "CIAR Cars",
     appNameShort: "CIAR",
-    tagline: "Egypt's Premier Car Marketplace",
-    description: "Buy, sell, and rent cars with confidence",
+    tagline: "The World's Premier Car Marketplace",
+    description: "Buy, sell, and rent cars with confidence on the world's most trusted automotive platform.",
     loading: "Loading...",
     error: "Something went wrong",
     retry: "Try Again",
@@ -35,7 +35,7 @@ const en: TranslationDictionary = {
     close: "Close",
     yes: "Yes",
     no: "No",
-    currency: "EGP",
+    currency: "USD",
     and: "and",
     or: "or",
   },
@@ -69,11 +69,11 @@ const en: TranslationDictionary = {
   // ---------------------------------------------------------------------------
   hero: {
     title: "Find Your Perfect Car",
-    subtitle: "Explore Egypt's largest selection of new and pre-owned vehicles",
+    subtitle: "Explore the world's largest selection of new and pre-owned vehicles",
     searchPlaceholder: "Search by make, model, or keyword...",
     searchButton: "Search Cars",
     popularSearches: "Popular Searches",
-    stats: "20,000+ Cars Listed | 15,000+ Happy Customers | 500+ Verified Dealers",
+    stats: "100,000+ Cars Listed | 50,000+ Happy Customers | 5,000+ Verified Dealers | 80+ Countries",
     browseCategories: "Browse Categories",
   },
 
@@ -108,12 +108,12 @@ const en: TranslationDictionary = {
   // Stats / Trust Bar
   // ---------------------------------------------------------------------------
   stats: {
-    title: "Trusted by Thousands",
-    subtitle: "Numbers that speak for themselves",
+    title: "Trusted Worldwide",
+    subtitle: "Numbers that speak across borders",
     carsListed: "Cars Listed",
     happyCustomers: "Happy Customers",
     verifiedDealers: "Verified Dealers",
-    citiesCovered: "Cities Covered",
+    citiesCovered: "Countries",
   },
 
   // ---------------------------------------------------------------------------
@@ -130,7 +130,7 @@ const en: TranslationDictionary = {
   cta: {
     title: "Ready to Sell Your Car?",
     subtitle:
-      "Join thousands of sellers on Egypt's largest car marketplace. List your car in minutes and reach millions of potential buyers.",
+      "Join thousands of sellers on the world's largest car marketplace. List your car in minutes and reach millions of potential buyers.",
     buttonText: "List Your Car",
     browseButton: "Browse Cars",
   },
@@ -140,7 +140,7 @@ const en: TranslationDictionary = {
   // ---------------------------------------------------------------------------
   footer: {
     description:
-      "Egypt's most trusted automotive marketplace. Buy, sell, and rent cars with confidence.",
+      "The world's most trusted automotive marketplace. Buy, sell, and rent cars with confidence.",
     quickLinks: "Quick Links",
     company: "Company",
     support: "Support",
@@ -375,10 +375,10 @@ const en: TranslationDictionary = {
     title: "About CIAR Cars",
     mission: "Our Mission",
     missionText:
-      "To revolutionize the automotive marketplace in Egypt by providing a transparent, trustworthy, and efficient platform for buying, selling, and renting vehicles.",
+      "To revolutionize the automotive marketplace worldwide by providing a transparent, trustworthy, and efficient platform for buying, selling, and renting vehicles.",
     vision: "Our Vision",
     visionText:
-      "To become the leading automotive platform in the Middle East and North Africa, connecting millions of car enthusiasts with their dream vehicles.",
+      "To become the leading automotive platform around the world, connecting millions of car enthusiasts with their dream vehicles.",
     values: "Our Values",
     transparency: "Transparency",
     transparencyText: "Complete vehicle history and honest listings",
@@ -401,10 +401,10 @@ const en: TranslationDictionary = {
     subject: "Subject",
     message: "Message",
     sendMessage: "Send Message",
-    officeAddress: "Office Address",
+    officeAddress: "Global Headquarters: Dubai, UAE",
     phoneNumber: "Phone Number",
     emailAddress: "Email Address",
-    workingHours: "Working Hours",
+    workingHours: "Mon-Fri: 9AM-6PM (GMT+4)",
     faqTitle: "Frequently Asked Questions",
   },
 };

@@ -71,7 +71,7 @@ export function useTranslation() {
   );
 
   const formatCurrency = useCallback(
-    (amount: number, currency: string = 'EGP'): string => {
+    (amount: number, currency: string = 'USD'): string => {
       return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency,

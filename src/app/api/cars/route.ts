@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
         doors: doors ? parseInt(doors) : null,
         seats: seats ? parseInt(seats) : null,
         city,
-        country: country || "Egypt",
+        country: country || "USA",
         address: address || null,
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,

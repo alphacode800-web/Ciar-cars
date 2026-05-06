@@ -105,11 +105,7 @@ const STEPS = [
 // ============ Cities ============
 
 const CITIES = [
-  'Cairo', 'Alexandria', 'Giza', 'Shubra El Kheima', 'Port Said',
-  'Suez', 'Luxor', 'Aswan', 'Tanta', 'Ismailia',
-  'Faiyum', 'Zagazig', 'Damietta', 'Mansoura', 'Beni Suef',
-  'Minya', 'Sohag', 'Qena', 'Hurghada', 'Marsa Alam',
-  'Sharm El Sheikh', '6th of October City', 'New Cairo', 'New Administrative Capital',
+  'Dubai', 'London', 'Tokyo', 'New York', 'Paris', 'Berlin', 'Sydney', 'Toronto', 'Singapore', 'Mumbai', 'São Paulo', 'Seoul', 'Los Angeles', 'Zurich', 'Madrid', 'Milan', 'Amsterdam', 'Bangkok', 'Istanbul', 'Barcelona',
 ];
 
 // ============ Stepper ============

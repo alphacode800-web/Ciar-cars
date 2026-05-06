@@ -237,7 +237,7 @@ const mockActivities = [
   { text: 'Your listing "BMW 320i" got 15 new views', time: '1 hr ago', icon: Eye },
   { text: 'Sara Ali sent you a message', time: '2 hrs ago', icon: MessageSquare },
   { text: 'Your booking for Mercedes C200 is confirmed', time: '5 hrs ago', icon: CheckCircle2 },
-  { text: 'You earned E£4,500 from rental', time: '1 day ago', icon: Wallet },
+  { text: 'You earned $4,500 from rental', time: '1 day ago', icon: Wallet },
 ];
 
 // ============ HELPERS ============
@@ -290,8 +290,8 @@ export default function UserDashboardView() {
     email: user?.email || '',
     phone: user?.phone || '',
     bio: user?.bio || '',
-    city: user?.city || 'Cairo',
-    country: user?.country || 'Egypt',
+    city: user?.city || 'Dubai',
+    country: user?.country || 'UAE',
   });
   const [passwordForm, setPasswordForm] = useState({
     current: '',
@@ -353,7 +353,7 @@ export default function UserDashboardView() {
           { label: 'Active Listings', value: '3', change: '+1', up: true, icon: Car, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
           { label: 'Total Views', value: '479', change: '+42', up: true, icon: Eye, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/30' },
           { label: 'Messages', value: '4', change: '+3', up: true, icon: MessageSquare, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/30' },
-          { label: 'Wallet Balance', value: formatPrice(currentBalance), change: '+E£4,500', up: true, icon: Wallet, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/30' },
+          { label: 'Wallet Balance', value: formatPrice(currentBalance), change: '+$4,500', up: true, icon: Wallet, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/30' },
         ].map((stat) => (
           <Card key={stat.label}>
             <CardContent className="p-5">

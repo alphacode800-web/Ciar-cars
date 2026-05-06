@@ -52,8 +52,8 @@ const CONTACT_INFO = [
   {
     icon: MapPin,
     title: 'Visit Us',
-    detail: 'New Cairo, Fifth Settlement',
-    subDetail: 'Cairo, Egypt',
+    detail: 'Business Bay, Dubai',
+    subDetail: 'Dubai, UAE',
     action: null,
     color: 'bg-orange-50 text-orange-600',
   },

@@ -192,7 +192,7 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <MapPin className="h-4 w-4 mt-0.5 text-emerald-500 shrink-0" />
                 <span className="text-sm text-zinc-400">
-                  123 Auto Mall, New Cairo, Cairo, Egypt
+                  Business Bay, Dubai, UAE
                 </span>
               </li>
               <li className="flex items-center gap-3">

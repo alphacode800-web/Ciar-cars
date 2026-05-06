@@ -423,7 +423,7 @@ export default function AuthView() {
                   <CardHeader className="text-center pb-2">
                     <CardTitle className="text-xl">Create Account</CardTitle>
                     <CardDescription>
-                      Join Egypt&apos;s premier car marketplace
+                      Join the world&apos;s premier car marketplace
                     </CardDescription>
                   </CardHeader>
                   <CardContent>

@@ -161,10 +161,10 @@ export const USER_ROLES = [
 // ============ CURRENCY ============
 
 export const CURRENCY = {
-  code: "EGP",
-  symbol: "E£",
-  name: "Egyptian Pound",
-  locale: "ar-EG",
+  code: "USD",
+  symbol: "$",
+  name: "US Dollar",
+  locale: "en-US",
 } as const;
 
 // ============ CAR STATUS OPTIONS ============
@@ -330,9 +330,9 @@ export const PAGE_SIZE_OPTIONS = [12, 24, 36, 48] as const;
 // ============ PLATFORM ============
 
 export const PLATFORM_NAME = "CIAR Cars";
-export const PLATFORM_TAGLINE = "Egypt's Premier Car Marketplace";
+export const PLATFORM_TAGLINE = "The World's Premier Car Marketplace";
 export const PLATFORM_DESCRIPTION =
-  "Buy, sell, and rent cars with confidence on CIAR Cars — Egypt's most trusted automotive platform.";
+  "Buy, sell, and rent cars with confidence on CIAR Cars — the world's most trusted automotive platform.";
 
 // ============ FILE UPLOAD LIMITS ============
 

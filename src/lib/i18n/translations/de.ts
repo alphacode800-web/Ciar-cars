@@ -7,8 +7,8 @@ const de: TranslationDictionary = {
   common: {
     appName: "CIAR Cars",
     appNameShort: "CIAR",
-    tagline: "Ägyptens führender Automarktplatz",
-    description: "Kaufen, verkaufen und mieten Sie Autos mit Vertrauen",
+    tagline: "Die weltweit führende Auto-Plattform",
+    description: "Kaufen, verkaufen und mieten Sie Autos mit Vertrauen auf der weltweit vertrauenswürdigsten Automobil-Plattform.",
     loading: "Laden...",
     error: "Etwas ist schiefgelaufen",
     retry: "Erneut versuchen",
@@ -35,7 +35,7 @@ const de: TranslationDictionary = {
     close: "Schließen",
     yes: "Ja",
     no: "Nein",
-    currency: "EGP",
+    currency: "USD",
     and: "und",
     or: "oder",
   },
@@ -69,11 +69,11 @@ const de: TranslationDictionary = {
   // ---------------------------------------------------------------------------
   hero: {
     title: "Finden Sie Ihr Traumauto",
-    subtitle: "Entdecken Sie Ägyptens größte Auswahl an neuen und gebrauchten Fahrzeugen",
+    subtitle: "Entdecken Sie die weltweit größte Auswahl an neuen und gebrauchten Fahrzeugen",
     searchPlaceholder: "Nach Marke, Modell oder Schlagwort suchen...",
     searchButton: "Autos suchen",
     popularSearches: "Beliebte Suchen",
-    stats: "20.000+ gelistete Autos | 15.000+ zufriedene Kunden | 500+ geprüfte Händler",
+    stats: "100.000+ gelistete Autos | 50.000+ zufriedene Kunden | 5.000+ geprüfte Händler | 80+ Länder",
     browseCategories: "Kategorien durchsuchen",
   },
 
@@ -108,12 +108,12 @@ const de: TranslationDictionary = {
   // Stats / Trust Bar
   // ---------------------------------------------------------------------------
   stats: {
-    title: "Tausende vertrauen uns",
-    subtitle: "Zahlen, die für sich sprechen",
+    title: "Weltweit vertraut",
+    subtitle: "Zahlen, die über Grenzen hinweg sprechen",
     carsListed: "Gelistete Autos",
     happyCustomers: "Zufriedene Kunden",
     verifiedDealers: "Geprüfte Händler",
-    citiesCovered: "Abgedeckte Städte",
+    citiesCovered: "Länder",
   },
 
   // ---------------------------------------------------------------------------
@@ -130,7 +130,7 @@ const de: TranslationDictionary = {
   cta: {
     title: "Bereit, Ihr Auto zu verkaufen?",
     subtitle:
-      "Schließen Sie sich Tausenden von Verkäufern auf Ägyptens größtem Automarktplatz an. Listen Sie Ihr Auto in wenigen Minuten und erreichen Sie Millionen potenzieller Käufer.",
+      "Schließen Sie sich Tausenden von Verkäufern auf dem weltweit größten Automarktplatz an. Listen Sie Ihr Auto in wenigen Minuten und erreichen Sie Millionen potenzieller Käufer.",
     buttonText: "Auto einstellen",
     browseButton: "Autos durchsuchen",
   },
@@ -140,7 +140,7 @@ const de: TranslationDictionary = {
   // ---------------------------------------------------------------------------
   footer: {
     description:
-      "Ägyptens vertrauenswürdigster Automarktplatz. Kaufen, verkaufen und mieten Sie Autos mit Vertrauen.",
+      "Die weltweit vertrauenswürdigste Automobil-Plattform.",
     quickLinks: "Schnelllinks",
     company: "Unternehmen",
     support: "Support",
@@ -375,10 +375,10 @@ const de: TranslationDictionary = {
     title: "Über CIAR Cars",
     mission: "Unsere Mission",
     missionText:
-      "Den Automarktplatz in Ägypten revolutionieren, indem wir eine transparente, vertrauenswürdige und effiziente Plattform zum Kaufen, Verkaufen und Mieten von Fahrzeugen bieten.",
+      "Den weltweiten Automarktplatz revolutionieren, indem wir eine transparente, vertrauenswürdige und effiziente Plattform zum Kaufen, Verkaufen und Mieten von Fahrzeugen bieten.",
     vision: "Unsere Vision",
     visionText:
-      "Die führende Automotive-Plattform im Nahen Osten und Nordafrika werden und Millionen von Autoenthusiasten mit ihren Traumfahrzeugen verbinden.",
+      "Die weltweit führende Automotive-Plattform werden und Millionen von Autoenthusiasten mit ihren Traumfahrzeugen verbinden.",
     values: "Unsere Werte",
     transparency: "Transparenz",
     transparencyText: "Vollständige Fahrzeughistorie und ehrliche Inserate",
@@ -401,10 +401,10 @@ const de: TranslationDictionary = {
     subject: "Betreff",
     message: "Nachricht",
     sendMessage: "Nachricht senden",
-    officeAddress: "Büroadresse",
+    officeAddress: "Globaler Hauptsitz: Dubai, VAE",
     phoneNumber: "Telefonnummer",
     emailAddress: "E-Mail-Adresse",
-    workingHours: "Geschäftszeiten",
+    workingHours: "Mon-Fri: 9AM-6PM (GMT+4)",
     faqTitle: "Häufig gestellte Fragen",
   },
 };

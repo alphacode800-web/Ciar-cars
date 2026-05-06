@@ -39,7 +39,7 @@ const TEAM_MEMBERS = [
   {
     name: 'Mohamed Ali',
     role: 'Head of Operations',
-    bio: 'Operations expert ensuring seamless experiences for buyers and sellers across Egypt.',
+    bio: 'Operations expert ensuring seamless experiences for buyers and sellers around the world.',
     avatar: 'https://placehold.co/200x200/1a1a2e/e2e8f0?text=MA',
   },
   {
@@ -176,11 +176,11 @@ export default function AboutView() {
           >
             <Badge className="mb-4">About CIAR Cars</Badge>
             <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
-              Egypt&apos;s Premier{' '}
+              The World&apos;s Premier{' '}
               <span className="text-primary">Car Marketplace</span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl">
-              We&apos;re on a mission to make buying, selling, and renting cars in Egypt
+              We&apos;re on a mission to make buying, selling, and renting cars worldwide
               as easy, transparent, and enjoyable as possible.
             </p>
           </motion.div>
@@ -207,12 +207,12 @@ export default function AboutView() {
                 Our Story
               </Badge>
               <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-                Built for Egypt, by Egyptians
+                Built for the world, by car enthusiasts
               </h2>
               <div className="mt-6 space-y-4 text-muted-foreground">
                 <p>
                   CIAR Cars was founded in 2023 with a simple vision: transform the way
-                  Egyptians buy and sell cars. The traditional car market in Egypt was
+                  people buy and sell cars. The traditional car market was
                   fragmented, opaque, and often frustrating for both buyers and sellers.
                 </p>
                 <p>
@@ -222,7 +222,7 @@ export default function AboutView() {
                   that puts the customer first.
                 </p>
                 <p>
-                  Today, CIAR Cars serves thousands of customers across Egypt, with
+                  Today, CIAR Cars serves thousands of customers around the world, with
                   listings spanning every major city and covering all vehicle types
                   from budget-friendly sedans to luxury SUVs.
                 </p>
@@ -273,7 +273,7 @@ export default function AboutView() {
           <SectionHeader
             badge="By The Numbers"
             title="Growing Every Day"
-            description="Our platform continues to expand, connecting more car enthusiasts across Egypt."
+            description="Our platform continues to expand, connecting more car enthusiasts around the world."
           />
 
           <motion.div
@@ -306,7 +306,7 @@ export default function AboutView() {
           <SectionHeader
             badge="Our Team"
             title="Meet the People Behind CIAR"
-            description="A passionate team dedicated to revolutionizing the car marketplace in Egypt."
+            description="A passionate team dedicated to revolutionizing the car marketplace worldwide."
           />
 
           <motion.div

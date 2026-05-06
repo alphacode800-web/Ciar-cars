@@ -41,7 +41,7 @@ const MOCK_BANNERS: Banner[] = [
   {
     id: '3',
     title: 'Rent Premium Cars',
-    subtitle: 'Experience luxury on wheels. Daily rates starting from E£1,500.',
+    subtitle: 'Experience luxury on wheels. Daily rates starting from $89.',
     imageUrl: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=1400&h=500&fit=crop',
     linkUrl: '/rental',
     ctaText: 'Rent Now',

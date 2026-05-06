@@ -69,26 +69,26 @@ interface FilterSectionProps {
 // ============ Constants ============
 
 const CITIES = [
-  'Cairo',
-  'Alexandria',
-  'Giza',
-  'Shubra El Kheima',
-  'Port Said',
-  'Suez',
-  'Luxor',
-  'Aswan',
-  'Mansoura',
-  'Tanta',
-  'Ismailia',
-  'Faiyum',
-  'Zagazig',
-  'Damietta',
-  'Minya',
-  'Beni Suef',
-  'Sohag',
-  'Qena',
-  'Hurghada',
-  'Sharm El Sheikh',
+  'Dubai',
+  'London',
+  'Tokyo',
+  'New York',
+  'Paris',
+  'Berlin',
+  'Sydney',
+  'Toronto',
+  'Singapore',
+  'Mumbai',
+  'São Paulo',
+  'Seoul',
+  'Los Angeles',
+  'Zurich',
+  'Madrid',
+  'Milan',
+  'Amsterdam',
+  'Bangkok',
+  'Istanbul',
+  'Barcelona',
 ] as const;
 
 // ============ Filter Section ============
@@ -343,7 +343,7 @@ export default function CarFilters({
           </FilterSection>
 
           {/* Price Range */}
-          <FilterSection title="Price Range (EGP)" icon={<DollarSign className="w-4 h-4" />}>
+          <FilterSection title="Price Range (USD)" icon={<DollarSign className="w-4 h-4" />}>
             <div className="flex items-center gap-2">
               <Input
                 type="number"

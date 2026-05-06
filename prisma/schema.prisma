@@ -92,7 +92,7 @@ model Car {
   
   // Location
   city            String
-  country         String    @default("Egypt")
+  country         String    @default("UAE")
   address         String?
   latitude        Float?
   longitude       Float?

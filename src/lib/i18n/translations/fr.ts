@@ -7,8 +7,8 @@ const fr: TranslationDictionary = {
   common: {
     appName: "CIAR Cars",
     appNameShort: "CIAR",
-    tagline: "La première plateforme automobile d'Égypte",
-    description: "Achetez, vendez et louez des voitures en toute confiance",
+    tagline: "La première plateforme automobile au monde",
+    description: "Achetez, vendez et louez des voitures en toute confiance sur la plateforme automobile la plus fiable au monde.",
     loading: "Chargement...",
     error: "Une erreur est survenue",
     retry: "Réessayer",
@@ -35,7 +35,7 @@ const fr: TranslationDictionary = {
     close: "Fermer",
     yes: "Oui",
     no: "Non",
-    currency: "EGP",
+    currency: "USD",
     and: "et",
     or: "ou",
   },
@@ -69,11 +69,11 @@ const fr: TranslationDictionary = {
   // ---------------------------------------------------------------------------
   hero: {
     title: "Trouvez la voiture idéale",
-    subtitle: "Découvrez la plus grande sélection de véhicules neufs et d'occasion en Égypte",
+    subtitle: "Explorez la plus grande sélection de véhicules neufs et d'occasion au monde",
     searchPlaceholder: "Rechercher par marque, modèle ou mot-clé...",
     searchButton: "Rechercher des voitures",
     popularSearches: "Recherches populaires",
-    stats: "20 000+ voitures listées | 15 000+ clients satisfaits | 500+ concessionnaires vérifiés",
+    stats: "100 000+ voitures listées | 50 000+ clients satisfaits | 5 000+ concessionnaires vérifiés | 80+ pays",
     browseCategories: "Parcourir les catégories",
   },
 
@@ -108,12 +108,12 @@ const fr: TranslationDictionary = {
   // Stats / Trust Bar
   // ---------------------------------------------------------------------------
   stats: {
-    title: "La confiance de milliers d'utilisateurs",
-    subtitle: "Des chiffres qui parlent d'eux-mêmes",
+    title: "La confiance dans le monde entier",
+    subtitle: "Des chiffres qui franchissent les frontières",
     carsListed: "Voitures listées",
     happyCustomers: "Clients satisfaits",
     verifiedDealers: "Concessionnaires vérifiés",
-    citiesCovered: "Villes couvertes",
+    citiesCovered: "Pays",
   },
 
   // ---------------------------------------------------------------------------
@@ -130,7 +130,7 @@ const fr: TranslationDictionary = {
   cta: {
     title: "Prêt à vendre votre voiture ?",
     subtitle:
-      "Rejoignez des milliers de vendeurs sur la plus grande plateforme automobile d'Égypte. Listez votre voiture en quelques minutes et touchez des millions d'acheteurs potentiels.",
+      "Rejoignez des milliers de vendeurs sur la plus grande plateforme automobile au monde. Listez votre voiture en quelques minutes et touchez des millions d'acheteurs potentiels.",
     buttonText: "Lister votre voiture",
     browseButton: "Parcourir les voitures",
   },
@@ -140,7 +140,7 @@ const fr: TranslationDictionary = {
   // ---------------------------------------------------------------------------
   footer: {
     description:
-      "La plateforme automobile la plus fiable d'Égypte. Achetez, vendez et louez des voitures en toute confiance.",
+      "La plateforme automobile la plus fiable au monde.",
     quickLinks: "Liens rapides",
     company: "Entreprise",
     support: "Support",
@@ -375,10 +375,10 @@ const fr: TranslationDictionary = {
     title: "À propos de CIAR Cars",
     mission: "Notre mission",
     missionText:
-      "Révolutionner le marché automobile en Égypte en proposant une plateforme transparente, fiable et efficace pour l'achat, la vente et la location de véhicules.",
+      "Révolutionner le marché automobile mondial en proposant une plateforme transparente, fiable et efficace pour l'achat, la vente et la location de véhicules.",
     vision: "Notre vision",
     visionText:
-      "Devenir la plateforme automobile de référence au Moyen-Orient et en Afrique du Nord, en connectant des millions de passionnés avec le véhicule de leurs rêves.",
+      "Devenir la plateforme automobile de référence dans le monde entier, en connectant des millions de passionnés avec le véhicule de leurs rêves.",
     values: "Nos valeurs",
     transparency: "Transparence",
     transparencyText: "Historique complet des véhicules et annonces honnêtes",
@@ -401,10 +401,10 @@ const fr: TranslationDictionary = {
     subject: "Objet",
     message: "Message",
     sendMessage: "Envoyer le message",
-    officeAddress: "Adresse du bureau",
+    officeAddress: "Siège mondial: Dubaï, EAU",
     phoneNumber: "Numéro de téléphone",
     emailAddress: "Adresse e-mail",
-    workingHours: "Horaires d'ouverture",
+    workingHours: "Mon-Fri: 9AM-6PM (GMT+4)",
     faqTitle: "Questions fréquentes",
   },
 };

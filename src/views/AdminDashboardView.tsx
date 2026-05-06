@@ -245,7 +245,7 @@ const mockActivities = [
   { id: '1', type: 'signup' as const, text: 'Nour El-Din created an account', time: '5 min ago' },
   { id: '2', type: 'listing' as const, text: 'New listing: BMW 320i 2023 by Sara Ali', time: '12 min ago' },
   { id: '3', type: 'booking' as const, text: 'Omar Hassan booked BMW 320i', time: '30 min ago' },
-  { id: '4', type: 'payment' as const, text: 'Payment received: E£5,000 from Omar', time: '1 hr ago' },
+  { id: '4', type: 'payment' as const, text: 'Payment received: $5,000 from Omar', time: '1 hr ago' },
   { id: '5', type: 'signup' as const, text: 'Karim Ibrahim created an account', time: '2 hrs ago' },
   { id: '6', type: 'listing' as const, text: 'New listing: Toyota Corolla 2024', time: '3 hrs ago' },
 ];

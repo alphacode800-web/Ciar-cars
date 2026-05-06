@@ -353,7 +353,7 @@ export function Navbar() {
                       <Wallet className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
                       {t('nav.wallet')}
                       <Badge variant="secondary" className="ml-auto text-xs">
-                        E£{(user.walletBalance ?? 0).toLocaleString()}
+                        ${(user.walletBalance ?? 0).toLocaleString()}
                       </Badge>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleNavClick('chat')}>

@@ -27,7 +27,7 @@ const TESTIMONIALS = [
     role: 'Car Seller',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face',
     rating: 5,
-    text: 'Sold my Hyundai within a week! The listing process was smooth and the exposure was amazing. Best car marketplace in Egypt by far.',
+    text: 'Sold my Hyundai within a week! The listing process was smooth and the exposure was amazing. Best car marketplace I\'ve ever used.',
     gradient: 'from-blue-400 to-indigo-500',
   },
   {
