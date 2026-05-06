@@ -4,7 +4,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/hooks/use-translation';
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 interface Banner {
   id: string;
   title: string;
@@ -14,6 +18,9 @@ interface Banner {
   ctaText?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Mock fallback data
+// ---------------------------------------------------------------------------
 const MOCK_BANNERS: Banner[] = [
   {
     id: '1',
@@ -41,9 +48,34 @@ const MOCK_BANNERS: Banner[] = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Slide transition variants
+// ---------------------------------------------------------------------------
+const slideVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? '100%' : '-100%',
+    opacity: 0,
+    scale: 1.02,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+    scale: 1,
+  },
+  exit: (direction: number) => ({
+    x: direction > 0 ? '-100%' : '100%',
+    opacity: 0,
+    scale: 0.98,
+  }),
+};
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 export function BannerSection() {
+  const { isRTL } = useTranslation();
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [[currentIndex, direction], setCurrentIndex] = useState([0, 0]);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -68,13 +100,20 @@ export function BannerSection() {
     fetchBanners();
   }, []);
 
-  const nextSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % banners.length);
-  }, [banners.length]);
+  const paginate = useCallback(
+    (newDirection: number) => {
+      setCurrentIndex(([prev]) => {
+        const next = prev + newDirection;
+        if (next < 0) return [banners.length - 1, newDirection];
+        if (next >= banners.length) return [0, newDirection];
+        return [next, newDirection];
+      });
+    },
+    [banners.length]
+  );
 
-  const prevSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
-  }, [banners.length]);
+  const nextSlide = useCallback(() => paginate(1), [paginate]);
+  const prevSlide = useCallback(() => paginate(-1), [paginate]);
 
   // Auto-rotate
   useEffect(() => {
@@ -90,7 +129,6 @@ export function BannerSection() {
   const handleCTA = () => {
     if (currentBanner.linkUrl) {
       // In SPA context, this would navigate using the store
-      // For now, it's a placeholder
     }
   };
 
@@ -102,14 +140,19 @@ export function BannerSection() {
           onMouseEnter={() => setIsAutoPlaying(false)}
           onMouseLeave={() => setIsAutoPlaying(true)}
         >
-          {/* Banner Images */}
-          <AnimatePresence mode="wait">
+          {/* Banner images with slide/fade transitions */}
+          <AnimatePresence initial={false} custom={direction} mode="popLayout">
             <motion.div
               key={currentIndex}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: 'spring', stiffness: 300, damping: 30 },
+                opacity: { duration: 0.3 },
+              }}
               className="relative aspect-[16/6] sm:aspect-[3/1] lg:aspect-[4/1]"
             >
               <img
@@ -153,7 +196,7 @@ export function BannerSection() {
                         onClick={handleCTA}
                       >
                         {currentBanner.ctaText}
-                        <ArrowRight className="ml-2 h-4 w-4" />
+                        <ArrowRight className={`h-4 w-4 ${isRTL ? 'rotate-180 rtl:rotate-0' : ''}`} />
                       </Button>
                     </motion.div>
                   )}
@@ -162,11 +205,13 @@ export function BannerSection() {
             </motion.div>
           </AnimatePresence>
 
-          {/* Navigation Arrows */}
+          {/* Navigation Arrows – RTL-aware positioning */}
           <Button
             variant="ghost"
             size="icon"
-            className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
+            className={`absolute top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 ${
+              isRTL ? 'right-4' : 'left-4'
+            }`}
             onClick={prevSlide}
           >
             <ChevronLeft className="h-5 w-5" />
@@ -174,18 +219,20 @@ export function BannerSection() {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
+            className={`absolute top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 ${
+              isRTL ? 'left-4' : 'right-4'
+            }`}
             onClick={nextSlide}
           >
             <ChevronRight className="h-5 w-5" />
           </Button>
 
-          {/* Dots */}
+          {/* Progress dots */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
             {banners.map((_, i) => (
               <button
                 key={i}
-                onClick={() => setCurrentIndex(i)}
+                onClick={() => setCurrentIndex([i, i > currentIndex ? 1 : -1])}
                 className={`h-2 rounded-full transition-all duration-300 ${
                   i === currentIndex
                     ? 'w-8 bg-white'

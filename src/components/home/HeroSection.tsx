@@ -1,236 +1,374 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Sparkles, ChevronDown } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { Car, Search, ArrowRight, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/hooks/use-translation';
 import { useAppStore } from '@/store/app-store';
-import { CAR_BRANDS, CAR_CONDITIONS } from '@/lib/constants';
-import type { CarCondition, BodyType } from '@/types';
 
-const STATS = [
-  { value: '10,000+', label: 'Cars Listed' },
-  { value: '5,000+', label: 'Verified Dealers' },
-  { value: '100,000+', label: 'Happy Users' },
-  { value: '4.8★', label: 'User Rating' },
+// ─── Popular search tags ────────────────────────────────────────────────────
+const POPULAR_TAGS = ['BMW', 'Mercedes', 'Toyota', 'Tesla', 'SUV', 'Electric'] as const;
+
+// ─── Floating decorative orbs ───────────────────────────────────────────────
+const FLOATING_ORBS = [
+  { size: 340, x: '5%', y: '15%', delay: 0, duration: 12, color: 'bg-emerald-500/10' },
+  { size: 220, x: '85%', y: '25%', delay: 1.5, duration: 10, color: 'bg-teal-500/10' },
+  { size: 180, x: '75%', y: '70%', delay: 3, duration: 14, color: 'bg-cyan-500/8' },
+  { size: 260, x: '15%', y: '75%', delay: 2, duration: 11, color: 'bg-emerald-400/6' },
 ];
 
-const floatingShapes = [
-  { size: 120, x: '10%', y: '20%', delay: 0, duration: 8 },
-  { size: 80, x: '80%', y: '30%', delay: 1, duration: 10 },
-  { size: 60, x: '70%', y: '70%', delay: 2, duration: 7 },
-  { size: 100, x: '20%', y: '75%', delay: 0.5, duration: 9 },
-  { size: 40, x: '90%', y: '60%', delay: 1.5, duration: 6 },
-];
+// ─── Particle positions (subtle animated dots) ──────────────────────────────
+const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
+  id: i,
+  x: `${Math.random() * 100}%`,
+  y: `${Math.random() * 100}%`,
+  size: Math.random() * 3 + 1,
+  delay: Math.random() * 4,
+  duration: Math.random() * 3 + 3,
+}));
 
+// ─── Animation variants ─────────────────────────────────────────────────────
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.2 },
+  },
+};
+
+const wordVariants = {
+  hidden: { opacity: 0, y: 40, rotateX: -40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    rotateX: 0,
+    transition: { type: 'spring' as const, stiffness: 120, damping: 14 },
+  },
+};
+
+const fadeUpVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, stiffness: 100, damping: 15 },
+  },
+};
+
+// ─── Component ──────────────────────────────────────────────────────────────
 export function HeroSection() {
-  const { setView, setFilters } = useAppStore();
-  const [brand, setBrand] = useState('');
-  const [condition, setCondition] = useState<string>('all');
-  const [priceRange, setPriceRange] = useState<string>('all');
+  const { t, isRTL, dirClasses } = useTranslation();
+  const { setView, setFilters, setSearchQuery } = useAppStore();
+  const [searchValue, setSearchValue] = useState('');
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  // Parallax effect for background image
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  });
+  const bgY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
+  const overlayOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0.4]);
 
   const handleSearch = () => {
-    const filters: Record<string, unknown> = {};
-    if (brand) filters.brand = brand;
-    if (condition && condition !== 'all') filters.condition = condition as CarCondition;
-    if (priceRange && priceRange !== 'all') {
-      const ranges: Record<string, { min?: number; max?: number }> = {
-        '0-500k': { max: 500000 },
-        '500k-1m': { min: 500000, max: 1000000 },
-        '1m-2m': { min: 1000000, max: 2000000 },
-        '2m-5m': { min: 2000000, max: 5000000 },
-        '5m+': { min: 5000000 },
-      };
-      filters.price = ranges[priceRange];
+    const query = searchValue.trim();
+    if (query) {
+      setSearchQuery(query);
+      setFilters({ query });
     }
-    setFilters(filters);
     setView('listing');
   };
 
+  const handleTagClick = (tag: string) => {
+    setSearchQuery(tag);
+    setFilters({ query: tag });
+    setView('listing');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleSearch();
+  };
+
+  // Split title for word-by-word stagger
+  const titleText = t('hero.title');
+  const titleWords = titleText.split(' ');
+
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white">
-      {/* Animated floating shapes */}
-      <div className="absolute inset-0 overflow-hidden">
-        {floatingShapes.map((shape, i) => (
+    <section
+      ref={heroRef}
+      dir={isRTL ? 'rtl' : 'ltr'}
+      className="relative min-h-[85vh] flex items-center justify-center overflow-hidden"
+    >
+      {/* ── Professional background image with parallax ── */}
+      <motion.div
+        className="absolute inset-0 w-full h-full scale-110"
+        style={{ y: bgY }}
+      >
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1920&q=80')`,
+          }}
+        />
+      </motion.div>
+
+      {/* ── Dark gradient overlay ── */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40"
+        style={{ opacity: overlayOpacity }}
+      />
+
+      {/* ── Bottom fade to page ── */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent z-[1]" />
+
+      {/* ── Floating decorative glowing orbs ── */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        {FLOATING_ORBS.map((orb, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full bg-emerald-500/5 border border-emerald-500/10"
+            className={`absolute rounded-full blur-3xl ${orb.color}`}
             style={{
-              width: shape.size,
-              height: shape.size,
-              left: shape.x,
-              top: shape.y,
+              width: orb.size,
+              height: orb.size,
+              left: orb.x,
+              top: orb.y,
             }}
             animate={{
-              y: [0, -30, 0],
-              x: [0, 15, 0],
-              rotate: [0, 180, 360],
+              y: [0, -35, 10, -20, 0],
+              x: [0, 20, -10, 15, 0],
+              scale: [1, 1.08, 0.95, 1.05, 1],
             }}
             transition={{
-              duration: shape.duration,
+              duration: orb.duration,
               repeat: Infinity,
-              delay: shape.delay,
+              delay: orb.delay,
               ease: 'easeInOut',
             }}
           />
         ))}
       </div>
 
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-
-      {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36">
-        <div className="text-center max-w-4xl mx-auto">
-          {/* Badge */}
+      {/* ── Subtle animated particle dots ── */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        {PARTICLES.map((p) => (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            key={p.id}
+            className="absolute rounded-full bg-white/20"
+            style={{
+              width: p.size,
+              height: p.size,
+              left: p.x,
+              top: p.y,
+            }}
+            animate={{
+              opacity: [0, 0.6, 0],
+              y: [0, -30, -60],
+            }}
+            transition={{
+              duration: p.duration,
+              repeat: Infinity,
+              delay: p.delay,
+              ease: 'easeOut',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* ── Main content ── */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24">
+        <div className="text-center max-w-4xl mx-auto">
+          {/* ── Badge ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.5, type: 'spring', stiffness: 120 }}
+            className="mb-8"
           >
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium mb-6">
-              <Sparkles className="h-4 w-4" />
-              Egypt&apos;s #1 Car Marketplace
-            </span>
+            <Badge
+              variant="outline"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border-emerald-500/25 text-emerald-400 text-sm font-medium backdrop-blur-sm cursor-default"
+            >
+              <TrendingUp className="h-4 w-4" />
+              <span>{t('hero.popularSearches')}</span>
+            </Badge>
           </motion.div>
 
-          {/* Heading */}
+          {/* ── Title with word-by-word stagger ── */}
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-6 [perspective:800px]"
+            style={{
+              textShadow: '0 4px 30px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3)',
+            }}
           >
-            Find Your{' '}
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
-              Dream Car
-            </span>
+            {titleWords.map((word, i) => {
+              // Highlight the "Dream" word (typically the 3rd word in English)
+              const isHighlight =
+                word.toLowerCase() === 'dream' ||
+                word === t('hero.title').split(' ')[2];
+              return (
+                <motion.span
+                  key={i}
+                  variants={wordVariants}
+                  className={`inline-block mr-[0.3em] last:mr-0 ${
+                    isHighlight
+                      ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent'
+                      : 'text-white'
+                  }`}
+                >
+                  {word}
+                </motion.span>
+              );
+            })}
           </motion.h1>
 
-          {/* Subtitle */}
+          {/* ── Subtitle ── */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg sm:text-xl text-zinc-400 mb-10 max-w-2xl mx-auto"
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="text-lg sm:text-xl text-zinc-300 mb-10 max-w-2xl mx-auto leading-relaxed"
+            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.4)' }}
           >
-            Egypt&apos;s Premier Car Marketplace — Buy, Rent, or Sell with confidence
+            {t('hero.subtitle')}
           </motion.p>
 
-          {/* Search Bar */}
+          {/* ── Search bar with spring animation ── */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 p-3 sm:p-4 mb-8"
+            transition={{
+              type: 'spring',
+              stiffness: 90,
+              damping: 18,
+              delay: 0.6,
+            }}
+            className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/15 p-3 sm:p-4 mb-8 shadow-2xl shadow-black/20"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              {/* Brand */}
-              <Select value={brand} onValueChange={setBrand}>
-                <SelectTrigger className="bg-white/5 border-white/10 text-white h-11 w-full focus:ring-emerald-500/50">
-                  <SelectValue placeholder="All Brands" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  <SelectItem value="all">All Brands</SelectItem>
-                  {CAR_BRANDS.map((b) => (
-                    <SelectItem key={b} value={b}>
-                      {b}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Search input */}
+              <div className="relative flex-1">
+                <Search
+                  className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400 ${
+                    isRTL ? 'right-3' : 'left-3'
+                  }`}
+                />
+                <input
+                  type="text"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={t('hero.searchPlaceholder')}
+                  className={`w-full h-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-zinc-500 px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all ${
+                    isRTL ? 'pr-10' : 'pl-10'
+                  }`}
+                />
+              </div>
 
-              {/* Price Range */}
-              <Select value={priceRange} onValueChange={setPriceRange}>
-                <SelectTrigger className="bg-white/5 border-white/10 text-white h-11 w-full focus:ring-emerald-500/50">
-                  <SelectValue placeholder="Any Price" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Any Price</SelectItem>
-                  <SelectItem value="0-500k">Under E£500K</SelectItem>
-                  <SelectItem value="500k-1m">E£500K - 1M</SelectItem>
-                  <SelectItem value="1m-2m">E£1M - 2M</SelectItem>
-                  <SelectItem value="2m-5m">E£2M - 5M</SelectItem>
-                  <SelectItem value="5m+">Over E£5M</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Condition */}
-              <Select value={condition} onValueChange={setCondition}>
-                <SelectTrigger className="bg-white/5 border-white/10 text-white h-11 w-full focus:ring-emerald-500/50">
-                  <SelectValue placeholder="Any Condition" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Any Condition</SelectItem>
-                  {CAR_CONDITIONS.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Search Button */}
+              {/* Search button with animated gradient */}
               <Button
                 onClick={handleSearch}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white h-11 sm:col-span-1 lg:col-span-2 font-medium"
+                className="h-12 px-6 sm:px-8 rounded-xl font-medium text-white relative overflow-hidden group"
+                size="lg"
               >
-                <Search className="mr-2 h-4 w-4" />
-                Search Cars
+                {/* Animated gradient background */}
+                <span className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] animate-[gradientShift_3s_ease_infinite] group-hover:animate-[gradientShift_1.5s_ease_infinite]" />
+                <span className="absolute inset-[1px] bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 bg-[length:200%_100%] animate-[gradientShift_3s_ease_infinite] group-hover:animate-[gradientShift_1.5s_ease_infinite] rounded-[10px]" />
+                <span className="relative flex items-center gap-2">
+                  <Search className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t('hero.searchButton')}</span>
+                  <span className="sm:hidden">{t('hero.searchButton')}</span>
+                  <ArrowRight
+                    className={`h-4 w-4 transition-transform group-hover:translate-x-1 ${
+                      isRTL ? 'rotate-180 group-hover:-translate-x-1' : ''
+                    }`}
+                  />
+                </span>
               </Button>
             </div>
           </motion.div>
 
-          {/* CTA Buttons */}
+          {/* ── Popular search tags with staggered fade-in ── */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: { transition: { staggerChildren: 0.07, delayChildren: 0.9 } },
+            }}
+            className="mb-12"
           >
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => setView('listing')}
-              className="border-white/20 text-white hover:bg-white/10 hover:text-white h-12 px-8 rounded-xl"
+            <motion.p
+              variants={fadeUpVariants}
+              className="text-sm text-zinc-500 mb-3 font-medium"
             >
-              Browse All Cars
-            </Button>
-            <Button
-              size="lg"
-              onClick={() => setView('sell-car')}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white h-12 px-8 rounded-xl"
+              {t('hero.popularSearches')}
+            </motion.p>
+            <motion.div
+              variants={{
+                hidden: {},
+                visible: { transition: { staggerChildren: 0.06 } },
+              }}
+              className="flex flex-wrap items-center justify-center gap-2"
             >
-              Sell Your Car
-            </Button>
+              {POPULAR_TAGS.map((tag) => (
+                <motion.button
+                  key={tag}
+                  variants={fadeUpVariants}
+                  onClick={() => handleTagClick(tag)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-zinc-300 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:bg-emerald-500/15 hover:border-emerald-500/30 hover:text-emerald-400 hover:scale-105 cursor-pointer"
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  {tag === 'Electric' && (
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  )}
+                  {tag === 'SUV' && <Car className="h-3.5 w-3.5" />}
+                  {tag}
+                </motion.button>
+              ))}
+            </motion.div>
           </motion.div>
 
-          {/* Stats Bar */}
+          {/* ── Browse categories CTA ── */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8"
+            transition={{ duration: 0.5, delay: 1.3 }}
           >
-            {STATS.map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-zinc-400">{stat.label}</div>
-              </div>
-            ))}
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={() => setView('listing')}
+              className="text-zinc-400 hover:text-white hover:bg-white/5 border border-white/10 rounded-xl px-6 transition-all duration-300"
+            >
+              <Car className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+              {t('hero.browseCategories')}
+              <ArrowRight
+                className={`h-4 w-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`}
+              />
+            </Button>
           </motion.div>
         </div>
       </div>
+
+      {/* ── CSS keyframes for animated gradient ── */}
+      <style jsx>{`
+        @keyframes gradientShift {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+      `}</style>
     </section>
   );
 }
