@@ -78,6 +78,10 @@ export async function GET(request: NextRequest) {
     const city = searchParams.get("city");
     if (city) where.city = { contains: city };
 
+    // Country
+    const country = searchParams.get("country");
+    if (country) where.country = country;
+
     // Price range
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");

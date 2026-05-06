@@ -31,6 +31,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Car,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CAR_SORT_OPTIONS, CURRENCY } from '@/lib/constants';
@@ -61,6 +62,7 @@ function buildQueryString(filters: CarSearchFilters & { sortBy?: string; sortOrd
   if (filters.transmission) params.set('transmission', filters.transmission);
   if (filters.bodyType) params.set('bodyType', filters.bodyType);
   if (filters.city) params.set('city', filters.city);
+  if (filters.country) params.set('country', filters.country);
   if (filters.mileage?.min) params.set('minMileage', String(filters.mileage.min));
   if (filters.mileage?.max) params.set('maxMileage', String(filters.mileage.max));
   if (filters.isAvailableForRent) params.set('isAvailableForRent', 'true');
@@ -119,6 +121,10 @@ export default function CarListingView() {
       }
       if (viewParams.city && typeof viewParams.city === 'string') {
         updates.city = viewParams.city;
+        hasUpdates = true;
+      }
+      if (viewParams.country && typeof viewParams.country === 'string') {
+        updates.country = viewParams.country;
         hasUpdates = true;
       }
       if (viewParams.isAvailableForRent) {
@@ -253,20 +259,22 @@ export default function CarListingView() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 py-3">
-            {/* Search bar */}
-            <div className="relative flex-1 max-w-xl">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            {/* Search bar — more prominent */}
+            <div className="relative flex-1 max-w-2xl">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center h-5 w-5 rounded-full bg-emerald-100 dark:bg-emerald-950/50">
+                <Search className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              </div>
               <Input
-                placeholder="Search by make, model, or keyword..."
+                placeholder="Search by make, model, year, or keyword..."
                 value={searchInput}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10 pr-10 h-10 bg-muted/50 border-border/60 focus-visible:bg-background"
+                className="pl-11 pr-10 h-11 bg-muted/60 border-border/50 focus-visible:bg-background focus-visible:border-emerald-300 dark:focus-visible:border-emerald-700 focus-visible:ring-emerald-200/50 dark:focus-visible:ring-emerald-800/30 transition-all duration-200 rounded-xl text-sm"
               />
               {searchInput && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-muted"
                   onClick={() => handleSearch('')}
                 >
                   <X className="w-3.5 h-3.5" />
@@ -276,7 +284,7 @@ export default function CarListingView() {
 
             {/* Sort dropdown */}
             <Select value={sortValue} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-[180px] h-10 bg-muted/50 border-border/60">
+              <SelectTrigger className="w-[180px] h-11 bg-muted/60 border-border/50 rounded-xl text-sm">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -290,11 +298,11 @@ export default function CarListingView() {
 
             {/* View mode toggle (desktop) */}
             {!isMobile && (
-              <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+              <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-1">
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-8 w-8 rounded-lg"
                   onClick={() => setViewMode('grid')}
                 >
                   <LayoutGrid className="w-4 h-4" />
@@ -302,7 +310,7 @@ export default function CarListingView() {
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-8 w-8 rounded-lg"
                   onClick={() => setViewMode('list')}
                 >
                   <List className="w-4 h-4" />
@@ -314,7 +322,7 @@ export default function CarListingView() {
             {isMobile && (
               <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" className="h-10 gap-2">
+                  <Button variant="outline" className="h-11 gap-2 rounded-xl">
                     <SlidersHorizontal className="w-4 h-4" />
                     Filters
                   </Button>
@@ -377,50 +385,65 @@ export default function CarListingView() {
 
           {/* Results area */}
           <div className="flex-1 min-w-0">
-            {/* Results header */}
+            {/* Page Title + Results header */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="mb-6"
+            >
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <Sparkles className="h-5 w-5 text-emerald-500" />
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+                  Browse Cars
+                </h1>
+              </div>
+              <div className="flex items-center justify-between">
+                {isLoading ? (
+                  <Skeleton className="h-4 w-52" />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Showing{' '}
+                    <span className="font-semibold text-foreground">
+                      {cars.length}
+                    </span>{' '}
+                    of{' '}
+                    <span className="font-semibold text-foreground">
+                      {totalCount.toLocaleString()}
+                    </span>{' '}
+                    cars available
+                  </p>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Active filter badges */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, delay: 0.15 }}
-              className="flex items-center justify-between mb-4"
+              className="flex items-center justify-between mb-5"
             >
-              <div className="flex items-center gap-2">
-                {isLoading ? (
-                  <Skeleton className="h-5 w-48" />
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Showing{' '}
-                    <span className="font-medium text-foreground">
-                      {cars.length}
-                    </span>{' '}
-                    of{' '}
-                    <span className="font-medium text-foreground">
-                      {totalCount.toLocaleString()}
-                    </span>{' '}
-                    cars
-                  </p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {!isMobile && filters.brand && (
+                  <FilterBadge label={filters.brand} onRemove={() => handleFilterChange({ brand: undefined })} />
+                )}
+                {!isMobile && filters.model && (
+                  <FilterBadge label={filters.model} onRemove={() => handleFilterChange({ model: undefined })} />
+                )}
+                {!isMobile && filters.condition && (
+                  <FilterBadge label={filters.condition === 'new' ? 'New' : 'Used'} onRemove={() => handleFilterChange({ condition: undefined })} />
+                )}
+                {!isMobile && filters.city && (
+                  <FilterBadge label={filters.city} onRemove={() => handleFilterChange({ city: undefined })} />
+                )}
+                {!isMobile && filters.country && (
+                  <FilterBadge label={filters.country} onRemove={() => handleFilterChange({ country: undefined })} />
+                )}
+                {!isMobile && filters.bodyType && (
+                  <FilterBadge label={filters.bodyType} onRemove={() => handleFilterChange({ bodyType: undefined })} />
                 )}
               </div>
-              {/* Active filter badges (desktop) */}
-              {!isMobile && (
-                <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                  {filters.brand && (
-                    <FilterBadge label={filters.brand} onRemove={() => handleFilterChange({ brand: undefined })} />
-                  )}
-                  {filters.model && (
-                    <FilterBadge label={filters.model} onRemove={() => handleFilterChange({ model: undefined })} />
-                  )}
-                  {filters.condition && (
-                    <FilterBadge label={filters.condition === 'new' ? 'New' : 'Used'} onRemove={() => handleFilterChange({ condition: undefined })} />
-                  )}
-                  {filters.city && (
-                    <FilterBadge label={filters.city} onRemove={() => handleFilterChange({ city: undefined })} />
-                  )}
-                  {filters.bodyType && (
-                    <FilterBadge label={filters.bodyType} onRemove={() => handleFilterChange({ bodyType: undefined })} />
-                  )}
-                </div>
-              )}
             </motion.div>
 
             {/* Grid */}

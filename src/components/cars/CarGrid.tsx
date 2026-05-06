@@ -21,6 +21,8 @@ interface CarGridProps {
   totalPages?: number;
   currentPage?: number;
   onPageChange?: (page: number) => void;
+  viewMode?: 'grid' | 'list';
+  onViewModeChange?: (mode: 'grid' | 'list') => void;
 }
 
 export function CarGrid({
@@ -32,7 +34,7 @@ export function CarGrid({
 }: CarGridProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-7">
         {Array.from({ length: 8 }).map((_, i) => (
           <CarCardSkeleton key={i} />
         ))}
@@ -117,7 +119,8 @@ export function CarGrid({
 
   return (
     <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+      {/* 3-column grid on large screens for the wider 3-image cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-7">
         {cars.map((car) => (
           <CarCard key={car.id} car={car} />
         ))}

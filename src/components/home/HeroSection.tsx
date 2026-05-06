@@ -1,12 +1,33 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Car, Search, ArrowRight, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAppStore } from '@/store/app-store';
+
+// ─── 15 Hero background images from Unsplash ─────────────────────────────────
+const HERO_IMAGES = [
+  'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1920&q=80',
+  'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1920&q=80',
+  'https://images.unsplash.com/photo-1542362567-b07e54358753?w=1920&q=80',
+  'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=1920&q=80',
+  'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=1920&q=80',
+  'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=1920&q=80',
+  'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1920&q=80',
+  'https://images.unsplash.com/photo-1502877338535-766e1452684a?w=1920&q=80',
+  'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=1920&q=80',
+  'https://images.unsplash.com/photo-1616422285623-13ff0162193c?w=1920&q=80',
+  'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=1920&q=80',
+  'https://images.unsplash.com/photo-1549317661-bd32c8ce0afa?w=1920&q=80',
+  'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=1920&q=80',
+  'https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=1920&q=80',
+  'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=1920&q=80',
+];
+
+const SLIDE_INTERVAL = 5000; // 5 seconds per slide
 
 // ─── Popular search tags ────────────────────────────────────────────────────
 const POPULAR_TAGS = ['BMW', 'Mercedes', 'Toyota', 'Tesla', 'SUV', 'Electric'] as const;
@@ -56,20 +77,81 @@ const fadeUpVariants = {
   },
 };
 
+// ─── Image transition variants ──────────────────────────────────────────────
+const imageVariants = {
+  enter: { opacity: 0, scale: 1.08 },
+  center: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.95 },
+};
+
 // ─── Component ──────────────────────────────────────────────────────────────
 export function HeroSection() {
-  const { t, isRTL, dirClasses } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const { setView, setFilters, setSearchQuery } = useAppStore();
   const [searchValue, setSearchValue] = useState('');
   const heroRef = useRef<HTMLDivElement>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Parallax effect for background image
+  // Preload images
+  useEffect(() => {
+    HERO_IMAGES.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+
+  // Parallax effect for background
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
   });
   const bgY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
   const overlayOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0.4]);
+
+  // Slideshow progress & auto-advance (uses ref to avoid setState in effect)
+  const startProgress = useCallback(() => {
+    // Clear any existing timers
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
+
+    // Reset progress bar directly via DOM
+    if (progressBarRef.current) {
+      progressBarRef.current.style.width = '0%';
+    }
+    const startTime = Date.now();
+
+    progressTimerRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const pct = Math.min((elapsed / SLIDE_INTERVAL) * 100, 100);
+      if (progressBarRef.current) {
+        progressBarRef.current.style.width = `${pct}%`;
+      }
+
+      if (pct >= 100) {
+        if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      }
+    }, 30);
+
+    slideTimerRef.current = setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, SLIDE_INTERVAL);
+  }, []);
+
+  // Reset progress & restart timer when slide changes
+  useEffect(() => {
+    startProgress();
+    return () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
+    };
+  }, [currentIndex, startProgress]);
+
+  const goToSlide = useCallback((index: number) => {
+    setCurrentIndex(index);
+  }, []);
 
   const handleSearch = () => {
     const query = searchValue.trim();
@@ -100,27 +182,43 @@ export function HeroSection() {
       dir={isRTL ? 'rtl' : 'ltr'}
       className="relative min-h-[85vh] flex items-center justify-center overflow-hidden"
     >
-      {/* ── Professional background image with parallax ── */}
+      {/* ── Sliding background gallery with crossfade ── */}
       <motion.div
         className="absolute inset-0 w-full h-full scale-110"
         style={{ y: bgY }}
       >
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1920&q=80')`,
-          }}
-        />
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={currentIndex}
+            variants={imageVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 1.2, ease: 'easeInOut' }}
+            className="absolute inset-0"
+          >
+            <img
+              src={HERO_IMAGES[currentIndex]}
+              alt={`Luxury car gallery ${currentIndex + 1}`}
+              className="w-full h-full object-cover"
+              loading={currentIndex < 2 ? 'eager' : 'lazy'}
+            />
+          </motion.div>
+        </AnimatePresence>
       </motion.div>
 
-      {/* ── Dark gradient overlay ── */}
+      {/* ── Premium dark gradient overlay ── */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40"
         style={{ opacity: overlayOpacity }}
       />
 
+      {/* ── Secondary luxury vignette overlay ── */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none z-[1]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent pointer-events-none z-[1]" />
+
       {/* ── Bottom fade to page ── */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent z-[1]" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent z-[2]" />
 
       {/* ── Floating decorative glowing orbs ── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
@@ -205,7 +303,6 @@ export function HeroSection() {
             }}
           >
             {titleWords.map((word, i) => {
-              // Highlight the "Dream" word (typically the 3rd word in English)
               const isHighlight =
                 word.toLowerCase() === 'dream' ||
                 word === t('hero.title').split(' ')[2];
@@ -274,7 +371,6 @@ export function HeroSection() {
                 className="h-12 px-6 sm:px-8 rounded-xl font-medium text-white relative overflow-hidden group"
                 size="lg"
               >
-                {/* Animated gradient background */}
                 <span className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] animate-[gradientShift_3s_ease_infinite] group-hover:animate-[gradientShift_1.5s_ease_infinite]" />
                 <span className="absolute inset-[1px] bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 bg-[length:200%_100%] animate-[gradientShift_3s_ease_infinite] group-hover:animate-[gradientShift_1.5s_ease_infinite] rounded-[10px]" />
                 <span className="relative flex items-center gap-2">
@@ -353,6 +449,37 @@ export function HeroSection() {
             </Button>
           </motion.div>
         </div>
+      </div>
+
+      {/* ── Image counter dots / indicators ── */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5">
+        {HERO_IMAGES.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => goToSlide(index)}
+            className={`relative transition-all duration-300 rounded-full cursor-pointer ${
+              index === currentIndex
+                ? 'w-6 h-2'
+                : 'w-2 h-2 hover:bg-white/40'
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+          >
+            <div
+              className={`absolute inset-0 rounded-full transition-colors duration-300 ${
+                index === currentIndex ? 'bg-white' : 'bg-white/25'
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+
+      {/* ── Progress bar at the bottom ── */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 h-1 bg-white/10">
+        <div
+          ref={progressBarRef}
+          className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 transition-none"
+          style={{ width: '0%' }}
+        />
       </div>
 
       {/* ── CSS keyframes for animated gradient ── */}

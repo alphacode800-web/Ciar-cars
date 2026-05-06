@@ -7,7 +7,7 @@ import { Footer } from '@/components/layout/Footer';
 
 // Views
 import { HeroSection } from '@/components/home/HeroSection';
-import { CategoriesSection } from '@/components/home/CategoriesSection';
+
 import { BannerSection } from '@/components/home/BannerSection';
 import { FeaturedCarsSection } from '@/components/home/FeaturedCarsSection';
 import { StatsSection } from '@/components/home/StatsSection';
@@ -54,7 +54,6 @@ function HomePage() {
   return (
     <>
       <HeroSection />
-      <CategoriesSection />
       <BannerSection />
       <FeaturedCarsSection />
       <StatsSection />

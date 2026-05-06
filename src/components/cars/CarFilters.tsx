@@ -68,6 +68,29 @@ interface FilterSectionProps {
 
 // ============ Constants ============
 
+const COUNTRIES = [
+  'United States',
+  'United Arab Emirates',
+  'United Kingdom',
+  'Germany',
+  'Japan',
+  'France',
+  'Canada',
+  'Australia',
+  'Saudi Arabia',
+  'South Korea',
+  'Switzerland',
+  'Spain',
+  'Italy',
+  'Netherlands',
+  'Brazil',
+  'India',
+  'Singapore',
+  'Turkey',
+  'Thailand',
+  'Sweden',
+] as const;
+
 const CITIES = [
   'Dubai',
   'London',
@@ -148,6 +171,7 @@ function getActiveFilterCount(filters: CarSearchFilters): number {
   if (filters.fuelType) count++;
   if (filters.transmission) count++;
   if (filters.bodyType) count++;
+  if (filters.country) count++;
   if (filters.city) count++;
   if (filters.mileage?.min || filters.mileage?.max) count++;
   if (filters.isAvailableForRent) count++;
@@ -472,6 +496,28 @@ export default function CarFilters({
                 {CITIES.map((city) => (
                   <SelectItem key={city} value={city}>
                     {city}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterSection>
+
+          {/* Country */}
+          <FilterSection title="Country" icon={<Building className="w-4 h-4" />} defaultOpen={false}>
+            <Select
+              value={filters.country || '__all__'}
+              onValueChange={(v) =>
+                updateFilter({ country: v === '__all__' ? undefined : v })
+              }
+            >
+              <SelectTrigger className="w-full h-9">
+                <SelectValue placeholder="All Countries" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Countries</SelectItem>
+                {COUNTRIES.map((country) => (
+                  <SelectItem key={country} value={country}>
+                    {country}
                   </SelectItem>
                 ))}
               </SelectContent>

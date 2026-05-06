@@ -15,13 +15,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -38,12 +31,46 @@ import {
   Check,
   CheckCircle2,
   ShieldCheck,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { useAppStore } from '@/store/app-store';
 import { toast } from 'sonner';
 import { CURRENCY } from '@/lib/constants';
 import { UserRole } from '@/types';
+
+const roles = [
+  {
+    value: 'user',
+    label: 'Buyer',
+    description: 'I want to find and buy my next car',
+    icon: User,
+    accent: 'emerald',
+    gradient: 'from-emerald-500 to-emerald-600',
+    ring: 'ring-emerald-500',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+    border: 'border-emerald-500',
+    iconBg: 'bg-emerald-100 dark:bg-emerald-900/40',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    labelColor: 'text-emerald-700 dark:text-emerald-300',
+    descColor: 'text-emerald-600/70 dark:text-emerald-400/70',
+  },
+  {
+    value: 'seller',
+    label: 'Seller',
+    description: 'I want to list and sell vehicles',
+    icon: Store,
+    accent: 'teal',
+    gradient: 'from-teal-500 to-teal-600',
+    ring: 'ring-teal-500',
+    bg: 'bg-teal-50 dark:bg-teal-950/30',
+    border: 'border-teal-500',
+    iconBg: 'bg-teal-100 dark:bg-teal-900/40',
+    iconColor: 'text-teal-600 dark:text-teal-400',
+    labelColor: 'text-teal-700 dark:text-teal-300',
+    descColor: 'text-teal-600/70 dark:text-teal-400/70',
+  },
+] as const;
 
 export default function AuthView() {
   const { setUser } = useAuthStore();
@@ -80,7 +107,7 @@ export default function AuthView() {
     if (/[^A-Za-z0-9]/.test(pw)) score++;
 
     if (score <= 1) return { score: 20, label: 'Weak', color: 'bg-red-500' };
-    if (score === 2) return { score: 40, label: 'Fair', color: 'bg-orange-500' };
+    if (score === 2) return { score: 40, label: 'Fair', color: 'bg-yellow-500' };
     if (score === 3) return { score: 60, label: 'Good', color: 'bg-yellow-500' };
     if (score === 4) return { score: 80, label: 'Strong', color: 'bg-emerald-500' };
     return { score: 100, label: 'Very Strong', color: 'bg-green-600' };
@@ -194,11 +221,11 @@ export default function AuthView() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-gray-950 dark:via-gray-900 dark:to-orange-950" />
-      <div className="absolute top-0 left-0 w-96 h-96 bg-orange-200/30 dark:bg-orange-900/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-amber-200/30 dark:bg-amber-900/20 rounded-full blur-3xl" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-orange-100/20 to-amber-100/20 dark:from-orange-800/10 dark:to-amber-800/10 rounded-full blur-3xl" />
+      {/* Gradient Background - Emerald/Teal */}
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950" />
+      <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-200/30 dark:bg-emerald-900/20 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-teal-200/30 dark:bg-teal-900/20 rounded-full blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-emerald-100/20 to-teal-100/20 dark:from-emerald-800/10 dark:to-teal-800/10 rounded-full blur-3xl" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -214,10 +241,10 @@ export default function AuthView() {
             transition={{ type: 'spring', stiffness: 200 }}
             className="flex items-center gap-2 mb-4"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
               <Car className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+            <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
               CIAR Cars
             </span>
           </motion.div>
@@ -282,7 +309,7 @@ export default function AuthView() {
                           <Label htmlFor="login-password">Password</Label>
                           <button
                             type="button"
-                            className="text-xs text-orange-600 hover:text-orange-700 font-medium"
+                            className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium"
                           >
                             Forgot password?
                           </button>
@@ -328,7 +355,7 @@ export default function AuthView() {
 
                       <Button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white h-11 font-medium"
+                        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white h-11 font-medium shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-shadow"
                         disabled={loginLoading}
                       >
                         {loginLoading ? (
@@ -343,13 +370,13 @@ export default function AuthView() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.3 }}
-                      className="mt-4 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200/50 dark:border-orange-800/30"
+                      className="mt-4 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/30"
                     >
-                      <div className="flex items-center gap-2 text-xs font-medium text-orange-700 dark:text-orange-400 mb-1">
+                      <div className="flex items-center gap-2 text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1">
                         <ShieldCheck className="w-3.5 h-3.5" />
                         Demo Credentials
                       </div>
-                      <p className="text-xs text-orange-600/80 dark:text-orange-400/80">
+                      <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">
                         admin@ciar.com / admin123
                       </p>
                     </motion.div>
@@ -370,7 +397,7 @@ export default function AuthView() {
                     <div className="grid grid-cols-2 gap-3">
                       <Button
                         variant="outline"
-                        className="h-10 font-normal"
+                        className="h-10 font-normal hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
                         onClick={() => toast.info('Google login coming soon!')}
                       >
                         <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
@@ -395,7 +422,7 @@ export default function AuthView() {
                       </Button>
                       <Button
                         variant="outline"
-                        className="h-10 font-normal"
+                        className="h-10 font-normal hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
                         onClick={() => toast.info('Facebook login coming soon!')}
                       >
                         <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="#1877F2">
@@ -593,32 +620,96 @@ export default function AuthView() {
                         )}
                       </div>
 
+                      {/* Role Selection - Visual Cards */}
                       <div className="space-y-2">
                         <Label>I want to...</Label>
-                        <Select
-                          value={registerForm.role}
-                          onValueChange={(value) =>
-                            setRegisterForm({ ...registerForm, role: value })
-                          }
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select your role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="user">
-                              <span className="flex items-center gap-2">
-                                <Car className="w-4 h-4 text-blue-500" />
-                                I want to buy
-                              </span>
-                            </SelectItem>
-                            <SelectItem value="seller">
-                              <span className="flex items-center gap-2">
-                                <Car className="w-4 h-4 text-emerald-500" />
-                                I want to sell
-                              </span>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="grid grid-cols-2 gap-3">
+                          {roles.map((role) => {
+                            const isSelected = registerForm.role === role.value;
+                            const Icon = role.icon;
+                            return (
+                              <motion.button
+                                key={role.value}
+                                type="button"
+                                whileHover={{ y: -2 }}
+                                whileTap={{ scale: 0.97 }}
+                                onClick={() =>
+                                  setRegisterForm({ ...registerForm, role: role.value })
+                                }
+                                className={`
+                                  relative flex flex-col items-center gap-2.5 p-4 rounded-xl border-2 cursor-pointer
+                                  transition-all duration-200 text-center
+                                  ${
+                                    isSelected
+                                      ? `${role.bg} ${role.border} shadow-lg`
+                                      : 'bg-white dark:bg-gray-900/50 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                                  }
+                                `}
+                              >
+                                {/* Selected check badge */}
+                                <AnimatePresence>
+                                  {isSelected && (
+                                    <motion.div
+                                      initial={{ scale: 0, opacity: 0 }}
+                                      animate={{ scale: 1, opacity: 1 }}
+                                      exit={{ scale: 0, opacity: 0 }}
+                                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                                      className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gradient-to-br ${role.gradient} flex items-center justify-center shadow-md`}
+                                    >
+                                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+
+                                {/* Icon */}
+                                <motion.div
+                                  animate={{
+                                    scale: isSelected ? 1.1 : 1,
+                                  }}
+                                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                                  className={`
+                                    w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-200
+                                    ${
+                                      isSelected
+                                        ? role.iconBg
+                                        : 'bg-gray-100 dark:bg-gray-800'
+                                    }
+                                  `}
+                                >
+                                  <Icon
+                                    className={`w-6 h-6 transition-colors duration-200 ${
+                                      isSelected
+                                        ? role.iconColor
+                                        : 'text-gray-400 dark:text-gray-500'
+                                    }`}
+                                  />
+                                </motion.div>
+
+                                {/* Label */}
+                                <span
+                                  className={`text-sm font-semibold transition-colors duration-200 ${
+                                    isSelected
+                                      ? role.labelColor
+                                      : 'text-gray-600 dark:text-gray-400'
+                                  }`}
+                                >
+                                  {role.label}
+                                </span>
+
+                                {/* Description */}
+                                <span
+                                  className={`text-[11px] leading-tight transition-colors duration-200 ${
+                                    isSelected
+                                      ? role.descColor
+                                      : 'text-gray-400 dark:text-gray-500'
+                                  }`}
+                                >
+                                  {role.description}
+                                </span>
+                              </motion.button>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       <div className="flex items-start gap-2">
@@ -638,11 +729,11 @@ export default function AuthView() {
                           className="text-sm text-muted-foreground leading-snug cursor-pointer"
                         >
                           I agree to the{' '}
-                          <button type="button" className="text-orange-600 hover:underline font-medium">
+                          <button type="button" className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline font-medium">
                             Terms of Service
                           </button>{' '}
                           and{' '}
-                          <button type="button" className="text-orange-600 hover:underline font-medium">
+                          <button type="button" className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline font-medium">
                             Privacy Policy
                           </button>
                         </Label>
@@ -650,7 +741,7 @@ export default function AuthView() {
 
                       <Button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white h-11 font-medium"
+                        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white h-11 font-medium shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-shadow"
                         disabled={registerLoading}
                       >
                         {registerLoading ? (
@@ -676,7 +767,7 @@ export default function AuthView() {
                     <div className="grid grid-cols-2 gap-3">
                       <Button
                         variant="outline"
-                        className="h-10 font-normal"
+                        className="h-10 font-normal hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
                         onClick={() => toast.info('Google signup coming soon!')}
                       >
                         <Chrome className="w-4 h-4 mr-2" />
@@ -684,7 +775,7 @@ export default function AuthView() {
                       </Button>
                       <Button
                         variant="outline"
-                        className="h-10 font-normal"
+                        className="h-10 font-normal hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
                         onClick={() => toast.info('Facebook signup coming soon!')}
                       >
                         <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="#1877F2">
@@ -698,7 +789,7 @@ export default function AuthView() {
                     <p className="text-sm text-muted-foreground">
                       Already have an account?{' '}
                       <button
-                        className="text-orange-600 hover:underline font-medium"
+                        className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline font-medium"
                         onClick={() =>
                           document.querySelector('[data-state="active"]')?.parentElement
                             ?.querySelector('[value="login"]')

@@ -44,8 +44,8 @@ const STATS = [
   },
   {
     icon: MapPin,
-    value: 27,
-    suffix: '',
+    value: 80,
+    suffix: '+',
     labelKey: 'stats.citiesCovered',
     gradient: 'from-purple-500 to-fuchsia-500',
     ringColor: 'ring-purple-500/20',
