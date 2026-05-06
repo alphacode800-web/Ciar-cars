@@ -5,9 +5,11 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/app-store';
+import { useAuthStore } from '@/store/auth-store';
 
 export function CTASection() {
-  const { setView, isAuthenticated } = useAppStore();
+  const { setView } = useAppStore();
+  const { isAuthenticated } = useAuthStore();
 
   const handleClick = () => {
     if (isAuthenticated) {

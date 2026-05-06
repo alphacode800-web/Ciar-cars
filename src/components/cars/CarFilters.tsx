@@ -48,6 +48,7 @@ import {
   TRANSMISSION_TYPES,
 } from '@/lib/constants';
 import type { CarSearchFilters } from '@/types';
+import { BodyType } from '@/types';
 
 // ============ Types ============
 
@@ -180,7 +181,7 @@ export default function CarFilters({
 
   const handleBodyTypeToggle = (value: string, checked: boolean) => {
     if (checked) {
-      updateFilter({ bodyType: value as CarSearchFilters['bodyType'] });
+      updateFilter({ bodyType: value as BodyType });
     } else {
       updateFilter({ bodyType: undefined });
     }
@@ -439,13 +440,13 @@ export default function CarFilters({
                   key={bt.value}
                   className={cn(
                     'flex items-center gap-2 cursor-pointer text-xs rounded-lg border px-2.5 py-2 transition-all select-none',
-                    bodyTypeFilters.includes(bt.value)
+                    bodyTypeFilters.includes(bt.value as BodyType)
                       ? 'border-primary bg-primary/5 text-primary font-medium'
                       : 'border-border hover:border-primary/50 text-muted-foreground'
                   )}
                 >
                   <Checkbox
-                    checked={bodyTypeFilters.includes(bt.value)}
+                    checked={bodyTypeFilters.includes(bt.value as BodyType)}
                     onCheckedChange={(checked) => handleBodyTypeToggle(bt.value, !!checked)}
                     className="sr-only"
                   />

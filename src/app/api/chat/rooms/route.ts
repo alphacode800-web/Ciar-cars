@@ -26,20 +26,11 @@ export async function GET(request: NextRequest) {
                     id: true,
                     name: true,
                     avatar: true,
-                    isOnline: true,
+                    city: true,
+                    rating: true,
+                    totalReviews: true,
                   },
                 },
-              },
-            },
-            car: {
-              select: {
-                id: true,
-                title: true,
-                brand: true,
-                model: true,
-                year: true,
-                images: { where: { isPrimary: true }, take: 1 },
-                price: true,
               },
             },
             _count: {
@@ -51,16 +42,53 @@ export async function GET(request: NextRequest) {
       orderBy: { room: { lastMessageAt: "desc" } },
     });
 
+    // Get unique carIds from rooms to batch-fetch car data
+    const carIds = rooms
+      .map((r) => r.room.carId)
+      .filter((id): id is string => !!id);
+    const uniqueCarIds = [...new Set(carIds)];
+
+    const carsData = uniqueCarIds.length > 0
+      ? await db.car.findMany({
+          where: { id: { in: uniqueCarIds } },
+          select: {
+            id: true,
+            title: true,
+            brand: true,
+            model: true,
+            year: true,
+            price: true,
+          },
+        })
+      : [];
+
+    // Also fetch primary images for these cars
+    const carImages = uniqueCarIds.length > 0
+      ? await db.carImage.findMany({
+          where: { carId: { in: uniqueCarIds }, isPrimary: true },
+          select: { carId: true, url: true },
+        })
+      : [];
+
+    const carMap = new Map(carsData.map((c) => [c.id, c]));
+    const carImageMap = new Map(carImages.map((ci) => [ci.carId, ci.url]));
+
     const formattedRooms = rooms
       .map((r) => {
         const otherParticipants = r.room.participants
           .filter((p) => p.userId !== user.id)
           .map((p) => p.user);
 
+        const carId = r.room.carId;
+        const car = carId ? carMap.get(carId) : undefined;
+        const carImageUrl = carId ? carImageMap.get(carId) : undefined;
+
         return {
           id: r.room.id,
           type: r.room.type,
-          car: r.room.car || null,
+          car: car
+            ? { ...car, primaryImage: carImageUrl || null }
+            : null,
           participants: otherParticipants,
           lastMessage: r.room.lastMessage,
           lastMessageAt: r.room.lastMessageAt,
@@ -179,17 +207,6 @@ export async function POST(request: NextRequest) {
               },
             },
           },
-          car: {
-            select: {
-              id: true,
-              title: true,
-              brand: true,
-              model: true,
-              year: true,
-              images: { where: { isPrimary: true }, take: 1 },
-              price: true,
-            },
-          },
         },
       });
     } else {
@@ -204,23 +221,40 @@ export async function POST(request: NextRequest) {
               },
             },
           },
-          car: {
-            select: {
-              id: true,
-              title: true,
-              brand: true,
-              model: true,
-              year: true,
-              images: { where: { isPrimary: true }, take: 1 },
-              price: true,
-            },
-          },
         },
       });
     }
 
+    // Fetch car data if carId exists
+    let carData = null;
+    if (room.carId) {
+      const car = await db.car.findUnique({
+        where: { id: room.carId },
+        select: {
+          id: true,
+          title: true,
+          brand: true,
+          model: true,
+          year: true,
+          price: true,
+        },
+      });
+      if (car) {
+        const primaryImage = await db.carImage.findFirst({
+          where: { carId: car.id, isPrimary: true },
+          select: { url: true },
+        });
+        carData = { ...car, primaryImage: primaryImage?.url || null };
+      }
+    }
+
+    const responseData = {
+      ...room,
+      car: carData,
+    };
+
     return NextResponse.json(
-      { success: true, data: room, message: "Chat room ready" },
+      { success: true, data: responseData, message: "Chat room ready" },
       { status: room.type === "private" ? 200 : 201 }
     );
   } catch (error: unknown) {

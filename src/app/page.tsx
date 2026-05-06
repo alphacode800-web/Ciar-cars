@@ -72,7 +72,7 @@ const pageVariants = {
 };
 
 const pageTransition = {
-  type: 'tween',
+  type: 'tween' as const,
   ease: 'easeInOut',
   duration: 0.2,
 };
@@ -90,13 +90,13 @@ function ViewRouter() {
         return <CarListingView />;
       
       case 'detail':
-        return <CarDetailView carId={viewParams.carId as string} />;
+        return <CarDetailView />;
       
       case 'search':
-        return <SearchView initialQuery={viewParams.query as string} />;
+        return <SearchView />;
       
       case 'auth':
-        return <AuthView initialMode={viewParams.mode as 'login' | 'register'} />;
+        return <AuthView />;
       
       case 'admin':
         return <AdminDashboardView />;
@@ -105,10 +105,10 @@ function ViewRouter() {
         return <UserDashboardView />;
       
       case 'chat':
-        return <ChatView roomId={viewParams.roomId as string} />;
+        return <ChatView />;
       
       case 'rental':
-        return <RentalBookingView carId={viewParams.carId as string} />;
+        return <RentalBookingView />;
       
       case 'sell-car':
         return <SellCarView />;
@@ -122,7 +122,7 @@ function ViewRouter() {
       case 'my-bookings':
       case 'notifications':
       case 'settings':
-        return <UserDashboardView activeTab={currentView} />;
+        return <UserDashboardView />;
       
       case 'about':
         return <AboutView />;

@@ -185,7 +185,9 @@ export type AppView =
   | "notifications"
   | "comparison"
   | "sell-car"
-  | "wallet";
+  | "wallet"
+  | "about"
+  | "contact";
 
 // ============ USER TYPES ============
 
