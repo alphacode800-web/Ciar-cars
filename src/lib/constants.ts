@@ -160,12 +160,49 @@ export const USER_ROLES = [
 
 // ============ CURRENCY ============
 
-export const CURRENCY = {
-  code: "USD",
-  symbol: "$",
-  name: "US Dollar",
-  locale: "en-US",
-} as const;
+// NOTE: This reads dynamically from localStorage so it reflects the user's
+// selected currency. For reactive updates in components, use `useCurrencyStore`
+// from `@/store/currency-store` instead.
+
+const _STORAGE_KEY = 'ciar-currency';
+const _DEFAULT = { code: 'USD', symbol: '$', name: 'US Dollar', locale: 'en-US' };
+
+function _getStored(): { code: string; symbol: string; name: string; locale: string } {
+  if (typeof window === 'undefined') return _DEFAULT;
+  try {
+    const saved = localStorage.getItem(_STORAGE_KEY);
+    if (saved) {
+      const map: Record<string, { code: string; symbol: string; name: string; locale: string }> = {
+        USD: { code: 'USD', symbol: '$', name: 'US Dollar', locale: 'en-US' },
+        EUR: { code: 'EUR', symbol: '€', name: 'Euro', locale: 'de-DE' },
+        GBP: { code: 'GBP', symbol: '£', name: 'British Pound', locale: 'en-GB' },
+        SAR: { code: 'SAR', symbol: 'ر.س', name: 'Saudi Riyal', locale: 'ar-SA' },
+        AED: { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham', locale: 'ar-AE' },
+        SDG: { code: 'SDG', symbol: 'ج.س', name: 'Sudanese Pound', locale: 'ar-SD' },
+        SYP: { code: 'SYP', symbol: 'ل.س', name: 'Syrian Pound', locale: 'ar-SY' },
+        KWD: { code: 'KWD', symbol: 'د.ك', name: 'Kuwaiti Dinar', locale: 'ar-KW' },
+        QAR: { code: 'QAR', symbol: 'ر.ق', name: 'Qatari Riyal', locale: 'ar-QA' },
+        BHD: { code: 'BHD', symbol: 'د.ب', name: 'Bahraini Dinar', locale: 'ar-BH' },
+        OMR: { code: 'OMR', symbol: 'ر.ع', name: 'Omani Rial', locale: 'ar-OM' },
+        TRY: { code: 'TRY', symbol: '₺', name: 'Turkish Lira', locale: 'tr-TR' },
+      };
+      return map[saved] ?? _DEFAULT;
+    }
+  } catch { /* ignore */ }
+  return _DEFAULT;
+}
+
+export const CURRENCY: {
+  readonly code: string;
+  readonly symbol: string;
+  readonly name: string;
+  readonly locale: string;
+} = {
+  get code() { return _getStored().code; },
+  get symbol() { return _getStored().symbol; },
+  get name() { return _getStored().name; },
+  get locale() { return _getStored().locale; },
+};
 
 // ============ CAR STATUS OPTIONS ============
 

@@ -223,25 +223,25 @@ async function seed() {
         inquiriesCount: 18,
         images: [
           {
-            url: "https://placehold.co/800x600/1a1a2e/e0e0e0?text=BMW+320i+Front",
+            url: "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=800&h=600&fit=crop",
             alt: "BMW 320i 2023 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/1a1a2e/e0e0e0?text=BMW+320i+Side",
+            url: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop",
             alt: "BMW 320i 2023 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/1a1a2e/e0e0e0?text=BMW+320i+Interior",
+            url: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&h=600&fit=crop",
             alt: "BMW 320i 2023 Interior",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/1a1a2e/e0e0e0?text=BMW+320i+Rear",
+            url: "https://images.unsplash.com/photo-1492144534655-09fa855f7b96?w=800&h=600&fit=crop",
             alt: "BMW 320i 2023 Rear View",
             isPrimary: false,
             order: 3,
@@ -294,31 +294,31 @@ async function seed() {
         inquiriesCount: 24,
         images: [
           {
-            url: "https://placehold.co/800x600/2d2d44/e0e0e0?text=Mercedes+C200+Front",
+            url: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&h=600&fit=crop",
             alt: "Mercedes C200 AMG 2022 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/2d2d44/e0e0e0?text=Mercedes+C200+Side",
+            url: "https://images.unsplash.com/photo-1606611013016-969c19ba27bb?w=800&h=600&fit=crop",
             alt: "Mercedes C200 AMG 2022 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/2d2d44/e0e0e0?text=Mercedes+C200+Dashboard",
+            url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=600&fit=crop",
             alt: "Mercedes C200 AMG 2022 Dashboard",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/2d2d44/e0e0e0?text=Mercedes+C200+Rear",
+            url: "https://images.unsplash.com/photo-1489824904134-891ab64532f1?w=800&h=600&fit=crop",
             alt: "Mercedes C200 AMG 2022 Rear View",
             isPrimary: false,
             order: 3,
           },
           {
-            url: "https://placehold.co/800x600/2d2d44/e0e0e0?text=Mercedes+C200+Interior",
+            url: "https://images.unsplash.com/photo-1526726538690-5cbf956ae2fd?w=800&h=600&fit=crop",
             alt: "Mercedes C200 AMG 2022 Interior Detail",
             isPrimary: false,
             order: 4,
@@ -375,25 +375,25 @@ async function seed() {
         inquiriesCount: 42,
         images: [
           {
-            url: "https://placehold.co/800x600/0f3460/e0e0e0?text=Toyota+Camry+Front",
+            url: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop",
             alt: "Toyota Camry 2024 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/0f3460/e0e0e0?text=Toyota+Camry+Side",
+            url: "https://images.unsplash.com/photo-1626668011687-8a114cf5a34c?w=800&h=600&fit=crop",
             alt: "Toyota Camry 2024 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/0f3460/e0e0e0?text=Toyota+Camry+Interior",
+            url: "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=800&h=600&fit=crop",
             alt: "Toyota Camry 2024 Interior",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/0f3460/e0e0e0?text=Toyota+Camry+Rear",
+            url: "https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=800&h=600&fit=crop",
             alt: "Toyota Camry 2024 Rear View",
             isPrimary: false,
             order: 3,
@@ -447,31 +447,31 @@ async function seed() {
         inquiriesCount: 11,
         images: [
           {
-            url: "https://placehold.co/800x600/16213e/e0e0e0?text=Hyundai+Tucson+Front",
+            url: "https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop",
             alt: "Hyundai Tucson 2023 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/16213e/e0e0e0?text=Hyundai+Tucson+Side",
+            url: "https://images.unsplash.com/photo-1614200187524-dc4b892acf16?w=800&h=600&fit=crop",
             alt: "Hyundai Tucson 2023 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/16213e/e0e0e0?text=Hyundai+Tucson+Interior",
+            url: "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=800&h=600&fit=crop",
             alt: "Hyundai Tucson 2023 Interior",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/16213e/e0e0e0?text=Hyundai+Tucson+Rear",
+            url: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
             alt: "Hyundai Tucson 2023 Rear View",
             isPrimary: false,
             order: 3,
           },
           {
-            url: "https://placehold.co/800x600/16213e/e0e0e0?text=Hyundai+Tucson+Boot",
+            url: "https://images.unsplash.com/photo-1542362567-b07e54358753?w=800&h=600&fit=crop",
             alt: "Hyundai Tucson 2023 Boot Space",
             isPrimary: false,
             order: 4,
@@ -521,25 +521,25 @@ async function seed() {
         inquiriesCount: 20,
         images: [
           {
-            url: "https://placehold.co/800x600/1b1b2f/e0e0e0?text=Kia+Sportage+Front",
+            url: "https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&h=600&fit=crop",
             alt: "Kia Sportage 2023 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/1b1b2f/e0e0e0?text=Kia+Sportage+Side",
+            url: "https://images.unsplash.com/photo-1549317661-bd32c8ce0afa?w=800&h=600&fit=crop",
             alt: "Kia Sportage 2023 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/1b1b2f/e0e0e0?text=Kia+Sportage+Dashboard",
+            url: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop",
             alt: "Kia Sportage 2023 Dashboard",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/1b1b2f/e0e0e0?text=Kia+Sportage+Rear",
+            url: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&h=600&fit=crop",
             alt: "Kia Sportage 2023 Rear View",
             isPrimary: false,
             order: 3,
@@ -590,25 +590,25 @@ async function seed() {
         inquiriesCount: 29,
         images: [
           {
-            url: "https://placehold.co/800x600/0c0c1d/e0e0e0?text=Audi+A4+Front",
+            url: "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=800&h=600&fit=crop",
             alt: "Audi A4 2022 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/0c0c1d/e0e0e0?text=Audi+A4+Side",
+            url: "https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=800&h=600&fit=crop",
             alt: "Audi A4 2022 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/0c0c1d/e0e0e0?text=Audi+A4+Cockpit",
+            url: "https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?w=800&h=600&fit=crop",
             alt: "Audi A4 2022 Virtual Cockpit",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/0c0c1d/e0e0e0?text=Audi+A4+Rear",
+            url: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&h=600&fit=crop",
             alt: "Audi A4 2022 Rear View",
             isPrimary: false,
             order: 3,
@@ -658,31 +658,31 @@ async function seed() {
         inquiriesCount: 35,
         images: [
           {
-            url: "https://placehold.co/800x600/2c2c3e/e0e0e0?text=Nissan+Patrol+Front",
+            url: "https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&h=600&fit=crop",
             alt: "Nissan Patrol 2021 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/2c2c3e/e0e0e0?text=Nissan+Patrol+Side",
+            url: "https://images.unsplash.com/photo-1542362567-b07e54358753?w=800&h=600&fit=crop",
             alt: "Nissan Patrol 2021 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/2c2c3e/e0e0e0?text=Nissan+Patrol+Interior",
+            url: "https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=800&h=600&fit=crop",
             alt: "Nissan Patrol 2021 Interior",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/2c2c3e/e0e0e0?text=Nissan+Patrol+Rear",
+            url: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop",
             alt: "Nissan Patrol 2021 Rear View",
             isPrimary: false,
             order: 3,
           },
           {
-            url: "https://placehold.co/800x600/2c2c3e/e0e0e0?text=Nissan+Patrol+Seats",
+            url: "https://images.unsplash.com/photo-1492144534655-09fa855f7b96?w=800&h=600&fit=crop",
             alt: "Nissan Patrol 2021 Seats",
             isPrimary: false,
             order: 4,
@@ -736,25 +736,25 @@ async function seed() {
         inquiriesCount: 38,
         images: [
           {
-            url: "https://placehold.co/800x600/3d0c02/e0e0e0?text=Camaro+SS+Front",
+            url: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
             alt: "Chevrolet Camaro SS 2023 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/3d0c02/e0e0e0?text=Camaro+SS+Side",
+            url: "https://images.unsplash.com/photo-1580414057403-c5f451f30e1c?w=800&h=600&fit=crop",
             alt: "Chevrolet Camaro SS 2023 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/3d0c02/e0e0e0?text=Camaro+SS+Engine",
+            url: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&h=600&fit=crop",
             alt: "Chevrolet Camaro SS 2023 V8 Engine",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/3d0c02/e0e0e0?text=Camaro+SS+Interior",
+            url: "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=800&h=600&fit=crop",
             alt: "Chevrolet Camaro SS 2023 Interior",
             isPrimary: false,
             order: 3,
@@ -803,25 +803,25 @@ async function seed() {
         inquiriesCount: 15,
         images: [
           {
-            url: "https://placehold.co/800x600/1a2634/e0e0e0?text=Honda+Civic+Front",
+            url: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=800&h=600&fit=crop",
             alt: "Honda Civic 2024 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/1a2634/e0e0e0?text=Honda+Civic+Side",
+            url: "https://images.unsplash.com/photo-1525609004556-c46c40d4f174?w=800&h=600&fit=crop",
             alt: "Honda Civic 2024 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/1a2634/e0e0e0?text=Honda+Civic+Interior",
+            url: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&h=600&fit=crop",
             alt: "Honda Civic 2024 Interior",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/1a2634/e0e0e0?text=Honda+Civic+Rear",
+            url: "https://images.unsplash.com/photo-1606611013016-969c19ba27bb?w=800&h=600&fit=crop",
             alt: "Honda Civic 2024 Rear View",
             isPrimary: false,
             order: 3,
@@ -871,31 +871,31 @@ async function seed() {
         inquiriesCount: 45,
         images: [
           {
-            url: "https://placehold.co/800x600/1c1c1c/e0e0e0?text=Porsche+Cayenne+Front",
+            url: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop",
             alt: "Porsche Cayenne S 2022 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/1c1c1c/e0e0e0?text=Porsche+Cayenne+Side",
+            url: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&h=600&fit=crop",
             alt: "Porsche Cayenne S 2022 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/1c1c1c/e0e0e0?text=Porsche+Cayenne+Dashboard",
+            url: "https://images.unsplash.com/photo-1492144534655-09fa855f7b96?w=800&h=600&fit=crop",
             alt: "Porsche Cayenne S 2022 Dashboard",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/1c1c1c/e0e0e0?text=Porsche+Cayenne+Rear",
+            url: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=800&h=600&fit=crop",
             alt: "Porsche Cayenne S 2022 Rear View",
             isPrimary: false,
             order: 3,
           },
           {
-            url: "https://placehold.co/800x600/1c1c1c/e0e0e0?text=Porsche+Cayenne+Engine",
+            url: "https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=800&h=600&fit=crop",
             alt: "Porsche Cayenne S 2022 Engine Bay",
             isPrimary: false,
             order: 4,
@@ -949,25 +949,25 @@ async function seed() {
         inquiriesCount: 13,
         images: [
           {
-            url: "https://placehold.co/800x600/1e1e2f/e0e0e0?text=VW+Golf+GTI+Front",
+            url: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&h=600&fit=crop",
             alt: "VW Golf GTI 2023 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/1e1e2f/e0e0e0?text=VW+Golf+GTI+Side",
+            url: "https://images.unsplash.com/photo-1606611013016-969c19ba27bb?w=800&h=600&fit=crop",
             alt: "VW Golf GTI 2023 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/1e1e2f/e0e0e0?text=VW+Golf+GTI+Interior",
+            url: "https://images.unsplash.com/photo-1525609004556-c46c40d4f174?w=800&h=600&fit=crop",
             alt: "VW Golf GTI 2023 Interior",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/1e1e2f/e0e0e0?text=VW+Golf+GTI+Rear",
+            url: "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=800&h=600&fit=crop",
             alt: "VW Golf GTI 2023 Rear View",
             isPrimary: false,
             order: 3,
@@ -1018,31 +1018,31 @@ async function seed() {
         inquiriesCount: 67,
         images: [
           {
-            url: "https://placehold.co/800x600/cc0000/e0e0e0?text=Tesla+Model+3+Front",
+            url: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&h=600&fit=crop",
             alt: "Tesla Model 3 2024 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/cc0000/e0e0e0?text=Tesla+Model+3+Side",
+            url: "https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=800&h=600&fit=crop",
             alt: "Tesla Model 3 2024 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/cc0000/e0e0e0?text=Tesla+Model+3+Screen",
+            url: "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=800&h=600&fit=crop",
             alt: "Tesla Model 3 2024 Touchscreen",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/cc0000/e0e0e0?text=Tesla+Model+3+Rear",
+            url: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop",
             alt: "Tesla Model 3 2024 Rear View",
             isPrimary: false,
             order: 3,
           },
           {
-            url: "https://placehold.co/800x600/cc0000/e0e0e0?text=Tesla+Model+3+Charging",
+            url: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop",
             alt: "Tesla Model 3 2024 Charging Port",
             isPrimary: false,
             order: 4,
@@ -1092,25 +1092,25 @@ async function seed() {
         inquiriesCount: 19,
         images: [
           {
-            url: "https://placehold.co/800x600/1a1a1a/e0e0e0?text=Lexus+ES+Front",
+            url: "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=800&h=600&fit=crop",
             alt: "Lexus ES 350 F Sport 2023 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/1a1a1a/e0e0e0?text=Lexus+ES+Side",
+            url: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop",
             alt: "Lexus ES 350 F Sport 2023 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/1a1a1a/e0e0e0?text=Lexus+ES+Interior",
+            url: "https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop",
             alt: "Lexus ES 350 F Sport 2023 Interior",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/1a1a1a/e0e0e0?text=Lexus+ES+Rear",
+            url: "https://images.unsplash.com/photo-1614200187524-dc4b892acf16?w=800&h=600&fit=crop",
             alt: "Lexus ES 350 F Sport 2023 Rear View",
             isPrimary: false,
             order: 3,
@@ -1159,25 +1159,25 @@ async function seed() {
         inquiriesCount: 28,
         images: [
           {
-            url: "https://placehold.co/800x600/8b0000/e0e0e0?text=MG+HS+Front",
+            url: "https://images.unsplash.com/photo-1542362567-b07e54358753?w=800&h=600&fit=crop",
             alt: "MG HS Trophy 2023 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/8b0000/e0e0e0?text=MG+HS+Side",
+            url: "https://images.unsplash.com/photo-1492144534655-09fa855f7b96?w=800&h=600&fit=crop",
             alt: "MG HS Trophy 2023 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/8b0000/e0e0e0?text=MG+HS+Interior",
+            url: "https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&h=600&fit=crop",
             alt: "MG HS Trophy 2023 Interior",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/8b0000/e0e0e0?text=MG+HS+Rear",
+            url: "https://images.unsplash.com/photo-1549317661-bd32c8ce0afa?w=800&h=600&fit=crop",
             alt: "MG HS Trophy 2023 Rear View",
             isPrimary: false,
             order: 3,
@@ -1226,25 +1226,25 @@ async function seed() {
         inquiriesCount: 22,
         images: [
           {
-            url: "https://placehold.co/800x600/2d3436/e0e0e0?text=Changan+CS75+Front",
+            url: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&h=600&fit=crop",
             alt: "Changan CS75 Plus 2024 Front View",
             isPrimary: true,
             order: 0,
           },
           {
-            url: "https://placehold.co/800x600/2d3436/e0e0e0?text=Changan+CS75+Side",
+            url: "https://images.unsplash.com/photo-1583267746897-2cf415887172?w=800&h=600&fit=crop",
             alt: "Changan CS75 Plus 2024 Side View",
             isPrimary: false,
             order: 1,
           },
           {
-            url: "https://placehold.co/800x600/2d3436/e0e0e0?text=Changan+CS75+Interior",
+            url: "https://images.unsplash.com/photo-1542362567-b07e54358753?w=800&h=600&fit=crop",
             alt: "Changan CS75 Plus 2024 Interior",
             isPrimary: false,
             order: 2,
           },
           {
-            url: "https://placehold.co/800x600/2d3436/e0e0e0?text=Changan+CS75+Rear",
+            url: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&h=600&fit=crop",
             alt: "Changan CS75 Plus 2024 Rear View",
             isPrimary: false,
             order: 3,
@@ -1505,7 +1505,7 @@ async function seed() {
             "Egypt's Premier Car Marketplace — Buy, sell, and rent with confidence",
           content: JSON.stringify({
             backgroundImage:
-              "https://placehold.co/1920x800/0f3460/e0e0e0?text=CIAR+Cars+Hero",
+              "https://images.unsplash.com/photo-1492144534655-09fa855f7b96?w=1920&h=800&fit=crop",
             cta: { label: "Browse Cars", url: "/listing?condition=for-sale" },
             secondaryCta: {
               label: "Sell Your Car",
@@ -1554,37 +1554,37 @@ async function seed() {
                 label: "Sedans",
                 value: "sedan",
                 count: 1200,
-                image: "https://placehold.co/400x300/1a1a2e/e0e0e0?text=Sedans",
+                image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0afa?w=800&h=600&fit=crop",
               },
               {
                 label: "SUVs",
                 value: "suv",
                 count: 1800,
-                image: "https://placehold.co/400x300/1a1a2e/e0e0e0?text=SUVs",
+                image: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&h=600&fit=crop",
               },
               {
                 label: "Coupe",
                 value: "coupe",
                 count: 400,
-                image: "https://placehold.co/400x300/1a1a2e/e0e0e0?text=Coupe",
+                image: "https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=800&h=600&fit=crop",
               },
               {
                 label: "Hatchback",
                 value: "hatchback",
                 count: 600,
-                image: "https://placehold.co/400x300/1a1a2e/e0e0e0?text=Hatchback",
+                image: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&h=600&fit=crop",
               },
               {
                 label: "Trucks",
                 value: "truck",
                 count: 300,
-                image: "https://placehold.co/400x300/1a1a2e/e0e0e0?text=Trucks",
+                image: "https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?w=800&h=600&fit=crop",
               },
               {
                 label: "Convertibles",
                 value: "convertible",
                 count: 150,
-                image: "https://placehold.co/400x300/1a1a2e/e0e0e0?text=Convertibles",
+                image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop",
               },
             ],
           }),
@@ -1683,7 +1683,7 @@ async function seed() {
           subtitle:
             "Egypt's most trusted platform for buying, selling, and renting cars. Join thousands of satisfied customers today.",
           imageUrl:
-            "https://placehold.co/1200x400/0f3460/ffffff?text=Welcome+to+CIAR+Cars",
+            "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1200&h=400&fit=crop",
           linkUrl: "/listing",
           position: "home",
           order: 0,
@@ -1698,7 +1698,7 @@ async function seed() {
           subtitle:
             "Get your car featured on our homepage and reach 10x more buyers. Limited time offer!",
           imageUrl:
-            "https://placehold.co/1200x400/1a5276/ffffff?text=Featured+Listing+Offer",
+            "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&h=400&fit=crop",
           linkUrl: "/sell-car",
           position: "home",
           order: 1,
@@ -1713,7 +1713,7 @@ async function seed() {
           subtitle:
             "Choose from BMW, Mercedes, Tesla and more. All cars fully insured with roadside assistance.",
           imageUrl:
-            "https://placehold.co/1200x400/154360/ffffff?text=Rent+Premium+Cars",
+            "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=1200&h=400&fit=crop",
           linkUrl: "/listing?condition=for-rent",
           position: "home",
           order: 2,

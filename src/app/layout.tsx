@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
+import { Inter, Outfit, Cairo } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 
-const jakarta = Plus_Jakarta_Sans({
+const jakarta = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
@@ -13,6 +13,12 @@ const jakarta = Plus_Jakarta_Sans({
 const outfit = Outfit({
   variable: "--font-display",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const cairo = Cairo({
+  variable: "--font-arabic",
+  subsets: ["arabic", "latin"],
   display: "swap",
 });
 
@@ -52,7 +58,7 @@ export default function RootLayout({
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <body
-        className={`${jakarta.variable} ${outfit.variable} font-sans antialiased bg-background text-foreground`}
+        className={`${jakarta.variable} ${outfit.variable} ${cairo.variable} font-sans antialiased bg-background text-foreground`}
       >
         <ThemeProvider
           attribute="class"
