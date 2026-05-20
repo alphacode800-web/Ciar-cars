@@ -454,3 +454,26 @@ Stage Summary:
 - Footer uses translated address (Dubai, UAE) and international phone (+971)
 - CategoriesSection removed from homepage for cleaner layout
 - Arabic flag updated from Egypt to Saudi Arabia for global neutrality
+
+---
+Task ID: 11
+Agent: Main Developer
+Task: Simplify CarCard to show single main image only
+
+Work Log:
+- Rewrote CarCard.tsx: replaced 3-image layout (main + 2 stacked) with single main image layout
+- Simplified getCarImages() to getCarPrimaryImage() - returns only the primary image
+- Single image with aspect-[16/10] ratio, full width across card
+- Preserved all existing features: badges (Featured, New, For Rent), favorite button, views counter, hover "View Details" button
+- Image hover zoom reduced from 110% to 105% for elegance
+- Card hover lift reduced from 6px to 4px with reduced scale for subtlety
+- Updated CarCardSkeleton to match single-image layout (single Skeleton instead of 3-part layout)
+- Updated CarGrid.tsx: grid now uses xl:grid-cols-4 (4 columns on xl) since cards are more compact
+- Removed unused getCarImages function and 3-image related code
+- Zero lint errors, dev server compiles successfully
+
+Stage Summary:
+- CarCard now shows a single clean main image per card
+- Cleaner, more elegant card design with single-image banner
+- CarGrid supports up to 4 columns on xl screens
+- All functionality preserved: favorites, badges, specs, ratings, hover effects
