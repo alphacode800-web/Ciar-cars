@@ -117,14 +117,6 @@ const fr: TranslationDictionary = {
   },
 
   // ---------------------------------------------------------------------------
-  // Testimonials
-  // ---------------------------------------------------------------------------
-  testimonials: {
-    title: "Ce que disent nos clients",
-    subtitle: "De vraies histoires de vrais acheteurs et vendeurs automobiles",
-  },
-
-  // ---------------------------------------------------------------------------
   // Call-to-Action
   // ---------------------------------------------------------------------------
   cta: {
@@ -133,6 +125,85 @@ const fr: TranslationDictionary = {
       "Rejoignez des milliers de vendeurs sur la plus grande plateforme automobile au monde. Listez votre voiture en quelques minutes et touchez des millions d'acheteurs potentiels.",
     buttonText: "Lister votre voiture",
     browseButton: "Parcourir les voitures",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Luxury Gallery Strip
+  // ---------------------------------------------------------------------------
+  gallery: {
+    badge: "Découvrez l'excellence",
+    title: "Collection de luxe",
+    subtitle: "Parcourez les automobiles les plus prestigieuses au monde — cliquez pour commencer.",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Banner Section
+  // ---------------------------------------------------------------------------
+  banner: {
+    newArrivals: "Nouveautés",
+    newArrivalsText: "Découvrez les derniers modèles 2024-2025 des meilleures marques avec des offres de financement exclusives.",
+    newArrivalsCTA: "Découvrir",
+    electricVehicles: "Véhicules électriques",
+    electricVehiclesText: "Découvrez l'avenir de la conduite avec notre collection soignée de VE premium.",
+    electricVehiclesCTA: "Voir les VE",
+    premiumRental: "Location de voitures premium",
+    premiumRentalText: "Vivez le luxe sur roues. Tarifs journaliers à partir de 89$.",
+    premiumRentalCTA: "Louer maintenant",
+    featured: "En vedette",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Car Card Labels
+  // ---------------------------------------------------------------------------
+  carCard: {
+    featured: "En vedette",
+    new: "Neuf",
+    forRent: "À louer",
+    negotiable: "Négociable",
+    viewDetails: "Voir les détails",
+    perDay: "/jour",
+    petrol: "Essence",
+    diesel: "Diesel",
+    electric: "Électrique",
+    hybrid: "Hybride",
+    automatic: "Auto",
+    manual: "Manuelle",
+    cvt: "CVT",
+    used: "Occasion",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Testimonials
+  // ---------------------------------------------------------------------------
+  testimonials: {
+    title: "Ce que disent nos clients",
+    subtitle: "De vraies histoires de vrais acheteurs et vendeurs automobiles",
+    name1: "James Mitchell",
+    role1: "Acheteur",
+    text1: "J'ai trouvé ma BMW Série 3 de rêve en parfait état. La plateforme a rendu la comparaison des prix et le contact avec le vendeur incroyablement faciles. Je recommande vivement !",
+    name2: "Sophie Laurent",
+    role2: "Vendeuse",
+    text2: "J'ai vendu ma Hyundai en une semaine ! Le processus de mise en ligne était fluide et la visibilité exceptionnelle. La meilleure plateforme automobile que j'ai utilisée.",
+    name3: "Marcus Weber",
+    role3: "Concessionnaire vérifié",
+    text3: "En tant que concessionnaire, CIAR Cars a révolutionné notre activité. La plateforme génère des leads de qualité et l'équipe de support est toujours réactif.",
+    name4: "Carlos Rivera",
+    role4: "Client location",
+    text4: "J'ai loué une Tesla Model 3 pour un week-end. Le processus de location était fluide, la voiture en excellent état et les tarifs très compétitifs.",
+    name5: "Yuki Tanaka",
+    role5: "Acheteuse",
+    text5: "La fonctionnalité d'inspection m'a donné une tranquillité d'esprit. J'ai acheté une Mercedes d'occasion exactement comme décrite. Toute l'expérience était premium.",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Page Views
+  // ---------------------------------------------------------------------------
+  pages: {
+    comparison: "Comparaison de voitures",
+    comparisonText: "Sélectionnez des voitures pour comparer les caractéristiques côte à côte.",
+    comingSoon: "Bientôt disponible !",
+    checkout: "Paiement",
+    checkoutText: "Finalisez votre paiement.",
   },
 
   // ---------------------------------------------------------------------------
@@ -406,6 +477,9 @@ const fr: TranslationDictionary = {
     emailAddress: "Adresse e-mail",
     workingHours: "Mon-Fri: 9AM-6PM (GMT+4)",
     faqTitle: "Questions fréquentes",
+    address: "Business Bay, Dubaï, EAU",
+    phone: "+971 4 123 4567",
+    email: "hello@ciarcars.com",
   },
 };
 

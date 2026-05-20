@@ -117,14 +117,6 @@ const de: TranslationDictionary = {
   },
 
   // ---------------------------------------------------------------------------
-  // Testimonials
-  // ---------------------------------------------------------------------------
-  testimonials: {
-    title: "Was unsere Kunden sagen",
-    subtitle: "Echte Geschichten von echten Autokäufern und -verkäufern",
-  },
-
-  // ---------------------------------------------------------------------------
   // Call-to-Action
   // ---------------------------------------------------------------------------
   cta: {
@@ -133,6 +125,85 @@ const de: TranslationDictionary = {
       "Schließen Sie sich Tausenden von Verkäufern auf dem weltweit größten Automarktplatz an. Listen Sie Ihr Auto in wenigen Minuten und erreichen Sie Millionen potenzieller Käufer.",
     buttonText: "Auto einstellen",
     browseButton: "Autos durchsuchen",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Luxury Gallery Strip
+  // ---------------------------------------------------------------------------
+  gallery: {
+    badge: "Entdecken Sie das Beste",
+    title: "Luxus-Kollektion",
+    subtitle: "Scrollen Sie durch die weltweit prestigeträchtigsten Automobile — klicken Sie, um zu browsen.",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Banner Section
+  // ---------------------------------------------------------------------------
+  banner: {
+    newArrivals: "Neu eingetroffen",
+    newArrivalsText: "Entdecken Sie die neuesten Modelle 2024–2025 von Top-Marken mit exklusiven Finanzierungsangeboten.",
+    newArrivalsCTA: "Jetzt entdecken",
+    electricVehicles: "Elektrofahrzeuge",
+    electricVehiclesText: "Entdecken Sie die Zukunft des Fahrens mit unserer kuratierten Kollektion Premium-EVs.",
+    electricVehiclesCTA: "EVs ansehen",
+    premiumRental: "Premium-Autos mieten",
+    premiumRentalText: "Erleben Sie Luxus auf Rädern. Tagespreise ab 89€.",
+    premiumRentalCTA: "Jetzt mieten",
+    featured: "Empfohlen",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Car Card Labels
+  // ---------------------------------------------------------------------------
+  carCard: {
+    featured: "Empfohlen",
+    new: "Neu",
+    forRent: "Zu vermieten",
+    negotiable: "Verhandlungsbasis",
+    viewDetails: "Details ansehen",
+    perDay: "/Tag",
+    petrol: "Benzin",
+    diesel: "Diesel",
+    electric: "Elektro",
+    hybrid: "Hybrid",
+    automatic: "Automatik",
+    manual: "Schaltgetriebe",
+    cvt: "CVT",
+    used: "Gebraucht",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Testimonials
+  // ---------------------------------------------------------------------------
+  testimonials: {
+    title: "Was unsere Kunden sagen",
+    subtitle: "Echte Geschichten von echten Autokäufern und -verkäufern",
+    name1: "James Mitchell",
+    role1: "Autokäufer",
+    text1: "Meinen Traum-BMW 3er in perfektem Zustand gefunden. Die Plattform hat den Preisvergleich und die Kontaktaufnahme mit dem Verkäufer unglaublich einfach gemacht. Sehr empfehlenswert!",
+    name2: "Sophie Laurent",
+    role2: "Autoverkäuferin",
+    text2: "Mein Hyundai innerhalb einer Woche verkauft! Der Inseratsprozess war reibungslos und die Reichweite erstaunlich. Die beste Automarkt-Plattform, die ich je genutzt habe.",
+    name3: "Marcus Weber",
+    role3: "Geprüfter Händler",
+    text3: "Als Händler war CIAR Cars ein Wendepunkt für unser Geschäft. Die Plattform bringt qualitativ hochwertige Leads und der Support ist immer responsiv.",
+    name4: "Carlos Rivera",
+    role4: "Mietkunde",
+    text4: "Ein Tesla Model 3 für ein Wochenendtrip gemietet. Der Mietprozess war nahtlos, das Auto in ausgezeichnetem Zustand und die Preise sehr wettbewerbsfähig.",
+    name5: "Yuki Tanaka",
+    role5: "Autokäuferin",
+    text5: "Die Inspektionsfunktion gab mir Sicherheit. Einen gebrauchten Mercedes gekauft, der genau wie beschrieben war. Das gesamte Erlebnis war erstklassig.",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Page Views
+  // ---------------------------------------------------------------------------
+  pages: {
+    comparison: "Auto-Vergleich",
+    comparisonText: "Wählen Sie Autos aus, um Eigenschaften nebeneinander zu vergleichen.",
+    comingSoon: "Demnächst!",
+    checkout: "Kasse",
+    checkoutText: "Schließen Sie Ihre Zahlung ab.",
   },
 
   // ---------------------------------------------------------------------------
@@ -406,6 +477,9 @@ const de: TranslationDictionary = {
     emailAddress: "E-Mail-Adresse",
     workingHours: "Mon-Fri: 9AM-6PM (GMT+4)",
     faqTitle: "Häufig gestellte Fragen",
+    address: "Business Bay, Dubai, VAE",
+    phone: "+971 4 123 4567",
+    email: "hello@ciarcars.com",
   },
 };
 

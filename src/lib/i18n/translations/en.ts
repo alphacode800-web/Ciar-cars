@@ -117,14 +117,6 @@ const en: TranslationDictionary = {
   },
 
   // ---------------------------------------------------------------------------
-  // Testimonials
-  // ---------------------------------------------------------------------------
-  testimonials: {
-    title: "What Our Customers Say",
-    subtitle: "Real stories from real car buyers and sellers",
-  },
-
-  // ---------------------------------------------------------------------------
   // Call-to-Action
   // ---------------------------------------------------------------------------
   cta: {
@@ -133,6 +125,85 @@ const en: TranslationDictionary = {
       "Join thousands of sellers on the world's largest car marketplace. List your car in minutes and reach millions of potential buyers.",
     buttonText: "List Your Car",
     browseButton: "Browse Cars",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Luxury Gallery Strip
+  // ---------------------------------------------------------------------------
+  gallery: {
+    badge: "Explore the Finest",
+    title: "Luxury Collection",
+    subtitle: "Scroll through the world's most prestigious automobiles — click any to start browsing.",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Banner Section
+  // ---------------------------------------------------------------------------
+  banner: {
+    newArrivals: "New Arrivals",
+    newArrivalsText: "Explore the latest 2024–2025 models from top brands with exclusive financing offers.",
+    newArrivalsCTA: "Explore Now",
+    electricVehicles: "Electric Vehicles",
+    electricVehiclesText: "Discover the future of driving with our curated collection of premium EVs.",
+    electricVehiclesCTA: "View EVs",
+    premiumRental: "Rent Premium Cars",
+    premiumRentalText: "Experience luxury on wheels. Daily rates starting from $89.",
+    premiumRentalCTA: "Rent Now",
+    featured: "Featured",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Car Card Labels
+  // ---------------------------------------------------------------------------
+  carCard: {
+    featured: "Featured",
+    new: "New",
+    forRent: "For Rent",
+    negotiable: "Negotiable",
+    viewDetails: "View Details",
+    perDay: "/day",
+    petrol: "Petrol",
+    diesel: "Diesel",
+    electric: "Electric",
+    hybrid: "Hybrid",
+    automatic: "Auto",
+    manual: "Manual",
+    cvt: "CVT",
+    used: "Used",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Testimonials
+  // ---------------------------------------------------------------------------
+  testimonials: {
+    title: "What Our Customers Say",
+    subtitle: "Real stories from real car buyers and sellers",
+    name1: "James Mitchell",
+    role1: "Car Buyer",
+    text1: "Found my dream BMW 3 Series in perfect condition. The platform made it incredibly easy to compare prices and connect with the seller. Highly recommend!",
+    name2: "Sophie Laurent",
+    role2: "Car Seller",
+    text2: "Sold my Hyundai within a week! The listing process was smooth and the exposure was amazing. Best car marketplace I've ever used.",
+    name3: "Marcus Weber",
+    role3: "Verified Dealer",
+    text3: "As a dealer, CIAR Cars has been a game-changer for our business. The platform brings quality leads and the support team is always responsive.",
+    name4: "Carlos Rivera",
+    role4: "Rental Customer",
+    text4: "Rented a Tesla Model 3 for a weekend trip. The rental process was seamless, car was in excellent condition, and the pricing was very competitive.",
+    name5: "Yuki Tanaka",
+    role5: "Car Buyer",
+    text5: "The car inspection feature gave me peace of mind. Bought a used Mercedes and it was exactly as described. The whole experience was premium.",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Page Views
+  // ---------------------------------------------------------------------------
+  pages: {
+    comparison: "Car Comparison",
+    comparisonText: "Select cars to compare features side by side.",
+    comingSoon: "Coming soon!",
+    checkout: "Checkout",
+    checkoutText: "Complete your payment.",
   },
 
   // ---------------------------------------------------------------------------
@@ -406,6 +477,9 @@ const en: TranslationDictionary = {
     emailAddress: "Email Address",
     workingHours: "Mon-Fri: 9AM-6PM (GMT+4)",
     faqTitle: "Frequently Asked Questions",
+    address: "Business Bay, Dubai, UAE",
+    phone: "+971 4 123 4567",
+    email: "hello@ciarcars.com",
   },
 };
 

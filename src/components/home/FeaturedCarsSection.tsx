@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/carousel';
 import { CarCard, CarCardSkeleton } from '@/components/cars/CarCard';
 import { useAppStore } from '@/store/app-store';
+import { useTranslation } from '@/hooks/use-translation';
 import type { CarListItem } from '@/types';
 import { CarCondition, FuelType, TransmissionType, BodyType, CarStatus } from '@/types';
 
@@ -184,6 +185,7 @@ const MOCK_FEATURED_CARS: CarListItem[] = [
 
 export function FeaturedCarsSection() {
   const { setView } = useAppStore();
+  const { t } = useTranslation();
   const [cars, setCars] = useState<CarListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [api, setApi] = useState<CarouselApi>();
@@ -222,7 +224,7 @@ export function FeaturedCarsSection() {
               viewport={{ once: true }}
               className="text-3xl sm:text-4xl font-bold tracking-tight"
             >
-              Featured Cars
+              {t('featured.title')}
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 10 }}
@@ -231,7 +233,7 @@ export function FeaturedCarsSection() {
               transition={{ delay: 0.1 }}
               className="text-muted-foreground mt-1"
             >
-              Hand-picked premium vehicles for you
+              {t('featured.subtitle')}
             </motion.p>
           </div>
           <Button
@@ -239,7 +241,7 @@ export function FeaturedCarsSection() {
             onClick={() => setView('listing')}
             className="hidden sm:flex items-center gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
           >
-            View All
+            {t('featured.viewAll')}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
@@ -302,7 +304,7 @@ export function FeaturedCarsSection() {
             onClick={() => setView('listing')}
             className="w-full text-emerald-600 border-emerald-200 hover:bg-emerald-50"
           >
-            View All Featured Cars
+            {t('featured.viewAll')}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>

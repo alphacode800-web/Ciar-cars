@@ -18,10 +18,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppStore } from '@/store/app-store';
 import { CURRENCY } from '@/lib/constants';
+import { useTranslation } from '@/hooks/use-translation';
 import type { CarListItem } from '@/types';
 
 // ============ Unsplash Car Images Pool ============
-// Used as fallback / secondary images when primaryImage is missing or for variety
 
 const UNSPLASH_CAR_IMAGES = [
   'https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=600&h=400&fit=crop',
@@ -44,34 +44,25 @@ const UNSPLASH_CAR_IMAGES = [
   'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=600&h=400&fit=crop',
 ];
 
-// ============ Helper: Generate 3 images for a car ============
-
 function getCarImages(car: CarListItem): [string, string, string] {
   const primary = car.primaryImage || null;
-
-  // Generate a deterministic index from car.id
   const hash = car.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const idx1 = hash % UNSPLASH_CAR_IMAGES.length;
   const idx2 = (hash + 7) % UNSPLASH_CAR_IMAGES.length;
   const idx3 = (hash + 13) % UNSPLASH_CAR_IMAGES.length;
 
   if (primary) {
-    // Use primary image, and 2 different Unsplash images as alternates
-    // Make sure secondary images don't duplicate the primary
     const alt1 = UNSPLASH_CAR_IMAGES[idx1];
     const alt2 = UNSPLASH_CAR_IMAGES[idx2];
     return [primary, alt1 !== primary ? alt1 : UNSPLASH_CAR_IMAGES[idx3], alt2 !== primary ? alt2 : UNSPLASH_CAR_IMAGES[(idx2 + 5) % UNSPLASH_CAR_IMAGES.length]];
   }
 
-  // No primary image — use 3 different Unsplash images
   return [
     UNSPLASH_CAR_IMAGES[idx1],
     UNSPLASH_CAR_IMAGES[idx2],
     UNSPLASH_CAR_IMAGES[idx3],
   ];
 }
-
-// ============ Image Wrapper ============
 
 function CarImage({
   src,
@@ -120,14 +111,13 @@ function CarImage({
   );
 }
 
-// ============ CarCard Component ============
-
 interface CarCardProps {
   car: CarListItem;
 }
 
 export function CarCard({ car }: CarCardProps) {
   const { setView } = useAppStore();
+  const { t } = useTranslation();
   const [isFavorite, setIsFavorite] = useState(false);
 
   const images = useMemo(() => getCarImages(car), [car]);
@@ -151,25 +141,27 @@ export function CarCard({ car }: CarCardProps) {
   };
 
   const fuelLabel = (fuel: string) => {
-    const labels: Record<string, string> = {
-      petrol: 'Petrol',
-      diesel: 'Diesel',
-      electric: 'Electric',
-      hybrid: 'Hybrid',
+    const map: Record<string, string> = {
+      petrol: t('carCard.petrol'),
+      diesel: t('carCard.diesel'),
+      electric: t('carCard.electric'),
+      hybrid: t('carCard.hybrid'),
     };
-    return labels[fuel] || fuel;
+    return map[fuel] || fuel;
   };
 
   const transmissionLabel = (trans: string) => {
-    const labels: Record<string, string> = {
-      automatic: 'Auto',
-      manual: 'Manual',
+    const map: Record<string, string> = {
+      automatic: t('carCard.automatic'),
+      manual: t('carCard.manual'),
       cvt: 'CVT',
     };
-    return labels[trans] || trans;
+    return map[trans] || trans;
   };
 
   const conditionLabel = (cond: string) => {
+    if (cond === 'new') return t('carCard.new');
+    if (cond === 'used') return t('carCard.used');
     return cond.charAt(0).toUpperCase() + cond.slice(1);
   };
 
@@ -183,38 +175,33 @@ export function CarCard({ car }: CarCardProps) {
         className="group cursor-pointer h-full overflow-hidden rounded-2xl border border-border/40 bg-card shadow-sm hover:shadow-2xl hover:shadow-emerald-500/5 transition-all duration-500 flex flex-col"
         onClick={handleClick}
       >
-        {/* ============ 3-Image Layout ============ */}
         <div className="relative flex flex-col md:flex-row w-full">
-          {/* Main Image (left on desktop, top on mobile) */}
           <div className="relative w-full md:w-[60%] aspect-[16/10] md:aspect-auto md:h-[220px] overflow-hidden">
             <CarImage
               src={images[0]}
               alt={`${car.brand} ${car.model} ${car.year}`}
               className="absolute inset-0"
             />
-            {/* Hover overlay with zoom */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-            {/* Badges */}
             <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 z-10">
               {car.isFeatured && (
                 <Badge className="bg-emerald-600/90 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 border-0 shadow-sm">
-                  Featured
+                  {t('carCard.featured')}
                 </Badge>
               )}
               {car.condition === 'new' && (
                 <Badge className="bg-teal-600/90 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 border-0 shadow-sm">
-                  New
+                  {t('carCard.new')}
                 </Badge>
               )}
               {car.isAvailableForRent && (
                 <Badge className="bg-amber-600/90 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 border-0 shadow-sm">
-                  For Rent
+                  {t('carCard.forRent')}
                 </Badge>
               )}
             </div>
 
-            {/* Favorite Button */}
             <button
               onClick={handleFavorite}
               className="absolute top-2.5 right-2.5 h-8 w-8 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center hover:bg-black/50 transition-all duration-300 z-10 hover:scale-110"
@@ -229,7 +216,6 @@ export function CarCard({ car }: CarCardProps) {
               />
             </button>
 
-            {/* Views Counter */}
             <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-md z-10">
               <Eye className="h-3 w-3 text-white/80" />
               <span className="text-[10px] text-white/80 font-medium tabular-nums">
@@ -237,21 +223,17 @@ export function CarCard({ car }: CarCardProps) {
               </span>
             </div>
 
-            {/* View Details button - appears on hover */}
             <div className="absolute bottom-3 right-3 z-10 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600/90 backdrop-blur-md text-white text-xs font-medium shadow-lg hover:bg-emerald-600 transition-colors">
-                View Details
+                {t('carCard.viewDetails')}
                 <ArrowRight className="h-3 w-3" />
               </span>
             </div>
 
-            {/* Image zoom effect on hover */}
             <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-110 pointer-events-none" />
           </div>
 
-          {/* Stacked Images (right on desktop, bottom row on mobile) */}
           <div className="w-full md:w-[40%] flex flex-row md:flex-col">
-            {/* Secondary Image 1 */}
             <div className="relative w-1/2 md:w-full aspect-[16/10] md:aspect-[16/9] overflow-hidden border-l border-b md:border-b-0 md:border-l border-border/30">
               <CarImage
                 src={images[1]}
@@ -259,11 +241,8 @@ export function CarCard({ car }: CarCardProps) {
                 className="absolute inset-0"
               />
               <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-110 pointer-events-none" />
-              {/* Subtle glass overlay for consistency */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
             </div>
-
-            {/* Secondary Image 2 */}
             <div className="relative w-1/2 md:w-full aspect-[16/10] md:aspect-[16/9] overflow-hidden border-l md:border-l border-border/30">
               <CarImage
                 src={images[2]}
@@ -275,7 +254,6 @@ export function CarCard({ car }: CarCardProps) {
             </div>
           </div>
 
-          {/* Image Dots */}
           <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1 z-10 group-hover:opacity-0 transition-opacity duration-300">
             {[0, 1, 2].map((i) => (
               <span
@@ -290,9 +268,7 @@ export function CarCard({ car }: CarCardProps) {
           </div>
         </div>
 
-        {/* ============ Content Section ============ */}
         <div className="flex-1 p-4 flex flex-col">
-          {/* Title Row */}
           <div className="flex items-start justify-between gap-2 mb-2">
             <h3 className="font-semibold text-sm leading-tight line-clamp-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">
               {car.brand} {car.model}{' '}
@@ -313,7 +289,6 @@ export function CarCard({ car }: CarCardProps) {
             )}
           </div>
 
-          {/* Price */}
           <div className="flex items-center gap-2 mb-3">
             <span className="text-lg font-bold text-foreground tracking-tight">
               {formatPrice(car.price)}
@@ -323,17 +298,16 @@ export function CarCard({ car }: CarCardProps) {
                 variant="secondary"
                 className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/30"
               >
-                Negotiable
+                {t('carCard.negotiable')}
               </Badge>
             )}
             {car.isAvailableForRent && car.rentalPriceDaily != null && (
               <span className="text-[11px] text-muted-foreground">
-                ${car.rentalPriceDaily}/day
+                ${car.rentalPriceDaily}{t('carCard.perDay')}
               </span>
             )}
           </div>
 
-          {/* Specs Grid */}
           <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mb-3">
             {car.mileage != null && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -359,7 +333,6 @@ export function CarCard({ car }: CarCardProps) {
             </div>
           </div>
 
-          {/* Divider + Footer */}
           <div className="flex items-center justify-between pt-3 mt-auto border-t border-border/50">
             <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6">
@@ -384,12 +357,9 @@ export function CarCard({ car }: CarCardProps) {
   );
 }
 
-// ============ Skeleton ============
-
 export function CarCardSkeleton() {
   return (
     <div className="h-full overflow-hidden rounded-2xl border border-border/40 bg-card shadow-sm flex flex-col">
-      {/* 3-image layout skeleton */}
       <div className="flex flex-col md:flex-row">
         <Skeleton className="w-full md:w-[60%] aspect-[16/10] md:aspect-auto md:h-[220px] rounded-none" />
         <div className="w-full md:w-[40%] flex flex-row md:flex-col">
@@ -397,8 +367,6 @@ export function CarCardSkeleton() {
           <Skeleton className="w-1/2 md:w-full aspect-[16/10] md:aspect-[16/9] rounded-none" />
         </div>
       </div>
-
-      {/* Content skeleton */}
       <div className="p-4 space-y-3 flex-1 flex flex-col">
         <div className="flex items-start justify-between">
           <Skeleton className="h-4 w-3/4" />

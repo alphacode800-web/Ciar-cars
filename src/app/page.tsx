@@ -5,16 +5,14 @@ import { useAppStore } from '@/store/app-store';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 
-// Views
 import { HeroSection } from '@/components/home/HeroSection';
-
 import { BannerSection } from '@/components/home/BannerSection';
+import { LuxuryGalleryStrip } from '@/components/home/LuxuryGalleryStrip';
 import { FeaturedCarsSection } from '@/components/home/FeaturedCarsSection';
 import { StatsSection } from '@/components/home/StatsSection';
 import { TestimonialsSection } from '@/components/home/TestimonialsSection';
 import { CTASection } from '@/components/home/CTASection';
 
-// Lazy-loaded views for performance
 import CarListingView from '@/views/CarListingView';
 import CarDetailView from '@/views/CarDetailView';
 import SearchView from '@/views/SearchView';
@@ -28,9 +26,11 @@ import WalletView from '@/views/WalletView';
 import AboutView from '@/views/AboutView';
 import ContactView from '@/views/ContactView';
 
-// Loading component
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from '@/hooks/use-translation';
+import { ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 function ViewLoader() {
   return (
@@ -49,12 +49,12 @@ function ViewLoader() {
   );
 }
 
-// Homepage view
 function HomePage() {
   return (
     <>
       <HeroSection />
       <BannerSection />
+      <LuxuryGalleryStrip />
       <FeaturedCarsSection />
       <StatsSection />
       <TestimonialsSection />
@@ -63,7 +63,6 @@ function HomePage() {
   );
 }
 
-// Page transition variants
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
   in: { opacity: 1, y: 0 },
@@ -76,45 +75,46 @@ const pageTransition = {
   duration: 0.2,
 };
 
-// Main view router
+function PlaceholderView({ titleKey, textKey }: { titleKey: string; textKey: string }) {
+  const { t } = useTranslation();
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center p-8">
+      <div className="text-center space-y-4">
+        <h2 className="text-2xl font-bold">{t(titleKey)}</h2>
+        <p className="text-muted-foreground">{t(textKey)}</p>
+        <p className="text-sm text-muted-foreground">{t('pages.comingSoon')}</p>
+      </div>
+    </div>
+  );
+}
+
 function ViewRouter() {
   const { currentView, viewParams } = useAppStore();
-  
+
   const renderView = () => {
     switch (currentView) {
       case 'home':
         return <HomePage />;
-      
       case 'listing':
         return <CarListingView />;
-      
       case 'detail':
         return <CarDetailView />;
-      
       case 'search':
         return <SearchView />;
-      
       case 'auth':
         return <AuthView />;
-      
       case 'admin':
         return <AdminDashboardView />;
-      
       case 'dashboard':
         return <UserDashboardView />;
-      
       case 'chat':
         return <ChatView />;
-      
       case 'rental':
         return <RentalBookingView />;
-      
       case 'sell-car':
         return <SellCarView />;
-      
       case 'wallet':
         return <WalletView />;
-      
       case 'profile':
       case 'favorites':
       case 'my-listings':
@@ -122,34 +122,14 @@ function ViewRouter() {
       case 'notifications':
       case 'settings':
         return <UserDashboardView />;
-      
       case 'about':
         return <AboutView />;
-      
       case 'contact':
         return <ContactView />;
-      
       case 'comparison':
-        return (
-          <div className="min-h-[60vh] flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl font-bold">Car Comparison</h2>
-              <p className="text-muted-foreground">Select cars to compare features side by side.</p>
-              <p className="text-sm text-muted-foreground">Coming soon!</p>
-            </div>
-          </div>
-        );
-      
+        return <PlaceholderView titleKey="pages.comparison" textKey="pages.comparisonText" />;
       case 'checkout':
-        return (
-          <div className="min-h-[60vh] flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl font-bold">Checkout</h2>
-              <p className="text-muted-foreground">Complete your payment.</p>
-            </div>
-          </div>
-        );
-      
+        return <PlaceholderView titleKey="pages.checkout" textKey="pages.checkoutText" />;
       default:
         return <HomePage />;
     }
@@ -171,21 +151,18 @@ function ViewRouter() {
   );
 }
 
-// Scroll to top on view change
 function ScrollToTop() {
   const { currentView } = useAppStore();
-  
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentView]);
-  
+
   return null;
 }
 
 export default function App() {
   const { currentView } = useAppStore();
-
-  // Admin dashboard has its own layout (sidebar)
   const isAdminView = currentView === 'admin';
 
   return (

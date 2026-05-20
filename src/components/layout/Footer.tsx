@@ -192,16 +192,16 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <MapPin className="h-4 w-4 mt-0.5 text-emerald-500 shrink-0" />
                 <span className="text-sm text-zinc-400">
-                  Business Bay, Dubai, UAE
+                  {t('contact.address')}
                 </span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="h-4 w-4 text-emerald-500 shrink-0" />
-                <span className="text-sm text-zinc-400">+20 100 123 4567</span>
+                <span className="text-sm text-zinc-400">{t('contact.phone')}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-emerald-500 shrink-0" />
-                <span className="text-sm text-zinc-400">hello@ciarcars.com</span>
+                <span className="text-sm text-zinc-400">{t('contact.email')}</span>
               </li>
             </ul>
 

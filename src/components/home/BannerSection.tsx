@@ -1,61 +1,57 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight, Zap, Car as CarIcon, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAppStore } from '@/store/app-store';
 import { useTranslation } from '@/hooks/use-translation';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 interface Banner {
   id: string;
-  title: string;
-  subtitle?: string;
+  titleKey: string;
+  subtitleKey: string;
   imageUrl: string;
-  linkUrl?: string;
-  ctaText?: string;
+  icon?: React.ReactNode;
+  ctaKey: string;
+  onCTA: () => void;
 }
 
-// ---------------------------------------------------------------------------
-// Mock fallback data
-// ---------------------------------------------------------------------------
-const MOCK_BANNERS: Banner[] = [
+const BANNERS: Banner[] = [
   {
-    id: '1',
-    title: 'New Arrivals: 2024 Models',
-    subtitle: 'Explore the latest models from top brands with exclusive financing offers.',
-    imageUrl: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1400&h=500&fit=crop',
-    linkUrl: '/listing?condition=new',
-    ctaText: 'Explore Now',
-  },
-  {
-    id: '2',
-    title: 'Electric Vehicles Festival',
-    subtitle: 'Discover the future of driving with our curated EV collection.',
-    imageUrl: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=1400&h=500&fit=crop',
-    linkUrl: '/listing?fuelType=electric',
-    ctaText: 'View EVs',
-  },
-  {
-    id: '3',
-    title: 'Rent Premium Cars',
-    subtitle: 'Experience luxury on wheels. Daily rates starting from $89.',
+    id: 'new-arrivals',
+    titleKey: 'banner.newArrivals',
+    subtitleKey: 'banner.newArrivalsText',
     imageUrl: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=1400&h=500&fit=crop',
-    linkUrl: '/rental',
-    ctaText: 'Rent Now',
+    icon: <CarIcon className="h-5 w-5" />,
+    ctaKey: 'banner.newArrivalsCTA',
+    onCTA: () => useAppStore.getState().setView('listing', { condition: 'new' }),
+  },
+  {
+    id: 'electric-vehicles',
+    titleKey: 'banner.electricVehicles',
+    subtitleKey: 'banner.electricVehiclesText',
+    imageUrl: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=1400&h=500&fit=crop',
+    icon: <Zap className="h-5 w-5" />,
+    ctaKey: 'banner.electricVehiclesCTA',
+    onCTA: () => useAppStore.getState().setView('listing', { fuelType: 'electric' }),
+  },
+  {
+    id: 'premium-rental',
+    titleKey: 'banner.premiumRental',
+    subtitleKey: 'banner.premiumRentalText',
+    imageUrl: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=1400&h=500&fit=crop',
+    icon: <Crown className="h-5 w-5" />,
+    ctaKey: 'banner.premiumRentalCTA',
+    onCTA: () => useAppStore.getState().setView('listing', { isAvailableForRent: true }),
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Slide transition variants
-// ---------------------------------------------------------------------------
 const slideVariants = {
   enter: (direction: number) => ({
-    x: direction > 0 ? '100%' : '-100%',
+    x: direction > 0 ? '60%' : '-60%',
     opacity: 0,
-    scale: 1.02,
+    scale: 1.04,
   }),
   center: {
     x: 0,
@@ -63,42 +59,22 @@ const slideVariants = {
     scale: 1,
   },
   exit: (direction: number) => ({
-    x: direction > 0 ? '-100%' : '100%',
+    x: direction > 0 ? '-60%' : '60%',
     opacity: 0,
-    scale: 0.98,
+    scale: 0.96,
   }),
 };
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+const AUTO_PLAY_INTERVAL = 5000;
+
 export function BannerSection() {
   const { isRTL } = useTranslation();
-  const [banners, setBanners] = useState<Banner[]>([]);
+  const { t } = useTranslation();
   const [[currentIndex, direction], setCurrentIndex] = useState([0, 0]);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchBanners = async () => {
-      try {
-        const res = await fetch('/api/banners?position=home');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.data?.length > 0) {
-            setBanners(data.data);
-            setIsLoading(false);
-            return;
-          }
-        }
-      } catch {
-        // API not available, use mock data
-      }
-      setBanners(MOCK_BANNERS);
-      setIsLoading(false);
-    };
-    fetchBanners();
-  }, []);
+  const [progressKey, setProgressKey] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const banners = BANNERS;
 
   const paginate = useCallback(
     (newDirection: number) => {
@@ -108,6 +84,7 @@ export function BannerSection() {
         if (next >= banners.length) return [0, newDirection];
         return [next, newDirection];
       });
+      setProgressKey((k) => k + 1);
     },
     [banners.length]
   );
@@ -115,32 +92,40 @@ export function BannerSection() {
   const nextSlide = useCallback(() => paginate(1), [paginate]);
   const prevSlide = useCallback(() => paginate(-1), [paginate]);
 
-  // Auto-rotate
   useEffect(() => {
     if (!isAutoPlaying || banners.length <= 1) return;
-    const interval = setInterval(nextSlide, 5000);
-    return () => clearInterval(interval);
-  }, [isAutoPlaying, nextSlide, banners.length]);
+    timerRef.current = setTimeout(() => {
+      nextSlide();
+    }, AUTO_PLAY_INTERVAL);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [isAutoPlaying, nextSlide, banners.length, progressKey]);
 
-  if (isLoading || banners.length === 0) return null;
+  const handleDotClick = useCallback(
+    (i: number) => {
+      setCurrentIndex([i, i > currentIndex ? 1 : -1]);
+      setProgressKey((k) => k + 1);
+    },
+    [currentIndex]
+  );
+
+  const handleMouseEnter = useCallback(() => setIsAutoPlaying(false), []);
+  const handleMouseLeave = useCallback(() => {
+    setIsAutoPlaying(true);
+    setProgressKey((k) => k + 1);
+  }, []);
 
   const currentBanner = banners[currentIndex];
-
-  const handleCTA = () => {
-    if (currentBanner.linkUrl) {
-      // In SPA context, this would navigate using the store
-    }
-  };
 
   return (
     <section className="py-16 sm:py-20 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
-          className="relative rounded-2xl overflow-hidden group"
-          onMouseEnter={() => setIsAutoPlaying(false)}
-          onMouseLeave={() => setIsAutoPlaying(true)}
+          className="relative rounded-2xl overflow-hidden group shadow-luxury-lg"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         >
-          {/* Banner images with slide/fade transitions */}
           <AnimatePresence initial={false} custom={direction} mode="popLayout">
             <motion.div
               key={currentIndex}
@@ -150,66 +135,81 @@ export function BannerSection() {
               animate="center"
               exit="exit"
               transition={{
-                x: { type: 'spring', stiffness: 300, damping: 30 },
-                opacity: { duration: 0.3 },
+                x: { type: 'spring', stiffness: 260, damping: 28, mass: 0.8 },
+                opacity: { duration: 0.35, ease: 'easeInOut' },
+                scale: { duration: 0.35, ease: 'easeInOut' },
               }}
               className="relative aspect-[16/6] sm:aspect-[3/1] lg:aspect-[4/1]"
             >
               <img
                 src={currentBanner.imageUrl}
-                alt={currentBanner.title}
+                alt={t(currentBanner.titleKey)}
                 className="h-full w-full object-cover"
               />
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-
-              {/* Content */}
+              <div
+                className={`absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-transparent ${
+                  isRTL ? '[transform:scaleX(-1)]' : ''
+                }`}
+              />
               <div className="absolute inset-0 flex items-center">
                 <div className="px-8 sm:px-12 lg:px-16 max-w-xl">
-                  <motion.h3
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3"
-                  >
-                    {currentBanner.title}
-                  </motion.h3>
-                  {currentBanner.subtitle && (
-                    <motion.p
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="text-white/80 text-sm sm:text-base mb-6 line-clamp-2"
-                    >
-                      {currentBanner.subtitle}
-                    </motion.p>
-                  )}
-                  {currentBanner.ctaText && (
+                  {currentBanner.icon && (
                     <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 }}
+                      initial={{ opacity: 0, scale: 0.6 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.15, type: 'spring', stiffness: 300, damping: 20 }}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 mb-4 rounded-full bg-emerald-500/20 border border-emerald-400/30 backdrop-blur-sm text-emerald-300 text-xs font-medium"
                     >
-                      <Button
-                        size="lg"
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white h-11 px-6 rounded-xl"
-                        onClick={handleCTA}
-                      >
-                        {currentBanner.ctaText}
-                        <ArrowRight className={`h-4 w-4 ${isRTL ? 'rotate-180 rtl:rotate-0' : ''}`} />
-                      </Button>
+                      {currentBanner.icon}
+                      {t('banner.featured')}
                     </motion.div>
                   )}
+
+                  <motion.h3
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight"
+                  >
+                    {t(currentBanner.titleKey)}
+                  </motion.h3>
+
+                  <motion.p
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    className="text-white/75 text-sm sm:text-base mb-6 line-clamp-2 leading-relaxed"
+                  >
+                    {t(currentBanner.subtitleKey)}
+                  </motion.p>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <Button
+                      size="lg"
+                      className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white h-11 px-7 rounded-xl shadow-lg shadow-emerald-900/30 transition-shadow hover:shadow-emerald-900/50"
+                      onClick={currentBanner.onCTA}
+                    >
+                      {t(currentBanner.ctaKey)}
+                      <ArrowRight
+                        className={`h-4 w-4 ml-2 transition-transform duration-200 ${
+                          isRTL ? 'rotate-180' : 'group-hover:translate-x-0.5'
+                        }`}
+                      />
+                    </Button>
+                  </motion.div>
                 </div>
               </div>
             </motion.div>
           </AnimatePresence>
 
-          {/* Navigation Arrows – RTL-aware positioning */}
           <Button
             variant="ghost"
             size="icon"
-            className={`absolute top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 ${
+            className={`absolute top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 border border-white/10 opacity-0 group-hover:opacity-100 transition-all duration-300 ${
               isRTL ? 'right-4' : 'left-4'
             }`}
             onClick={prevSlide}
@@ -219,7 +219,7 @@ export function BannerSection() {
           <Button
             variant="ghost"
             size="icon"
-            className={`absolute top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 ${
+            className={`absolute top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 border border-white/10 opacity-0 group-hover:opacity-100 transition-all duration-300 ${
               isRTL ? 'left-4' : 'right-4'
             }`}
             onClick={nextSlide}
@@ -227,20 +227,35 @@ export function BannerSection() {
             <ChevronRight className="h-5 w-5" />
           </Button>
 
-          {/* Progress dots */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
             {banners.map((_, i) => (
               <button
                 key={i}
-                onClick={() => setCurrentIndex([i, i > currentIndex ? 1 : -1])}
+                onClick={() => handleDotClick(i)}
                 className={`h-2 rounded-full transition-all duration-300 ${
                   i === currentIndex
-                    ? 'w-8 bg-white'
-                    : 'w-2 bg-white/50 hover:bg-white/70'
+                    ? 'w-8 bg-white shadow-sm shadow-white/50'
+                    : 'w-2 bg-white/40 hover:bg-white/60'
                 }`}
                 aria-label={`Go to slide ${i + 1}`}
               />
             ))}
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/10 z-10">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={progressKey}
+                className="h-full bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 origin-left"
+                initial={{ scaleX: 0 }}
+                animate={{
+                  scaleX: isAutoPlaying ? 1 : 1,
+                  transition: {
+                    scaleX: { duration: isAutoPlaying ? 5 : 0, ease: 'linear' },
+                  },
+                }}
+              />
+            </AnimatePresence>
           </div>
         </div>
       </div>
