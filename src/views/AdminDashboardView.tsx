@@ -35,15 +35,15 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 // Admin Section Components
-import { OverviewSection } from '@/components/admin/OverviewSection';
-import { UsersSection } from '@/components/admin/UsersSection';
-import { CarsSection } from '@/components/admin/CarsSection';
-import { BookingsSection } from '@/components/admin/BookingsSection';
-import { PaymentsSection } from '@/components/admin/PaymentsSection';
-import { SettingsSection } from '@/components/admin/SettingsSection';
-import { HomepageBuilderSection } from '@/components/admin/HomepageBuilderSection';
-import { NavigationSection } from '@/components/admin/NavigationSection';
-import { AuditLogsSection } from '@/components/admin/AuditLogsSection';
+import OverviewSection from '@/components/admin/OverviewSection';
+import UsersSection from '@/components/admin/UsersSection';
+import CarsSection from '@/components/admin/CarsSection';
+import BookingsSection from '@/components/admin/BookingsSection';
+import PaymentsSection from '@/components/admin/PaymentsSection';
+import SettingsSection from '@/components/admin/SettingsSection';
+import HomepageBuilderSection from '@/components/admin/HomepageBuilderSection';
+import NavigationSection from '@/components/admin/NavigationSection';
+import AuditLogsSection from '@/components/admin/AuditLogsSection';
 
 // ============ TYPES ============
 type AdminSection =
