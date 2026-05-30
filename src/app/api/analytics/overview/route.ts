@@ -4,7 +4,8 @@ import { apiSuccess, handleApiError } from '@/lib/api-response';
 import { carService } from '@/services/car.service';
 import { db } from '@/lib/db';
 
-const ANALYTICS_URL = process.env.ANALYTICS_API_URL ?? 'http://localhost:8001';
+import { getAnalyticsApiUrl } from '@/lib/analytics-url';
+
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY ?? 'ciar-dev-internal-key';
 
 export async function GET(request: NextRequest) {
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     await requireAdmin(request);
 
     try {
-      const res = await fetch(`${ANALYTICS_URL}/analytics/overview`, {
+      const res = await fetch(`${getAnalyticsApiUrl()}/analytics/overview`, {
         headers: { 'X-Api-Key': INTERNAL_API_KEY },
         next: { revalidate: 60 },
       });

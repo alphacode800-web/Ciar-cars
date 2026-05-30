@@ -1,0 +1,14 @@
+{
+  "experimentalServices": {
+    "frontend": {
+      "routePrefix": "/",
+      "framework": "nextjs"
+    },
+    "analytics-api": {
+      "root": "services/analytics-api",
+      "routePrefix": "/_/analytics-api",
+      "framework": "fastapi",
+      "includeFiles": ["db/custom.db"]
+    }
+  }
+}

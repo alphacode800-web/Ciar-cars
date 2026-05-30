@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { apiSuccess, handleApiError } from '@/lib/api-response';
 
-const ANALYTICS_URL = process.env.ANALYTICS_API_URL ?? 'http://localhost:8001';
+import { getAnalyticsApiUrl } from '@/lib/analytics-url';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     try {
       const res = await fetch(
-        `${ANALYTICS_URL}/search/suggest?q=${encodeURIComponent(q)}`,
+        `${getAnalyticsApiUrl()}/search/suggest?q=${encodeURIComponent(q)}`,
         { next: { revalidate: 30 } }
       );
       if (res.ok) {
