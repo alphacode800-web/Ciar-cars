@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAppStore } from '@/store/app-store';
 import { useAuthStore } from '@/store/auth-store';
 import type { AppView } from '@/types';
+import { ADMIN_LOGIN_PATH, isAdminRole } from '@/lib/auth-helpers';
 
 const NAV_LINKS: { label: string; view: AppView; icon: React.ElementType }[] = [
   { label: 'Home', view: 'home', icon: Car },
@@ -31,6 +32,15 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
   const handleNavClick = (view: AppView) => {
     setView(view);
     onOpenChange(false);
+  };
+
+  const handleAdminAccess = () => {
+    onOpenChange(false);
+    if (user && isAdminRole(user.role)) {
+      setView('admin');
+      return;
+    }
+    window.location.href = ADMIN_LOGIN_PATH;
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -158,13 +168,13 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
                 );
               })}
 
-              {(user.role === 'admin' || user.role === 'super_admin') && (
+              {isAdminRole(user.role) && (
                 <button
-                  onClick={() => handleNavClick('dashboard')}
+                  onClick={handleAdminAccess}
                   className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
                 >
                   <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
+                  Admin Panel
                 </button>
               )}
 

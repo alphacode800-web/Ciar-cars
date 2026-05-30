@@ -4,6 +4,7 @@
 // =============================================================================
 
 import { db } from "../src/lib/db";
+import { hashPassword, DEMO_PASSWORD } from "./seed-helpers";
 
 // =============================================================================
 // HELPERS
@@ -68,6 +69,8 @@ async function seed() {
     // =====================================================================
     console.log("📦 Creating users...");
 
+    const demoHash = await hashPassword(DEMO_PASSWORD);
+
     const users = await Promise.all([
       db.user.create({
         data: {
@@ -107,6 +110,7 @@ async function seed() {
           name: "Ahmed Hassan",
           phone: "+201012345671",
           role: "seller",
+          password: demoHash,
           isActive: true,
           city: "Cairo",
           country: "Egypt",
@@ -126,6 +130,7 @@ async function seed() {
           name: "Sara Mohamed",
           phone: "+201098765432",
           role: "seller",
+          password: demoHash,
           isActive: true,
           city: "Alexandria",
           country: "Egypt",
@@ -145,6 +150,7 @@ async function seed() {
           name: "Omar Ali",
           phone: "+201155544433",
           role: "user",
+          password: demoHash,
           isActive: true,
           city: "Giza",
           country: "Egypt",
@@ -159,6 +165,7 @@ async function seed() {
           name: "Fatma Ibrahim",
           phone: "+201234567890",
           role: "seller",
+          password: demoHash,
           isActive: true,
           city: "Cairo",
           country: "Egypt",
@@ -177,6 +184,33 @@ async function seed() {
     const [superAdmin, admin, ahmed, sara, omar, fatma] = users;
 
     console.log(`  ✅ Created ${users.length} users`);
+
+    // Sample audit logs for admin panel
+    await db.auditLog.createMany({
+      data: [
+        {
+          userId: admin.id,
+          action: "login",
+          entity: "User",
+          entityId: admin.id,
+          details: "Admin login to dashboard",
+          ipAddress: "127.0.0.1",
+        },
+        {
+          userId: superAdmin.id,
+          action: "settings",
+          entity: "Settings",
+          details: "Updated platform settings",
+        },
+        {
+          userId: admin.id,
+          action: "approve",
+          entity: "Car",
+          details: "Approved car listing",
+        },
+      ],
+    });
+    console.log("  ✅ Created sample audit logs");
 
     // =====================================================================
     // 2. CARS (15 cars with images, specs)

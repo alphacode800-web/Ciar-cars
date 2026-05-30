@@ -1,12 +1,13 @@
 // =============================================================================
 // CIAR Cars - API Auth Helper
 // =============================================================================
-// Simplified auth helper for API routes.
-// Extracts userId from request headers or body for use in route handlers.
-// In production, you'd use getServerSession from next-auth with proper JWT verification.
 
 import { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { db } from "@/lib/db";
+import { AuthError } from "@/lib/errors";
+
+export { AuthError };
 
 export interface AuthUser {
   id: string;
@@ -16,21 +17,34 @@ export interface AuthUser {
 
 /**
  * Get authenticated user from request.
- * Checks Authorization header for Bearer token (JWT).
- * Falls back to X-User-Id header (for development / testing).
+ * Uses NextAuth session cookie, then Bearer token, then X-User-Id (dev).
  */
 export async function getAuthUser(
   request: NextRequest
 ): Promise<AuthUser | null> {
   try {
-    // Try Bearer token (JWT) from Authorization header
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    if (token) {
+      const id = (token.id as string | undefined) || token.sub;
+      if (id) {
+        return {
+          id,
+          email: (token.email as string) || "",
+          role: (token.role as string) || "user",
+        };
+      }
+    }
+
     const authHeader = request.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      // Decode JWT payload (base64)
+      const bearerToken = authHeader.substring(7);
       try {
         const payload = JSON.parse(
-          Buffer.from(token.split(".")[1], "base64").toString()
+          Buffer.from(bearerToken.split(".")[1], "base64").toString()
         );
         if (payload?.id) {
           return {
@@ -40,19 +54,18 @@ export async function getAuthUser(
           };
         }
       } catch {
-        // JWT decode failed, try fallback
+        // JWT decode failed
       }
     }
 
-    // Fallback: X-User-Id header (development only)
-    const userId = request.headers.get("X-User-Id");
-    if (userId) {
-      const user = await db.user.findUnique({
-        where: { id: userId },
-        select: { id: true, email: true, role: true },
-      });
-      if (user) {
-        return user;
+    if (process.env.NODE_ENV !== "production") {
+      const userId = request.headers.get("X-User-Id");
+      if (userId) {
+        const user = await db.user.findUnique({
+          where: { id: userId },
+          select: { id: true, email: true, role: true },
+        });
+        if (user) return user;
       }
     }
   } catch {
@@ -62,9 +75,6 @@ export async function getAuthUser(
   return null;
 }
 
-/**
- * Require authentication. Returns user or throws error response.
- */
 export async function requireAuth(
   request: NextRequest
 ): Promise<AuthUser | never> {
@@ -75,9 +85,6 @@ export async function requireAuth(
   return user;
 }
 
-/**
- * Require admin role. Returns user or throws error response.
- */
 export async function requireAdmin(
   request: NextRequest
 ): Promise<AuthUser | never> {
@@ -86,17 +93,4 @@ export async function requireAdmin(
     throw new AuthError("Admin access required", 403);
   }
   return user;
-}
-
-/**
- * Custom error class for auth failures.
- */
-export class AuthError extends Error {
-  statusCode: number;
-
-  constructor(message: string, statusCode: number = 401) {
-    super(message);
-    this.statusCode = statusCode;
-    this.name = "AuthError";
-  }
 }

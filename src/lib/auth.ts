@@ -33,6 +33,10 @@ declare module "next-auth/jwt" {
   }
 }
 
+export type AuthLoginType = "user" | "admin";
+
+const ADMIN_EMAILS = new Set(["admin@ciar.com", "super@ciar.com"]);
+
 // Hardcoded admin credentials (for initial platform setup)
 const ADMIN_CREDENTIALS = [
   {
@@ -58,40 +62,95 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        loginType: { label: "Login Type", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email and password are required");
         }
 
-        // Check hardcoded admin credentials first
-        const adminUser = ADMIN_CREDENTIALS.find(
-          (a) => a.email === credentials.email
-        );
+        const loginType: AuthLoginType =
+          credentials.loginType === "admin" ? "admin" : "user";
 
-        if (adminUser) {
-          const isValid = await bcrypt.compare(
-            credentials.password,
-            adminUser.password
+        if (loginType === "admin") {
+          const adminUser = ADMIN_CREDENTIALS.find(
+            (a) => a.email === credentials.email
           );
-          if (isValid) {
-            return {
-              id: adminUser.id,
-              email: adminUser.email,
-              name: adminUser.name,
-              role: adminUser.role,
-            };
+
+          if (adminUser) {
+            const isValid = await bcrypt.compare(
+              credentials.password,
+              adminUser.password
+            );
+            if (isValid) {
+              return {
+                id: adminUser.id,
+                email: adminUser.email,
+                name: adminUser.name,
+                role: adminUser.role,
+              };
+            }
+            throw new Error("Invalid password");
           }
-          throw new Error("Invalid password");
+
+          const dbAdmin = await db.user.findUnique({
+            where: { email: credentials.email },
+          });
+
+          if (!dbAdmin) {
+            throw new Error("No admin account found with this email");
+          }
+
+          if (dbAdmin.role !== "admin" && dbAdmin.role !== "super_admin") {
+            throw new Error("This account is not authorized for admin access");
+          }
+
+          if (!dbAdmin.password) {
+            throw new Error("Admin account password is not configured");
+          }
+
+          if (!dbAdmin.isActive) {
+            throw new Error("This admin account has been deactivated");
+          }
+
+          if (dbAdmin.isBanned) {
+            throw new Error(
+              dbAdmin.bannedReason || "This admin account has been suspended"
+            );
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            dbAdmin.password
+          );
+
+          if (!isPasswordValid) {
+            throw new Error("Invalid password");
+          }
+
+          return {
+            id: dbAdmin.id,
+            email: dbAdmin.email,
+            name: dbAdmin.name,
+            image: dbAdmin.avatar,
+            role: dbAdmin.role,
+          };
         }
 
-        // Check database for regular users
+        if (ADMIN_EMAILS.has(credentials.email)) {
+          throw new Error("Please use the admin login page");
+        }
+
         const user = await db.user.findUnique({
           where: { email: credentials.email },
         });
 
         if (!user) {
           throw new Error("No account found with this email");
+        }
+
+        if (user.role === "admin" || user.role === "super_admin") {
+          throw new Error("Please use the admin login page");
         }
 
         if (!user.password) {

@@ -30,7 +30,6 @@ import {
   Loader2,
   Check,
   CheckCircle2,
-  ShieldCheck,
   Store,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
@@ -38,6 +37,11 @@ import { useAppStore } from '@/store/app-store';
 import { toast } from 'sonner';
 import { CURRENCY } from '@/lib/constants';
 import { UserRole } from '@/types';
+import {
+  isAdminRole,
+  signInWithCredentials,
+  syncAuthStoreFromSession,
+} from '@/lib/auth-helpers';
 
 const roles = [
   {
@@ -121,43 +125,26 @@ export default function AuthView() {
     }
     setLoginLoading(true);
     try {
-      const res = await fetch('/api/auth/signin/credentials', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: loginForm.email,
-          password: loginForm.password,
-          callbackUrl: '/',
-          csrfToken: Math.random().toString(36).slice(2),
-        }),
-      });
+      const result = await signInWithCredentials(
+        loginForm.email,
+        loginForm.password,
+        'user'
+      );
 
-      const data = await res.json();
+      if (!result.ok) {
+        toast.error(result.error || 'Invalid credentials');
+        return;
+      }
 
-      if (data.url || res.ok) {
-        const sessionRes = await fetch('/api/auth/session');
-        const session = await sessionRes.json();
-        if (session?.user) {
-          setUser({
-            id: session.user.id || '',
-            email: session.user.email || '',
-            name: session.user.name || '',
-            role: session.user.role || UserRole.USER,
-            isActive: true,
-            isBanned: false,
-            walletBalance: 0,
-            rating: 0,
-            totalReviews: 0,
-            totalListings: 0,
-            totalSales: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
-          toast.success('Welcome back!');
-          setView('home');
-        }
-      } else {
-        toast.error(data.error || 'Invalid credentials');
+      const user = await syncAuthStoreFromSession(setUser);
+      if (user && isAdminRole(user.role)) {
+        toast.error('Please use the admin login page');
+        return;
+      }
+
+      if (user) {
+        toast.success('Welcome back!');
+        setView('home');
       }
     } catch {
       toast.error('Login failed. Please try again.');
@@ -364,22 +351,6 @@ export default function AuthView() {
                         Sign In
                       </Button>
                     </form>
-
-                    {/* Demo Credentials */}
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                      className="mt-4 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/30"
-                    >
-                      <div className="flex items-center gap-2 text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1">
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        Demo Credentials
-                      </div>
-                      <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">
-                        admin@ciar.com / admin123
-                      </p>
-                    </motion.div>
 
                     {/* Divider */}
                     <div className="relative my-5">

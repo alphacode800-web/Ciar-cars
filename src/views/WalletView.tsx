@@ -147,22 +147,25 @@ function TopUpModal({
     setError(null);
 
     try {
-      // Simulate top-up (would call a payment API in production)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // In production, this would be:
-      // const res = await fetch('/api/users/wallet/topup', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ amount: numAmount, method: paymentMethod }),
-      // });
-      // const data = await res.json();
+      const res = await fetch('/api/users/wallet/topup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          amount: numAmount,
+          method: paymentMethod === 'card' ? 'card' : paymentMethod === 'paypal' ? 'paypal' : 'bank_transfer',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Top-up failed');
+      }
 
       onOpenChange(false);
       setAmount('');
       onSuccess();
-    } catch {
-      setError('Top-up failed. Please try again.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Top-up failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -1,37 +1,45 @@
-// =============================================================================
-// CIAR Cars - Settings API
-// GET /api/settings - Get all settings
-// PUT /api/settings - Update settings (admin only)
-// =============================================================================
-
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/api-auth";
+import { apiSuccess, handleApiError } from "@/lib/api-response";
 
-// ============ GET: All Settings ============
+const PUBLIC_SETTING_KEYS = new Set([
+  "site_name",
+  "site_tagline",
+  "support_email",
+  "support_phone",
+  "default_currency",
+  "default_country",
+  "social_facebook",
+  "social_instagram",
+  "social_twitter",
+]);
 
-export async function GET() {
+// ============ GET: Settings (admin = all, public = safe subset) ============
+
+export async function GET(request: NextRequest) {
   try {
-    const settings = await db.siteSetting.findMany({
-      orderBy: { key: "asc" },
-    });
+    let settingsMap: Record<string, string> = {};
 
-    // Convert to key-value map
-    const settingsMap: Record<string, string> = {};
-    for (const setting of settings) {
-      settingsMap[setting.key] = setting.value;
+    try {
+      await requireAdmin(request);
+      const settings = await db.siteSetting.findMany({ orderBy: { key: "asc" } });
+      for (const setting of settings) {
+        settingsMap[setting.key] = setting.value;
+      }
+    } catch {
+      const settings = await db.siteSetting.findMany({
+        where: { key: { in: [...PUBLIC_SETTING_KEYS] } },
+        orderBy: { key: "asc" },
+      });
+      for (const setting of settings) {
+        settingsMap[setting.key] = setting.value;
+      }
     }
 
-    return NextResponse.json({
-      success: true,
-      data: settingsMap,
-    });
+    return apiSuccess(settingsMap);
   } catch (error) {
-    console.error("[SETTINGS_GET]", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch settings" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 

@@ -14,21 +14,27 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const position = searchParams.get("position");
+    const all = searchParams.get("all") === "true";
 
-    const where: Record<string, unknown> = { isActive: true };
+    const where: Record<string, unknown> = {};
+
+    if (!all) {
+      where.isActive = true;
+    }
 
     if (position) {
       where.position = position;
     }
 
-    // Filter by date range
-    const now = new Date();
-    where.OR = [
-      { startDate: null, endDate: null },
-      { startDate: { lte: now }, endDate: null },
-      { startDate: null, endDate: { gte: now } },
-      { startDate: { lte: now }, endDate: { gte: now } },
-    ];
+    if (!all) {
+      const now = new Date();
+      where.OR = [
+        { startDate: null, endDate: null },
+        { startDate: { lte: now }, endDate: null },
+        { startDate: null, endDate: { gte: now } },
+        { startDate: { lte: now }, endDate: { gte: now } },
+      ];
+    }
 
     const banners = await db.banner.findMany({
       where,

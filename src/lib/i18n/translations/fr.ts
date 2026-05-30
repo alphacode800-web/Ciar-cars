@@ -64,6 +64,22 @@ const fr: TranslationDictionary = {
     admin: "Panneau d'administration",
   },
 
+  adminAuth: {
+    title: "CIAR Cars Admin",
+    subtitle: "Authorized personnel only",
+    signIn: "Admin Sign In",
+    signInDescription: "Sign in with your administrator credentials",
+    email: "Email",
+    password: "Password",
+    signInButton: "Sign In to Admin Panel",
+    backToSite: "Back to main site",
+    userLoginHint: "Not an administrator?",
+    welcome: "Welcome to the admin panel",
+    fillAllFields: "Please fill in all fields",
+    loginFailed: "Admin login failed. Please try again.",
+    invalidSession: "Admin session could not be established",
+  },
+
   // ---------------------------------------------------------------------------
   // Hero Section
   // ---------------------------------------------------------------------------

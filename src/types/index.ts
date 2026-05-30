@@ -172,6 +172,7 @@ export type AppView =
   | "detail"
   | "search"
   | "admin"
+  | "admin-auth"
   | "dashboard"
   | "auth"
   | "chat"

@@ -43,6 +43,7 @@ import { useCurrencyStore, CURRENCIES } from '@/store/currency-store';
 import { useTranslation } from '@/hooks/use-translation';
 import type { AppView } from '@/types';
 import { cn } from '@/lib/utils';
+import { ADMIN_LOGIN_PATH, isAdminRole } from '@/lib/auth-helpers';
 
 const NAV_VIEWS: { view: AppView; labelKey: string }[] = [
   { view: 'home', labelKey: 'nav.home' },
@@ -88,6 +89,15 @@ export function Navbar() {
   const handleNavClick = (view: AppView) => {
     setView(view);
     setMobileOpen(false);
+  };
+
+  const handleAdminAccess = () => {
+    setMobileOpen(false);
+    if (user && isAdminRole(user.role)) {
+      setView('admin');
+      return;
+    }
+    window.location.href = ADMIN_LOGIN_PATH;
   };
 
   const getInitials = (name?: string | null) => {
@@ -414,10 +424,10 @@ export function Navbar() {
                       <Heart className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
                       {t('nav.favorites')}
                     </DropdownMenuItem>
-                    {(user.role === 'admin' || user.role === 'super_admin') && (
+                    {isAdminRole(user.role) && (
                       <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleNavClick('dashboard')}>
+                        <DropdownMenuItem onClick={handleAdminAccess}>
                           <LayoutDashboard className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
                           {t('nav.admin')}
                         </DropdownMenuItem>

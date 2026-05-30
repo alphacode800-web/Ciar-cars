@@ -10,7 +10,11 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:seed-cars": "npx tsx prisma/seed-cars-by-country.ts",
+    "analytics:dev": "cd services/analytics-api && python3 -m uvicorn main:app --reload --port 8001",
+    "analytics:install": "pip3 install -r services/analytics-api/requirements.txt"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

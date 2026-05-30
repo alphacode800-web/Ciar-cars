@@ -25,6 +25,7 @@ async function adminFetch<T = any>(
 ): Promise<AdminResponse<T>> {
   try {
     const res = await fetch(endpoint, {
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       ...options,
     });
@@ -92,7 +93,24 @@ export async function getCars(params?: AdminCarFilters) {
   return adminFetch(`${API_BASE}/cars?${query.toString()}`);
 }
 
-export async function updateCar(id: string, data: { status?: string; isFeatured?: boolean; featuredUntil?: string | null }) {
+export interface AdminCarUpdatePayload {
+  status?: string;
+  isFeatured?: boolean;
+  featuredUntil?: string | null;
+  title?: string;
+  price?: number;
+  country?: string;
+  city?: string;
+  description?: string;
+  condition?: string;
+  mileage?: number;
+  fuelType?: string;
+  transmission?: string;
+  bodyType?: string;
+  primaryImageUrl?: string;
+}
+
+export async function updateCar(id: string, data: AdminCarUpdatePayload) {
   return adminFetch(`${API_BASE}/cars/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -186,8 +204,11 @@ export async function deleteHomepageSection(id: string) {
 }
 
 // ============ BANNERS ============
-export async function getBanners(position?: string) {
-  const query = position ? `?position=${position}` : '';
+export async function getBanners(position?: string, all = false) {
+  const params = new URLSearchParams();
+  if (position) params.set('position', position);
+  if (all) params.set('all', 'true');
+  const query = params.toString() ? `?${params.toString()}` : '';
   return adminFetch(`/api/banners${query}`);
 }
 

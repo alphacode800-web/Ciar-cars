@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Car,
@@ -102,142 +102,15 @@ import { useAuthStore } from '@/store/auth-store';
 import { useAppStore } from '@/store/app-store';
 import { toast } from 'sonner';
 import { CURRENCY } from '@/lib/constants';
-import type { CarStatus, BookingStatus, WalletTransactionType } from '@/types';
-
-// ============ MOCK DATA ============
-const mockUserListings = [
-  {
-    id: '1',
-    title: 'BMW 320i 2023',
-    brand: 'BMW',
-    year: 2023,
-    price: 1250000,
-    status: 'active' as CarStatus,
-    isFeatured: true,
-    views: 234,
-    inquiries: 12,
-    primaryImage: null,
-  },
-  {
-    id: '2',
-    title: 'Mercedes C200 2022',
-    brand: 'Mercedes-Benz',
-    year: 2022,
-    price: 980000,
-    status: 'active' as CarStatus,
-    isFeatured: false,
-    views: 156,
-    inquiries: 8,
-    primaryImage: null,
-  },
-  {
-    id: '3',
-    title: 'Toyota Corolla 2024',
-    brand: 'Toyota',
-    year: 2024,
-    price: 650000,
-    status: 'pending' as CarStatus,
-    isFeatured: false,
-    views: 0,
-    inquiries: 0,
-    primaryImage: null,
-  },
-  {
-    id: '4',
-    title: 'Hyundai Accent 2021',
-    brand: 'Hyundai',
-    year: 2021,
-    price: 380000,
-    status: 'sold' as CarStatus,
-    isFeatured: false,
-    views: 89,
-    inquiries: 5,
-    primaryImage: null,
-  },
-];
-
-const mockBookings = [
-  {
-    id: '1',
-    car: 'BMW 320i 2023',
-    owner: 'Sara Ali',
-    startDate: 'Mar 15, 2024',
-    endDate: 'Mar 20, 2024',
-    totalDays: 5,
-    totalPrice: 5000,
-    status: 'active' as BookingStatus,
-  },
-  {
-    id: '2',
-    car: 'Mercedes C200 2022',
-    owner: 'Ahmed Mohamed',
-    startDate: 'Apr 1, 2024',
-    endDate: 'Apr 5, 2024',
-    totalDays: 4,
-    totalPrice: 3600,
-    status: 'confirmed' as BookingStatus,
-  },
-  {
-    id: '3',
-    car: 'Toyota Camry 2023',
-    owner: 'Omar Hassan',
-    startDate: 'Apr 10, 2024',
-    endDate: 'Apr 12, 2024',
-    totalDays: 2,
-    totalPrice: 1800,
-    status: 'pending' as BookingStatus,
-  },
-  {
-    id: '4',
-    car: 'Nissan Sunny 2022',
-    owner: 'Karim Ibrahim',
-    startDate: 'Feb 20, 2024',
-    endDate: 'Feb 22, 2024',
-    totalDays: 2,
-    totalPrice: 1200,
-    status: 'completed' as BookingStatus,
-  },
-  {
-    id: '5',
-    car: 'Kia Sportage 2023',
-    owner: 'Nour El-Din',
-    startDate: 'Mar 5, 2024',
-    endDate: 'Mar 8, 2024',
-    totalDays: 3,
-    totalPrice: 2100,
-    status: 'cancelled' as BookingStatus,
-  },
-];
+import { useUserDashboard } from '@/hooks/use-user-dashboard';
+import { updateUserProfile, topUpWallet } from '@/lib/client-api';
+import type { WalletTransactionType } from '@/types';
 
 const mockFavorites = [
   { id: '1', title: 'Audi A4 2023', brand: 'Audi', price: 1100000, year: 2023, primaryImage: null },
   { id: '2', title: 'Porsche Cayenne 2022', brand: 'Porsche', price: 3200000, year: 2022, primaryImage: null },
   { id: '3', title: 'Tesla Model 3 2024', brand: 'Tesla', price: 1800000, year: 2024, primaryImage: null },
   { id: '4', title: 'Range Rover Sport 2023', brand: 'Range Rover', price: 4500000, year: 2023, primaryImage: null },
-];
-
-const mockTransactions = [
-  { id: '1', type: 'topup' as WalletTransactionType, amount: 10000, balance: 10000, description: 'Wallet top-up via card', date: 'Mar 15, 2024' },
-  { id: '2', type: 'purchase' as WalletTransactionType, amount: -500, balance: 9500, description: 'Featured listing fee', date: 'Mar 14, 2024' },
-  { id: '3', type: 'purchase' as WalletTransactionType, amount: -200, balance: 9300, description: 'Boost listing fee', date: 'Mar 13, 2024' },
-  { id: '4', type: 'earning' as WalletTransactionType, amount: 4500, balance: 13800, description: 'Rental earning - BMW 320i', date: 'Mar 10, 2024' },
-  { id: '5', type: 'refund' as WalletTransactionType, amount: 1200, balance: 15000, description: 'Cancelled booking refund', date: 'Mar 8, 2024' },
-  { id: '6', type: 'purchase' as WalletTransactionType, amount: -3600, balance: 11400, description: 'Rental payment - Mercedes', date: 'Mar 5, 2024' },
-];
-
-const mockChatRooms = [
-  { id: '1', name: 'Sara Ali', lastMessage: 'Is the BMW still available?', time: '2 min ago', unread: 3, carTitle: 'BMW 320i 2023' },
-  { id: '2', name: 'Omar Hassan', lastMessage: 'I can come see the car tomorrow', time: '1 hr ago', unread: 1, carTitle: 'Mercedes C200 2022' },
-  { id: '3', name: 'Karim Ibrahim', lastMessage: 'Thanks for the info!', time: '3 hrs ago', unread: 0, carTitle: 'Toyota Corolla 2024' },
-  { id: '4', name: 'Support Team', lastMessage: 'Your listing has been approved', time: '1 day ago', unread: 0, carTitle: null },
-  { id: '5', name: 'Nour El-Din', lastMessage: 'Can you send more photos?', time: '2 days ago', unread: 0, carTitle: 'Hyundai Accent 2021' },
-];
-
-const mockActivities = [
-  { text: 'Your listing "BMW 320i" got 15 new views', time: '1 hr ago', icon: Eye },
-  { text: 'Sara Ali sent you a message', time: '2 hrs ago', icon: MessageSquare },
-  { text: 'Your booking for Mercedes C200 is confirmed', time: '5 hrs ago', icon: CheckCircle2 },
-  { text: 'You earned $4,500 from rental', time: '1 day ago', icon: Wallet },
 ];
 
 // ============ HELPERS ============
@@ -283,6 +156,8 @@ function CarPlaceholderCard() {
 export default function UserDashboardView() {
   const { user } = useAuthStore();
   const { setView } = useAppStore();
+  const { loading, stats, listings, bookings, activities, transactions, chatRooms, profile, refresh } =
+    useUserDashboard();
   const [activeTab, setActiveTab] = useState('overview');
   const [favorites, setFavorites] = useState(mockFavorites);
   const [profileForm, setProfileForm] = useState({
@@ -293,6 +168,8 @@ export default function UserDashboardView() {
     city: user?.city || 'Dubai',
     country: user?.country || 'UAE',
   });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [topUpSubmitting, setTopUpSubmitting] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     current: '',
     newPassword: '',
@@ -310,12 +187,68 @@ export default function UserDashboardView() {
   const [topUpAmount, setTopUpAmount] = useState('');
   const [showTopUpDialog, setShowTopUpDialog] = useState(false);
 
+  useEffect(() => {
+    if (profile) {
+      setProfileForm({
+        name: profile.name ?? '',
+        email: profile.email ?? '',
+        phone: profile.phone ?? '',
+        bio: profile.bio ?? '',
+        city: profile.city ?? '',
+        country: profile.country ?? '',
+      });
+    }
+  }, [profile]);
+
+  const handleSaveProfile = useCallback(async () => {
+    setSavingProfile(true);
+    try {
+      const res = await updateUserProfile({
+        name: profileForm.name,
+        phone: profileForm.phone || undefined,
+        bio: profileForm.bio || undefined,
+        city: profileForm.city || undefined,
+        country: profileForm.country || undefined,
+      });
+      if (res.success) {
+        toast.success(res.message || 'Profile updated!');
+        refresh();
+      } else {
+        toast.error(res.error || 'Failed to update profile');
+      }
+    } finally {
+      setSavingProfile(false);
+    }
+  }, [profileForm, refresh]);
+
+  const handleTopUp = useCallback(async () => {
+    const amount = Number(topUpAmount);
+    if (!amount || amount < 1) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+    setTopUpSubmitting(true);
+    try {
+      const res = await topUpWallet(amount, 'card');
+      if (res.success) {
+        toast.success(`Wallet topped up with ${formatPrice(amount)}`);
+        setShowTopUpDialog(false);
+        setTopUpAmount('');
+        refresh();
+      } else {
+        toast.error(res.error || 'Top-up failed');
+      }
+    } finally {
+      setTopUpSubmitting(false);
+    }
+  }, [topUpAmount, refresh]);
+
   const removeFavorite = (id: string) => {
     setFavorites((prev) => prev.filter((f) => f.id !== id));
     toast.success('Removed from favorites');
   };
 
-  const currentBalance = 11400;
+  const currentBalance = stats.walletBalance;
 
   // ============ OVERVIEW TAB ============
   const renderOverview = () => (
@@ -350,10 +283,10 @@ export default function UserDashboardView() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Active Listings', value: '3', change: '+1', up: true, icon: Car, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
-          { label: 'Total Views', value: '479', change: '+42', up: true, icon: Eye, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/30' },
-          { label: 'Messages', value: '4', change: '+3', up: true, icon: MessageSquare, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/30' },
-          { label: 'Wallet Balance', value: formatPrice(currentBalance), change: '+$4,500', up: true, icon: Wallet, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/30' },
+          { label: 'Active Listings', value: String(stats.activeListings), change: `+${stats.totalListings - stats.activeListings}`, up: true, icon: Car, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
+          { label: 'Total Views', value: String(stats.totalViews), change: '+0', up: true, icon: Eye, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/30' },
+          { label: 'Messages', value: String(stats.unreadNotifications), change: '+0', up: true, icon: MessageSquare, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/30' },
+          { label: 'Wallet Balance', value: formatPrice(currentBalance), change: '', up: true, icon: Wallet, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/30' },
         ].map((stat) => (
           <Card key={stat.label}>
             <CardContent className="p-5">
@@ -381,17 +314,26 @@ export default function UserDashboardView() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockActivities.map((activity, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="mt-0.5 p-1.5 rounded-full bg-orange-50 dark:bg-orange-950/30">
-                    <activity.icon className="w-3.5 h-3.5 text-orange-600" />
+              {loading ? (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : activities.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No recent activity</p>
+              ) : (
+                activities.map((activity) => (
+                  <div key={activity.id} className="flex items-start gap-3">
+                    <div className="mt-0.5 p-1.5 rounded-full bg-orange-50 dark:bg-orange-950/30">
+                      <Bell className="w-3.5 h-3.5 text-orange-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{activity.title}</p>
+                      <p className="text-sm text-muted-foreground">{activity.message}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(activity.createdAt).toLocaleString()}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm">{activity.text}</p>
-                    <p className="text-xs text-muted-foreground">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -487,7 +429,27 @@ export default function UserDashboardView() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {mockUserListings.map((listing) => (
+        {loading ? (
+          <p className="text-sm text-muted-foreground col-span-full">Loading listings...</p>
+        ) : listings.length === 0 ? (
+          <Card className="col-span-full">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <Car className="w-12 h-12 text-muted-foreground/40 mb-4" />
+              <p className="text-lg font-medium text-muted-foreground">No listings yet</p>
+              <p className="text-sm text-muted-foreground mt-1 mb-4">
+                List your first car to start selling on CIAR Cars.
+              </p>
+              <Button
+                className="bg-gradient-to-r from-orange-500 to-amber-600 text-white"
+                onClick={() => setView('sell-car')}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Car
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+        listings.map((listing) => (
           <Card key={listing.id} className="overflow-hidden group">
             <div className="relative">
               <CarPlaceholderCard />
@@ -539,7 +501,7 @@ export default function UserDashboardView() {
               </div>
             </CardContent>
           </Card>
-        ))}
+        )))}
       </div>
     </motion.div>
   );
@@ -559,7 +521,20 @@ export default function UserDashboardView() {
       </div>
 
       <div className="space-y-4">
-        {mockBookings.map((booking) => (
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Loading bookings...</p>
+        ) : bookings.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <CalendarCheck className="w-12 h-12 text-muted-foreground/40 mb-4" />
+              <p className="text-lg font-medium text-muted-foreground">No bookings yet</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Browse cars available for rent to make your first booking.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+        bookings.map((booking) => (
           <Card key={booking.id} className="overflow-hidden">
             <CardContent className="p-5">
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -621,7 +596,7 @@ export default function UserDashboardView() {
               </div>
             </CardContent>
           </Card>
-        ))}
+        )))}
       </div>
     </motion.div>
   );
@@ -752,13 +727,10 @@ export default function UserDashboardView() {
                   <Button variant="outline" onClick={() => setShowTopUpDialog(false)}>Cancel</Button>
                   <Button
                     className="bg-gradient-to-r from-orange-500 to-amber-600 text-white"
-                    onClick={() => {
-                      toast.success(`Wallet topped up with ${formatPrice(Number(topUpAmount) || 0)}`);
-                      setShowTopUpDialog(false);
-                      setTopUpAmount('');
-                    }}
+                    disabled={topUpSubmitting}
+                    onClick={handleTopUp}
                   >
-                    Top Up
+                    {topUpSubmitting ? 'Processing...' : 'Top Up'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -788,15 +760,24 @@ export default function UserDashboardView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockTransactions.map((tx) => (
+              {!loading && transactions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    No transactions yet
+                  </TableCell>
+                </TableRow>
+              ) : null}
+              {transactions.map((tx) => (
                 <TableRow key={tx.id}>
-                  <TableCell className="font-medium text-sm max-w-[200px] truncate">{tx.description}</TableCell>
+                  <TableCell className="font-medium text-sm max-w-[200px] truncate">{tx.description ?? '—'}</TableCell>
                   <TableCell><TransactionTypeBadge type={tx.type} /></TableCell>
                   <TableCell className={`font-medium ${tx.amount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     {tx.amount >= 0 ? '+' : ''}{formatPrice(tx.amount)}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{formatPrice(tx.balance)}</TableCell>
-                  <TableCell className="hidden sm:table-cell text-muted-foreground">{tx.date}</TableCell>
+                  <TableCell className="text-muted-foreground">—</TableCell>
+                  <TableCell className="hidden sm:table-cell text-muted-foreground">
+                    {new Date(tx.createdAt).toLocaleDateString()}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -824,7 +805,18 @@ export default function UserDashboardView() {
         <CardContent className="p-0">
           <ScrollArea className="max-h-[600px]">
             <div className="divide-y">
-              {mockChatRooms.map((room) => (
+              {loading ? (
+                <p className="p-6 text-sm text-muted-foreground">Loading messages...</p>
+              ) : chatRooms.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <MessageSquare className="w-12 h-12 text-muted-foreground/40 mb-4" />
+                  <p className="text-lg font-medium text-muted-foreground">No messages yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Start a conversation from a car listing.
+                  </p>
+                </div>
+              ) : (
+              chatRooms.map((room) => (
                 <button
                   key={room.id}
                   className="w-full flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors text-left"
@@ -851,7 +843,7 @@ export default function UserDashboardView() {
                     </Badge>
                   )}
                 </button>
-              ))}
+              )))}
             </div>
           </ScrollArea>
         </CardContent>
@@ -897,7 +889,8 @@ export default function UserDashboardView() {
                 id="settings-email"
                 type="email"
                 value={profileForm.email}
-                onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                readOnly
+                className="bg-muted/50"
               />
             </div>
             <div className="space-y-2">
@@ -931,9 +924,10 @@ export default function UserDashboardView() {
         <CardFooter>
           <Button
             className="bg-gradient-to-r from-orange-500 to-amber-600 text-white"
-            onClick={() => toast.success('Profile updated!')}
+            disabled={savingProfile}
+            onClick={handleSaveProfile}
           >
-            Save Changes
+            {savingProfile ? 'Saving...' : 'Save Changes'}
           </Button>
         </CardFooter>
       </Card>

@@ -32,9 +32,16 @@ import {
   ChevronsRight,
   Car,
   Sparkles,
+  Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CAR_SORT_OPTIONS, CURRENCY } from '@/lib/constants';
+import {
+  COUNTRIES,
+  DEFAULT_COUNTRY,
+  getStoredCountry,
+  setStoredCountry,
+} from '@/lib/countries';
 import { useAppStore } from '@/store/app-store';
 import { useCarStore } from '@/store/car-store';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -96,6 +103,24 @@ export default function CarListingView() {
       setSearchInput(filters.query);
     }
   }, [filters.query]);
+
+  // Default country filter (Sudan first, persisted in localStorage)
+  useEffect(() => {
+    if (filters.country) return;
+    const stored = getStoredCountry();
+    const initial = stored || DEFAULT_COUNTRY;
+    setFilters({ country: initial, page: 1 });
+    setStoredCountry(initial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once until country is set
+  }, []);
+
+  const handleCountryChange = useCallback(
+    (countryName: string) => {
+      setStoredCountry(countryName);
+      setFilters({ country: countryName, page: 1 });
+    },
+    [setFilters]
+  );
 
   // Pre-populate filters from viewParams (when coming from homepage or other views)
   useEffect(() => {
@@ -248,8 +273,45 @@ export default function CarListingView() {
     return pages;
   }, [filters.page, totalPages]);
 
+  const selectedCountry = filters.country || DEFAULT_COUNTRY;
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Country selector */}
+      <div className="border-b border-border/50 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium shrink-0">
+              <Globe className="h-4 w-4 text-emerald-600" />
+              <span>Browse cars in</span>
+            </div>
+            <Select value={selectedCountry} onValueChange={handleCountryChange}>
+              <SelectTrigger className="w-full sm:w-[280px] h-10 bg-background">
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[320px]">
+                {COUNTRIES.map((c) => (
+                  <SelectItem key={c.code} value={c.nameEn}>
+                    <span className="flex items-center gap-2">
+                      <span>{c.flag}</span>
+                      <span>{c.nameEn}</span>
+                      {c.featured && (
+                        <Badge variant="secondary" className="text-[10px] ml-1">
+                          Popular
+                        </Badge>
+                      )}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground sm:ml-auto">
+              Showing listings in <strong className="text-foreground">{selectedCountry}</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Top Bar */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}

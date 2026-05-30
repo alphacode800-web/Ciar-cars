@@ -27,7 +27,8 @@ model User {
   // Wallet
   walletBalance Float    @default(0)
   
-  // Profile
+  // Session
+  lastLoginAt   DateTime?
   bio           String?
   city          String?
   country       String?
@@ -57,6 +58,7 @@ model User {
   notifications  Notification[]
   walletTransactions WalletTransaction[]
   payments       Payment[]
+  auditLogs      AuditLog[]
 
   @@index([role])
   @@index([city])
@@ -92,7 +94,7 @@ model Car {
   
   // Location
   city            String
-  country         String    @default("UAE")
+  country         String    @default("Egypt")
   address         String?
   latitude        Float?
   longitude       Float?
@@ -474,6 +476,8 @@ model AuditLog {
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([action])

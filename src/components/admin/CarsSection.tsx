@@ -3,37 +3,22 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Car as CarIcon,
-  CheckCircle,
-  Eye,
-  MoreHorizontal,
   RefreshCw,
   Search,
-  Star,
-  Trash2,
   XCircle,
   ChevronLeft,
   ChevronRight,
-  ImageIcon,
   AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { getCars, updateCar, deleteCar, type AdminCarFilters } from '@/lib/admin-api';
-import { useAppStore } from '@/store/app-store';
-import { CURRENCY } from '@/lib/constants';
+import { useAdminTranslation } from '@/hooks/use-admin-translation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { AdminCarsGrid, AdminCarsGridSkeleton } from '@/components/admin/AdminCarsGrid';
 import {
   Select,
   SelectContent,
@@ -41,14 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -104,90 +81,21 @@ interface PaginationInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatPrice(price: number): string {
-  return `${CURRENCY.symbol}${price.toLocaleString(CURRENCY.locale)}`;
-}
-
-function statusColor(status: string) {
-  switch (status) {
-    case 'active':
-      return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400';
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400';
-    case 'sold':
-      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400';
-    case 'archived':
-      return 'bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-400';
-    default:
-      return 'bg-gray-100 text-gray-600';
-  }
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString(CURRENCY.locale, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-function fallbackImage(car: AdminCar): string {
-  // Deterministic fallback based on car id
-  const hash = car.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-  return `https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=200&h=120&fit=crop&q=60&auto=format&seed=${hash}`;
-}
-
-// ---------------------------------------------------------------------------
 // Skeleton Loader
 // ---------------------------------------------------------------------------
 
-function CarsTableSkeleton() {
+function CarsPageSkeleton() {
   return (
     <div className="space-y-4">
-      {/* Header skeleton */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-8 w-8 rounded-lg" />
-          <Skeleton className="h-7 w-40" />
-        </div>
-        <Skeleton className="h-9 w-20 rounded-md" />
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-9 w-20" />
       </div>
-      {/* Filters skeleton */}
       <div className="flex flex-wrap gap-3">
-        <Skeleton className="h-9 w-64 rounded-md" />
-        <Skeleton className="h-9 w-36 rounded-md" />
-        <Skeleton className="h-9 w-36 rounded-md" />
+        <Skeleton className="h-9 w-64" />
+        <Skeleton className="h-9 w-36" />
       </div>
-      {/* Table skeleton */}
-      <div className="rounded-lg border">
-        <div className="border-b p-4">
-          <div className="flex gap-4">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-4 w-12" />
-          </div>
-        </div>
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 border-b p-4 last:border-0">
-            <Skeleton className="h-8 w-12 rounded" />
-            <Skeleton className="h-4 w-44" />
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-5 w-16 rounded-full" />
-            <Skeleton className="h-5 w-14 rounded-full" />
-            <Skeleton className="h-4 w-10" />
-            <Skeleton className="h-8 w-8 rounded" />
-          </div>
-        ))}
-      </div>
+      <AdminCarsGridSkeleton />
     </div>
   );
 }
@@ -197,8 +105,7 @@ function CarsTableSkeleton() {
 // ---------------------------------------------------------------------------
 
 export default function CarsSection() {
-  const setView = useAppStore((s) => s.setView);
-
+  const { t } = useAdminTranslation();
   // -- Data state --
   const [cars, setCars] = useState<AdminCar[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
@@ -224,7 +131,7 @@ export default function CarsSection() {
     setLoading(true);
     setError(null);
     try {
-      const params: AdminCarFilters = { page, limit: 10 };
+      const params: AdminCarFilters = { page, limit: 12 };
       if (search) params.search = search;
       if (statusFilter !== 'all') params.status = statusFilter;
       if (conditionFilter !== 'all') params.condition = conditionFilter;
@@ -234,14 +141,14 @@ export default function CarsSection() {
         setCars(res.data as AdminCar[]);
         setPagination(res.pagination ?? null);
       } else {
-        setError(res.error ?? 'Failed to load cars');
+        setError(res.error ?? t('cars.loadError'));
       }
     } catch {
-      setError('Network error. Please try again.');
+      setError(t('cars.networkError'));
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, conditionFilter]);
+  }, [page, search, statusFilter, conditionFilter, t]);
 
   useEffect(() => {
     fetchCars();
@@ -260,13 +167,13 @@ export default function CarsSection() {
     try {
       const res = await updateCar(car.id, { status: 'active' });
       if (res.success) {
-        toast.success(`"${car.title}" has been approved`);
+        toast.success(`${t('cars.approved')} "${car.title}"`);
         fetchCars();
       } else {
-        toast.error(res.error ?? 'Failed to approve car');
+        toast.error(res.error ?? t('cars.loadError'));
       }
     } catch {
-      toast.error('Network error');
+      toast.error(t('cars.networkError'));
     } finally {
       setActionLoading(null);
     }
@@ -277,13 +184,13 @@ export default function CarsSection() {
     try {
       const res = await updateCar(car.id, { status: 'archived' });
       if (res.success) {
-        toast.success(`"${car.title}" has been rejected`);
+        toast.success(`${t('cars.rejected')} "${car.title}"`);
         fetchCars();
       } else {
-        toast.error(res.error ?? 'Failed to reject car');
+        toast.error(res.error ?? t('cars.loadError'));
       }
     } catch {
-      toast.error('Network error');
+      toast.error(t('cars.networkError'));
     } finally {
       setActionLoading(null);
     }
@@ -302,15 +209,15 @@ export default function CarsSection() {
       if (res.success) {
         toast.success(
           newFeatured
-            ? `"${car.title}" featured for 30 days`
-            : `"${car.title}" removed from featured`
+            ? `"${car.title}" ${t('cars.featuredDays')}`
+            : `"${car.title}" ${t('cars.unfeatured')}`
         );
         fetchCars();
       } else {
-        toast.error(res.error ?? 'Failed to update featured status');
+        toast.error(res.error ?? t('cars.loadError'));
       }
     } catch {
-      toast.error('Network error');
+      toast.error(t('cars.networkError'));
     } finally {
       setActionLoading(null);
     }
@@ -321,13 +228,13 @@ export default function CarsSection() {
     try {
       const res = await updateCar(car.id, { status: 'sold' });
       if (res.success) {
-        toast.success(`"${car.title}" marked as sold`);
+        toast.success(`"${car.title}" ${t('cars.markedSold')}`);
         fetchCars();
       } else {
-        toast.error(res.error ?? 'Failed to mark as sold');
+        toast.error(res.error ?? t('cars.loadError'));
       }
     } catch {
-      toast.error('Network error');
+      toast.error(t('cars.networkError'));
     } finally {
       setActionLoading(null);
     }
@@ -338,13 +245,13 @@ export default function CarsSection() {
     try {
       const res = await updateCar(car.id, { status: 'archived' });
       if (res.success) {
-        toast.success(`"${car.title}" archived`);
+        toast.success(`"${car.title}" ${t('cars.archivedMsg')}`);
         fetchCars();
       } else {
-        toast.error(res.error ?? 'Failed to archive car');
+        toast.error(res.error ?? t('cars.loadError'));
       }
     } catch {
-      toast.error('Network error');
+      toast.error(t('cars.networkError'));
     } finally {
       setActionLoading(null);
     }
@@ -356,13 +263,13 @@ export default function CarsSection() {
     try {
       const res = await deleteCar(deleteTarget.id);
       if (res.success) {
-        toast.success(`"${deleteTarget.title}" has been deleted`);
+        toast.success(`${t('cars.deleted')} "${deleteTarget.title}"`);
         fetchCars();
       } else {
-        toast.error(res.error ?? 'Failed to delete car');
+        toast.error(res.error ?? t('cars.loadError'));
       }
     } catch {
-      toast.error('Network error');
+      toast.error(t('cars.networkError'));
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -377,7 +284,7 @@ export default function CarsSection() {
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
-  if (loading) return <CarsTableSkeleton />;
+  if (loading) return <CarsPageSkeleton />;
 
   if (error) {
     return (
@@ -392,7 +299,7 @@ export default function CarsSection() {
           className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
         >
           <RefreshCw className="h-4 w-4" />
-          Retry
+          {t('common.retry')}
         </Button>
       </div>
     );
@@ -407,9 +314,9 @@ export default function CarsSection() {
             <CarIcon className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Cars Management</h2>
+            <h2 className="text-lg font-semibold tracking-tight">{t('cars.title')}</h2>
             <p className="text-muted-foreground text-xs">
-              {pagination?.total ?? 0} total cars
+              {pagination?.total ?? 0} {t('cars.total')}
             </p>
           </div>
         </div>
@@ -420,7 +327,7 @@ export default function CarsSection() {
           className="gap-1.5"
         >
           <RefreshCw className="h-3.5 w-3.5" />
-          Refresh
+          {t('common.refresh')}
         </Button>
       </div>
 
@@ -432,7 +339,7 @@ export default function CarsSection() {
         <div className="relative flex-1 min-w-[200px] max-w-xs">
           <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
-            placeholder="Search cars..."
+            placeholder={t('cars.searchPlaceholder')}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="h-9 pl-9"
@@ -441,25 +348,25 @@ export default function CarsSection() {
 
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="h-9 w-[150px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={t('cars.status')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="sold">Sold</SelectItem>
-            <SelectItem value="archived">Archived</SelectItem>
+            <SelectItem value="all">{t('cars.allStatus')}</SelectItem>
+            <SelectItem value="active">{t('cars.active')}</SelectItem>
+            <SelectItem value="pending">{t('cars.pending')}</SelectItem>
+            <SelectItem value="sold">{t('cars.sold')}</SelectItem>
+            <SelectItem value="archived">{t('cars.archived')}</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={conditionFilter} onValueChange={setConditionFilter}>
           <SelectTrigger className="h-9 w-[140px]">
-            <SelectValue placeholder="Condition" />
+            <SelectValue placeholder={t('cars.condition')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Condition</SelectItem>
-            <SelectItem value="new">New</SelectItem>
-            <SelectItem value="used">Used</SelectItem>
+            <SelectItem value="all">{t('cars.allCondition')}</SelectItem>
+            <SelectItem value="new">{t('cars.new')}</SelectItem>
+            <SelectItem value="used">{t('cars.used')}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -477,214 +384,39 @@ export default function CarsSection() {
             className="text-muted-foreground gap-1.5"
           >
             <XCircle className="h-3.5 w-3.5" />
-            Clear
+            {t('common.clear')}
           </Button>
         )}
       </form>
 
-      {/* ---- Table ---- */}
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/30">
-              <TableHead className="w-[56px]">Image</TableHead>
-              <TableHead>Car</TableHead>
-              <TableHead className="hidden md:table-cell">Owner</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden sm:table-cell">Featured</TableHead>
-              <TableHead className="hidden lg:table-cell">Views</TableHead>
-              <TableHead className="w-[52px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {cars.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-32 text-center">
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <CarIcon className="h-8 w-8 opacity-40" />
-                    <p className="text-sm">No cars found</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              cars.map((car) => (
-                <TableRow key={car.id}>
-                  {/* Thumbnail */}
-                  <TableCell>
-                    <div className="h-8 w-12 overflow-hidden rounded border bg-muted">
-                      <img
-                        src={car.primaryImage || fallbackImage(car)}
-                        alt={car.title}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                  </TableCell>
-
-                  {/* Title */}
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="max-w-[200px] truncate text-sm font-medium">
-                        {car.title}
-                      </span>
-                      <span className="text-muted-foreground text-xs">
-                        {car.brand} {car.model} &middot; {car.year}
-                      </span>
-                    </div>
-                  </TableCell>
-
-                  {/* Owner */}
-                  <TableCell className="hidden md:table-cell">
-                    <span className="text-muted-foreground text-sm truncate max-w-[140px] block">
-                      {car.owner?.name || car.owner?.email || '—'}
-                    </span>
-                  </TableCell>
-
-                  {/* Price */}
-                  <TableCell>
-                    <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-                      {formatPrice(car.price)}
-                    </span>
-                  </TableCell>
-
-                  {/* Status */}
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={`text-[11px] capitalize ${statusColor(car.status)}`}
-                    >
-                      {car.status}
-                    </Badge>
-                  </TableCell>
-
-                  {/* Featured */}
-                  <TableCell className="hidden sm:table-cell">
-                    {car.isFeatured ? (
-                      <Badge className="gap-1 border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-                        <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                        Featured
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">—</span>
-                    )}
-                  </TableCell>
-
-                  {/* Views */}
-                  <TableCell className="hidden lg:table-cell">
-                    <span className="text-muted-foreground text-xs">
-                      {car.viewsCount.toLocaleString()}
-                    </span>
-                  </TableCell>
-
-                  {/* Actions */}
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          disabled={actionLoading === car.id}
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-
-                        {/* View */}
-                        <DropdownMenuItem
-                          onClick={() => setView('detail', { carId: car.id, slug: car.slug })}
-                          className="gap-2"
-                        >
-                          <Eye className="h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-
-                        {/* Conditional: pending */}
-                        {car.status === 'pending' && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleApprove(car)}
-                              className="gap-2 text-emerald-600 focus:text-emerald-700 dark:text-emerald-400"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                              Approve
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleReject(car)}
-                              className="gap-2 text-red-600 focus:text-red-700 dark:text-red-400"
-                            >
-                              <XCircle className="h-4 w-4" />
-                              Reject
-                            </DropdownMenuItem>
-                          </>
-                        )}
-
-                        {/* Feature / Unfeature */}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleToggleFeatured(car)}
-                          className="gap-2"
-                        >
-                          <Star className={`h-4 w-4 ${car.isFeatured ? 'fill-amber-500 text-amber-500' : ''}`} />
-                          {car.isFeatured ? 'Unfeature' : 'Feature for 30 days'}
-                        </DropdownMenuItem>
-
-                        {/* Mark as Sold */}
-                        {car.status === 'active' && (
-                          <DropdownMenuItem
-                            onClick={() => handleMarkSold(car)}
-                            className="gap-2 text-blue-600 focus:text-blue-700 dark:text-blue-400"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                            Mark as Sold
-                          </DropdownMenuItem>
-                        )}
-
-                        {/* Archive */}
-                        {(car.status === 'active' || car.status === 'sold') && (
-                          <DropdownMenuItem
-                            onClick={() => handleArchive(car)}
-                            className="gap-2"
-                          >
-                            <ImageIcon className="h-4 w-4" />
-                            Archive
-                          </DropdownMenuItem>
-                        )}
-
-                        {/* Delete */}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={() => setDeleteTarget(car)}
-                          className="gap-2"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {cars.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-16 text-muted-foreground rounded-lg border">
+          <CarIcon className="h-10 w-10 opacity-40" />
+          <p className="text-sm">{t('cars.noCars')}</p>
+        </div>
+      ) : (
+        <AdminCarsGrid
+          cars={cars}
+          actionLoading={actionLoading}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onToggleFeatured={handleToggleFeatured}
+          onMarkSold={handleMarkSold}
+          onArchive={handleArchive}
+          onDelete={setDeleteTarget}
+          onRefresh={fetchCars}
+        />
+      )}
 
       {/* ---- Pagination ---- */}
       {pagination && pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-muted-foreground text-xs">
-            Showing {(pagination.page - 1) * pagination.limit + 1}
+            {t('cars.showing')}{' '}
+            {(pagination.page - 1) * pagination.limit + 1}
             &ndash;
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-            {pagination.total}
+            {Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
+            {t('cars.of')} {pagination.total}
           </p>
           <div className="flex items-center gap-1">
             <Button
@@ -751,24 +483,23 @@ export default function CarsSection() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Car</AlertDialogTitle>
+            <AlertDialogTitle>{t('cars.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete{' '}
+              {t('cars.deleteDesc')}{' '}
               <strong className="text-foreground">
                 &ldquo;{deleteTarget?.title}&rdquo;
               </strong>
-              ? This action cannot be undone. All associated images, reviews, and
-              booking history will be permanently removed.
+              ? {t('cars.deleteWarning')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              {deleting ? 'Deleting...' : 'Delete Car'}
+              {deleting ? t('cars.deleting') : t('cars.deleteConfirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

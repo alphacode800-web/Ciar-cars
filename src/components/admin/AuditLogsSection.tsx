@@ -18,6 +18,7 @@ import {
 import { toast } from 'sonner';
 
 import { getAuditLogs, type AdminAuditFilters } from '@/lib/admin-api';
+import { useAdminTranslation } from '@/hooks/use-admin-translation';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -129,7 +130,7 @@ const ENTITY_OPTIONS = [
 
 // ============ RELATIVE TIME ============
 
-function formatRelativeTime(dateStr: string): string {
+function formatRelativeTime(dateStr: string, t: (key: string) => string): string {
   const now = Date.now();
   const date = new Date(dateStr).getTime();
   const diffMs = now - date;
@@ -140,13 +141,13 @@ function formatRelativeTime(dateStr: string): string {
   const diffWeek = Math.floor(diffDay / 7);
   const diffMonth = Math.floor(diffDay / 30);
 
-  if (diffSec < 60) return 'just now';
-  if (diffMin < 60) return `${diffMin} min ago`;
-  if (diffHr < 24) return `${diffHr} hour${diffHr !== 1 ? 's' : ''} ago`;
-  if (diffDay < 7) return `${diffDay} day${diffDay !== 1 ? 's' : ''} ago`;
-  if (diffWeek < 4) return `${diffWeek} week${diffWeek !== 1 ? 's' : ''} ago`;
-  if (diffMonth < 12) return `${diffMonth} month${diffMonth !== 1 ? 's' : ''} ago`;
-  return new Date(dateStr).toLocaleDateString('en-US', {
+  if (diffSec < 60) return t('audit.justNow');
+  if (diffMin < 60) return `${diffMin} ${t('audit.minAgo')}`;
+  if (diffHr < 24) return `${diffHr} ${t('audit.hourAgo')}${diffHr !== 1 && t('audit.hourAgo') === 'hour' ? 's' : ''}`;
+  if (diffDay < 7) return `${diffDay} ${t('audit.dayAgo')}${diffDay !== 1 && t('audit.dayAgo') === 'day' ? 's' : ''}`;
+  if (diffWeek < 4) return `${diffWeek} ${t('audit.weekAgo')}${diffWeek !== 1 && t('audit.weekAgo') === 'week' ? 's' : ''}`;
+  if (diffMonth < 12) return `${diffMonth} ${t('audit.monthAgo')}${diffMonth !== 1 && t('audit.monthAgo') === 'month' ? 's' : ''}`;
+  return new Date(dateStr).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -212,6 +213,7 @@ function AuditLogsSkeleton() {
 // ============ MAIN COMPONENT ============
 
 export default function AuditLogsSection() {
+  const { t } = useAdminTranslation();
   // Data state
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({
@@ -245,15 +247,15 @@ export default function AuditLogsSection() {
             setPagination(res.pagination as PaginationInfo);
           }
         } else {
-          setError(res.error || 'Failed to load audit logs');
+          setError(res.error || t('audit.loadError'));
         }
       } catch {
-        setError('Network error. Please try again.');
+        setError(t('audit.networkError'));
       } finally {
         setLoading(false);
       }
     },
-    [actionFilter, entityFilter]
+    [actionFilter, entityFilter, t]
   );
 
   useEffect(() => {
@@ -301,7 +303,7 @@ export default function AuditLogsSection() {
           className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
         >
           <RefreshCcw className="h-4 w-4" />
-          Retry
+          {t('common.retry')}
         </Button>
       </div>
     );
@@ -321,9 +323,9 @@ export default function AuditLogsSection() {
             <ScrollText className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Audit Logs</h2>
+            <h2 className="text-lg font-semibold tracking-tight">{t('audit.title')}</h2>
             <p className="text-muted-foreground text-xs">
-              {pagination.total} total log{pagination.total !== 1 ? 's' : ''}
+              {pagination.total} {t('audit.total')}
             </p>
           </div>
         </div>
@@ -334,7 +336,7 @@ export default function AuditLogsSection() {
           className="gap-1.5"
         >
           <RefreshCcw className="h-3.5 w-3.5" />
-          Refresh
+          {t('audit.refresh')}
         </Button>
       </div>
 
@@ -342,15 +344,15 @@ export default function AuditLogsSection() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Filters:</span>
+          <span className="text-sm text-muted-foreground">{t('audit.filters')}</span>
         </div>
 
         <Select value={actionFilter || '__all__'} onValueChange={(val) => setActionFilter(val === '__all__' ? '' : val)}>
           <SelectTrigger className="h-9 w-[180px]">
-            <SelectValue placeholder="All Actions" />
+            <SelectValue placeholder={t('audit.allActions')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__all__">All Actions</SelectItem>
+            <SelectItem value="__all__">{t('audit.allActions')}</SelectItem>
             {[
               'create', 'update', 'delete', 'login', 'logout',
               'approve', 'reject', 'ban', 'unban', 'feature',
@@ -365,10 +367,10 @@ export default function AuditLogsSection() {
 
         <Select value={entityFilter || '__all__'} onValueChange={(val) => setEntityFilter(val === '__all__' ? '' : val)}>
           <SelectTrigger className="h-9 w-[180px]">
-            <SelectValue placeholder="All Entities" />
+            <SelectValue placeholder={t('audit.allEntities')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__all__">All Entities</SelectItem>
+            <SelectItem value="__all__">{t('audit.allEntities')}</SelectItem>
             {ENTITY_OPTIONS.map((entity) => (
               <SelectItem key={entity} value={entity}>
                 {entity}
@@ -384,7 +386,7 @@ export default function AuditLogsSection() {
             onClick={clearFilters}
             className="text-muted-foreground text-xs"
           >
-            Clear filters
+            {t('audit.clearFilters')}
           </Button>
         )}
       </div>
@@ -394,13 +396,13 @@ export default function AuditLogsSection() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30">
-              <TableHead className="w-[100px]">Timestamp</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead className="w-[150px]">Action</TableHead>
-              <TableHead className="w-[120px]">Entity</TableHead>
-              <TableHead className="hidden lg:table-cell w-[100px]">Entity ID</TableHead>
-              <TableHead className="hidden md:table-cell w-[130px]">IP Address</TableHead>
-              <TableHead className="hidden xl:table-cell">Details</TableHead>
+              <TableHead className="w-[100px]">{t('audit.timestamp')}</TableHead>
+              <TableHead>{t('audit.user')}</TableHead>
+              <TableHead className="w-[150px]">{t('audit.action')}</TableHead>
+              <TableHead className="w-[120px]">{t('audit.entity')}</TableHead>
+              <TableHead className="hidden lg:table-cell w-[100px]">{t('audit.entityId')}</TableHead>
+              <TableHead className="hidden md:table-cell w-[130px]">{t('audit.ipAddress')}</TableHead>
+              <TableHead className="hidden xl:table-cell">{t('audit.details')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -409,9 +411,9 @@ export default function AuditLogsSection() {
                 <TableCell colSpan={7} className="h-32 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <ScrollText className="h-8 w-8 opacity-40" />
-                    <p className="text-sm">No audit logs found</p>
+                    <p className="text-sm">{t('audit.noLogs')}</p>
                     {hasFilters && (
-                      <p className="text-xs">Try clearing your filters</p>
+                      <p className="text-xs">{t('audit.tryClearFilters')}</p>
                     )}
                   </div>
                 </TableCell>
@@ -423,7 +425,7 @@ export default function AuditLogsSection() {
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="text-xs text-muted-foreground" title={formatFullDate(log.createdAt)}>
-                        {formatRelativeTime(log.createdAt)}
+                        {formatRelativeTime(log.createdAt, t)}
                       </span>
                     </div>
                   </TableCell>
@@ -436,7 +438,7 @@ export default function AuditLogsSection() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate max-w-[160px]">
-                          {log.user?.name || 'Unknown'}
+                          {log.user?.name || t('audit.unknown')}
                         </p>
                         <p className="text-xs text-muted-foreground truncate max-w-[160px]">
                           {log.user?.email || log.userId}
@@ -499,9 +501,9 @@ export default function AuditLogsSection() {
       {pagination.totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            Showing {(pagination.page - 1) * pagination.limit + 1}&ndash;
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-            {pagination.total} logs
+            {t('audit.showing')} {(pagination.page - 1) * pagination.limit + 1}&ndash;
+            {Math.min(pagination.page * pagination.limit, pagination.total)} {t('audit.of')}{' '}
+            {pagination.total} {t('audit.logs')}
           </p>
           <div className="flex items-center gap-1">
             <Button
@@ -512,7 +514,7 @@ export default function AuditLogsSection() {
               className="h-8"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
-              Prev
+              {t('audit.prev')}
             </Button>
             {getPaginationRange().map((page) => (
               <Button
@@ -536,7 +538,7 @@ export default function AuditLogsSection() {
               onClick={() => goToPage(pagination.page + 1)}
               className="h-8"
             >
-              Next
+              {t('audit.next')}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>

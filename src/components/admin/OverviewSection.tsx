@@ -7,20 +7,15 @@ import {
   Car,
   CalendarCheck,
   DollarSign,
-  TrendingUp,
-  TrendingDown,
   Eye,
   CreditCard,
   UserPlus,
-  ChevronRight,
   AlertCircle,
   RefreshCcw,
-  BarChart3,
   Settings,
-  Navigation,
+  ScrollText,
 } from 'lucide-react';
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -51,6 +46,14 @@ import {
 } from 'recharts';
 import { getStats } from '@/lib/admin-api';
 import { CURRENCY } from '@/lib/constants';
+import { useAdminTranslation } from '@/hooks/use-admin-translation';
+import { useAuthStore } from '@/store/auth-store';
+import {
+  AdminStatCard,
+  AdminWelcomeBanner,
+  AdminQuickAction,
+  LuxuryCard,
+} from '@/components/admin/layout/admin-ui';
 
 // ============ TYPES ============
 
@@ -217,85 +220,11 @@ const CONDITION_COLORS: Record<string, string> = {
   certified: 'hsl(174, 60%, 51%)',
 };
 
-// ============ STAT CARD ============
-
-function StatCard({
-  label,
-  value,
-  change,
-  changeLabel,
-  isUp,
-  icon: Icon,
-  colorClass,
-  bgClass,
-  barBgClass,
-  delay,
-}: {
-  label: string;
-  value: string;
-  change: string;
-  changeLabel: string;
-  isUp: boolean;
-  icon: React.ElementType;
-  colorClass: string;
-  bgClass: string;
-  barBgClass: string;
-  delay: number;
-}) {
-  const sparkBars = [35, 55, 42, 68, 50, 75, 60];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4, ease: 'easeOut' }}
-    >
-      <Card className="relative overflow-hidden hover:shadow-md transition-shadow">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className={`p-2.5 rounded-xl ${bgClass}`}>
-              <Icon className={`w-5 h-5 ${colorClass}`} />
-            </div>
-            <div
-              className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
-                isUp
-                  ? 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40'
-                  : 'text-red-700 bg-red-50 dark:text-red-400 dark:bg-red-950/40'
-              }`}
-            >
-              {isUp ? (
-                <TrendingUp className="w-3.5 h-3.5" />
-              ) : (
-                <TrendingDown className="w-3.5 h-3.5" />
-              )}
-              {change}
-            </div>
-          </div>
-          <p className="text-2xl font-bold tracking-tight">{value}</p>
-          <p className="text-sm text-muted-foreground mt-1">{label}</p>
-          {/* Mini Sparkline */}
-          <div className="mt-3 flex items-end gap-[3px] h-8">
-            {sparkBars.map((h, i) => (
-              <motion.div
-                key={i}
-                initial={{ height: 0 }}
-                animate={{ height: `${h}%` }}
-                transition={{ delay: delay + i * 0.05, duration: 0.3, ease: 'easeOut' }}
-                className={`flex-1 rounded-sm ${barBgClass}`}
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
-
 // ============ STAT CARD SKELETON ============
 
 function StatCardSkeleton() {
   return (
-    <Card>
+    <LuxuryCard>
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-3">
           <Skeleton className="h-10 w-10 rounded-xl" />
@@ -309,7 +238,7 @@ function StatCardSkeleton() {
           ))}
         </div>
       </CardContent>
-    </Card>
+    </LuxuryCard>
   );
 }
 
@@ -320,6 +249,8 @@ interface OverviewSectionProps {
 }
 
 export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
+  const { t } = useAdminTranslation();
+  const { user } = useAuthStore();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -332,14 +263,14 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
       if (res.success && res.data) {
         setStats(res.data as StatsData);
       } else {
-        setError(res.error || 'Failed to load dashboard data');
+        setError(res.error || t('overview.loadError'));
       }
     } catch {
-      setError('Network error. Please try again.');
+      setError(t('overview.networkError'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchStats();
@@ -388,7 +319,7 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
+          <LuxuryCard>
             <CardHeader>
               <Skeleton className="h-5 w-36 mb-1" />
               <Skeleton className="h-4 w-52" />
@@ -396,8 +327,8 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
             <CardContent>
               <Skeleton className="h-[250px] w-full rounded-lg" />
             </CardContent>
-          </Card>
-          <Card>
+          </LuxuryCard>
+          <LuxuryCard>
             <CardHeader>
               <Skeleton className="h-5 w-28 mb-1" />
               <Skeleton className="h-4 w-48" />
@@ -405,11 +336,11 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
             <CardContent>
               <Skeleton className="h-[250px] w-full rounded-lg" />
             </CardContent>
-          </Card>
+          </LuxuryCard>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {Array.from({ length: 2 }).map((_, i) => (
-            <Card key={i}>
+            <LuxuryCard key={i}>
               <CardHeader>
                 <Skeleton className="h-5 w-40 mb-1" />
                 <Skeleton className="h-4 w-56" />
@@ -417,7 +348,7 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
               <CardContent>
                 <Skeleton className="h-[220px] w-full rounded-lg" />
               </CardContent>
-            </Card>
+            </LuxuryCard>
           ))}
         </div>
       </motion.div>
@@ -435,16 +366,16 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
         <div className="p-4 rounded-full bg-red-100 dark:bg-red-950/30 mb-4">
           <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">Failed to Load Dashboard</h3>
+        <h3 className="text-lg font-semibold mb-2">{t('overview.loadError')}</h3>
         <p className="text-muted-foreground text-sm mb-6 max-w-md text-center">
-          {error || 'Something went wrong while fetching dashboard data.'}
+          {error || t('overview.networkError')}
         </p>
         <Button
           onClick={fetchStats}
-          className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
+          className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/20"
         >
-          <RefreshCcw className="w-4 h-4 mr-2" />
-          Try Again
+          <RefreshCcw className="w-4 h-4 me-2" />
+          {t('overview.tryAgain')}
         </Button>
       </motion.div>
     );
@@ -456,69 +387,51 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="space-y-6"
+      className="space-y-6 lg:space-y-8"
     >
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard Overview</h2>
-        <p className="text-muted-foreground">
-          Welcome back! Here&apos;s what&apos;s happening on CIAR Cars.
-        </p>
-      </motion.div>
+      <AdminWelcomeBanner
+        greeting={`${t('overview.welcome')}${user?.name ? `، ${user.name.split(' ')[0]}` : ''}`}
+        subtitle={t('overview.subtitle')}
+        stats={[
+          { label: t('overview.pendingListings'), value: String(stats.listings.pending) },
+          { label: t('overview.activeListings'), value: String(stats.listings.active) },
+          { label: t('overview.activeRentals'), value: String(stats.bookings.active) },
+        ]}
+      />
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Total Users"
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-5">
+        <AdminStatCard
+          label={t('overview.totalUsers')}
           value={formatCompactNumber(stats.users.total)}
           change="+12.5%"
-          changeLabel="vs last month"
-          isUp={true}
           icon={Users}
-          colorClass="text-emerald-600 dark:text-emerald-400"
-          bgClass="bg-emerald-50 dark:bg-emerald-950/30"
-          barBgClass="bg-emerald-200 dark:bg-emerald-800/60"
+          accent="emerald"
           delay={0.1}
         />
-        <StatCard
-          label="Total Listings"
+        <AdminStatCard
+          label={t('overview.totalListings')}
           value={formatCompactNumber(stats.listings.total)}
           change="+8.2%"
-          changeLabel="vs last month"
-          isUp={true}
           icon={Car}
-          colorClass="text-teal-600 dark:text-teal-400"
-          bgClass="bg-teal-50 dark:bg-teal-950/30"
-          barBgClass="bg-teal-200 dark:bg-teal-800/60"
-          delay={0.2}
+          accent="teal"
+          delay={0.15}
         />
-        <StatCard
-          label="Active Rentals"
+        <AdminStatCard
+          label={t('overview.activeRentals')}
           value={String(stats.bookings.active)}
           change="+23.1%"
-          changeLabel="vs last month"
-          isUp={true}
           icon={CalendarCheck}
-          colorClass="text-cyan-600 dark:text-cyan-400"
-          bgClass="bg-cyan-50 dark:bg-cyan-950/30"
-          barBgClass="bg-cyan-200 dark:bg-cyan-800/60"
-          delay={0.3}
+          accent="cyan"
+          delay={0.2}
         />
-        <StatCard
-          label="Revenue"
+        <AdminStatCard
+          label={t('overview.revenue')}
           value={formatCurrency(stats.revenue.total)}
           change="+18.7%"
-          changeLabel="vs last month"
-          isUp={true}
           icon={DollarSign}
-          colorClass="text-emerald-600 dark:text-emerald-400"
-          bgClass="bg-emerald-50 dark:bg-emerald-950/30"
-          barBgClass="bg-emerald-200 dark:bg-emerald-800/60"
-          delay={0.4}
+          accent="amber"
+          delay={0.25}
         />
       </div>
 
@@ -530,10 +443,10 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.4 }}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Revenue Overview</CardTitle>
-              <CardDescription>Revenue &amp; bookings over the last 7 days</CardDescription>
+          <LuxuryCard>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">{t('overview.revenueChart')}</CardTitle>
+              <CardDescription>{t('overview.revenueChartDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer config={revenueChartConfig} className="h-[250px] w-full">
@@ -558,7 +471,7 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
                 </AreaChart>
               </ChartContainer>
             </CardContent>
-          </Card>
+          </LuxuryCard>
         </motion.div>
 
         {/* New Users Chart */}
@@ -567,10 +480,10 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.4 }}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">New Users</CardTitle>
-              <CardDescription>Monthly user registrations</CardDescription>
+          <LuxuryCard>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">{t('overview.newUsers')}</CardTitle>
+              <CardDescription>{t('overview.newUsersDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer config={usersChartConfig} className="h-[250px] w-full">
@@ -587,22 +500,21 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
                 </BarChart>
               </ChartContainer>
             </CardContent>
-          </Card>
+          </LuxuryCard>
         </motion.div>
       </div>
 
       {/* Pie Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Listings by Condition */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.4 }}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Listings by Condition</CardTitle>
-              <CardDescription>Distribution of car conditions</CardDescription>
+          <LuxuryCard>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">{t('overview.listingsByCondition')}</CardTitle>
+              <CardDescription>{t('overview.listingsByConditionDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="flex items-center justify-center">
               {conditionPieData.length > 0 ? (
@@ -627,23 +539,22 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
                 </ChartContainer>
               ) : (
                 <div className="h-[220px] flex items-center justify-center text-muted-foreground text-sm">
-                  No listing data available
+                  {t('overview.noData')}
                 </div>
               )}
             </CardContent>
-          </Card>
+          </LuxuryCard>
         </motion.div>
 
-        {/* Bookings by Status */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8, duration: 0.4 }}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Bookings by Status</CardTitle>
-              <CardDescription>Current booking distribution</CardDescription>
+          <LuxuryCard>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">{t('overview.bookingsByStatus')}</CardTitle>
+              <CardDescription>{t('overview.bookingsByStatusDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="flex items-center justify-center">
               {bookingPieData.length > 0 ? (
@@ -668,27 +579,26 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
                 </ChartContainer>
               ) : (
                 <div className="h-[220px] flex items-center justify-center text-muted-foreground text-sm">
-                  No booking data available
+                  {t('overview.noData')}
                 </div>
               )}
             </CardContent>
-          </Card>
+          </LuxuryCard>
         </motion.div>
       </div>
 
       {/* Activity Feed & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.4 }}
           className="lg:col-span-2"
         >
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Recent Activity</CardTitle>
-              <CardDescription>Latest user signups on the platform</CardDescription>
+          <LuxuryCard>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">{t('overview.recentActivity')}</CardTitle>
+              <CardDescription>{t('overview.recentActivityDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -707,7 +617,7 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm">
                           <span className="font-medium">{user.name || user.email}</span>{' '}
-                          created an account
+                          {t('overview.createdAccount')}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-xs text-muted-foreground">{timeAgo(user.createdAt)}</p>
@@ -719,125 +629,69 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
                   ))
                 ) : (
                   <div className="text-center py-8 text-muted-foreground text-sm">
-                    No recent activity
+                    {t('overview.noActivity')}
                   </div>
                 )}
               </div>
             </CardContent>
-          </Card>
+          </LuxuryCard>
         </motion.div>
 
-        {/* Quick Actions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.0, duration: 0.4 }}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Quick Actions</CardTitle>
-              <CardDescription>Common admin tasks</CardDescription>
+          <LuxuryCard>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">{t('overview.quickActions')}</CardTitle>
+              <CardDescription>{t('overview.quickActionsDesc')}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-12 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors"
+            <CardContent className="space-y-2">
+              <AdminQuickAction
+                icon={Eye}
+                title={t('overview.pendingCars')}
+                subtitle={`${stats.listings.pending} ${t('overview.pendingReview')}`}
                 onClick={() => onNavigate('cars')}
-              >
-                <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
-                  <Eye className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium">View Pending Cars</p>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.listings.pending} pending review
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-12 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors"
+                accent="amber"
+              />
+              <AdminQuickAction
+                icon={CalendarCheck}
+                title={t('overview.processBookings')}
+                subtitle={`${stats.bookings.active} ${t('overview.activeBookings')}`}
                 onClick={() => onNavigate('bookings')}
-              >
-                <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/30">
-                  <CalendarCheck className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium">Process Bookings</p>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.bookings.active} active bookings
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-12 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors"
+                accent="teal"
+              />
+              <AdminQuickAction
+                icon={Users}
+                title={t('overview.manageUsers')}
+                subtitle={`${formatCompactNumber(stats.users.total)} ${t('overview.totalUsersShort')}`}
                 onClick={() => onNavigate('users')}
-              >
-                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                  <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium">Manage Users</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatCompactNumber(stats.users.total)} total users
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-12 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors"
+                accent="emerald"
+              />
+              <AdminQuickAction
+                icon={CreditCard}
+                title={t('overview.viewPayments')}
+                subtitle={formatCurrency(stats.revenue.total)}
                 onClick={() => onNavigate('payments')}
-              >
-                <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
-                  <CreditCard className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium">View Payments</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatCurrency(stats.revenue.total)} total
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-12 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors"
+                accent="cyan"
+              />
+              <AdminQuickAction
+                icon={Settings}
+                title={t('overview.platformSettings')}
+                subtitle={t('overview.configurePlatform')}
                 onClick={() => onNavigate('settings')}
-              >
-                <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
-                  <Settings className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium">Platform Settings</p>
-                  <p className="text-xs text-muted-foreground">Configure your platform</p>
-                </div>
-                <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-12 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors"
-                onClick={() => onNavigate('reports')}
-              >
-                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                  <BarChart3 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium">View Reports</p>
-                  <p className="text-xs text-muted-foreground">Analytics &amp; insights</p>
-                </div>
-                <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
-              </Button>
+                accent="slate"
+              />
+              <AdminQuickAction
+                icon={ScrollText}
+                title={t('overview.viewAudit')}
+                subtitle={t('overview.auditDesc')}
+                onClick={() => onNavigate('audit')}
+                accent="emerald"
+              />
             </CardContent>
-          </Card>
+          </LuxuryCard>
         </motion.div>
       </div>
     </motion.div>

@@ -67,9 +67,16 @@ export async function GET(request: NextRequest) {
       db.car.count({ where }),
     ]);
 
+    const formatted = cars.map((car) => ({
+      ...car,
+      primaryImage: car.images[0]?.url ?? null,
+      owner: car.owner,
+      _count: car._count,
+    }));
+
     return NextResponse.json({
       success: true,
-      data: cars,
+      data: formatted,
       pagination: {
         page,
         limit,

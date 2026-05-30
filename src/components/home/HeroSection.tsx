@@ -8,24 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAppStore } from '@/store/app-store';
 
-// ─── 15 Hero background images from Unsplash ─────────────────────────────────
-const HERO_IMAGES = [
-  'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1920&q=80',
-  'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1920&q=80',
-  'https://images.unsplash.com/photo-1542362567-b07e54358753?w=1920&q=80',
-  'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=1920&q=80',
-  'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=1920&q=80',
-  'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=1920&q=80',
-  'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1920&q=80',
-  'https://images.unsplash.com/photo-1502877338535-766e1452684a?w=1920&q=80',
-  'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=1920&q=80',
-  'https://images.unsplash.com/photo-1616422285623-13ff0162193c?w=1920&q=80',
-  'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=1920&q=80',
-  'https://images.unsplash.com/photo-1549317661-bd32c8ce0afa?w=1920&q=80',
-  'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=1920&q=80',
-  'https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=1920&q=80',
-  'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=1920&q=80',
-];
+import { DEFAULT_HERO_BACKGROUNDS } from '@/lib/countries';
 
 const SLIDE_INTERVAL = 5000; // 5 seconds per slide
 
@@ -90,18 +73,29 @@ export function HeroSection() {
   const { setView, setFilters, setSearchQuery } = useAppStore();
   const [searchValue, setSearchValue] = useState('');
   const heroRef = useRef<HTMLDivElement>(null);
+  const [heroImages, setHeroImages] = useState<string[]>(DEFAULT_HERO_BACKGROUNDS);
   const [currentIndex, setCurrentIndex] = useState(0);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Preload images
   useEffect(() => {
-    HERO_IMAGES.forEach((src) => {
+    fetch('/api/public/site-content')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.data?.heroBackgrounds?.length) {
+          setHeroImages(data.data.heroBackgrounds);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    heroImages.forEach((src) => {
       const img = new Image();
       img.src = src;
     });
-  }, []);
+  }, [heroImages]);
 
   // Parallax effect for background
   const { scrollYProgress } = useScroll({
@@ -136,9 +130,9 @@ export function HeroSection() {
     }, 30);
 
     slideTimerRef.current = setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+      setCurrentIndex((prev) => (prev + 1) % heroImages.length);
     }, SLIDE_INTERVAL);
-  }, []);
+  }, [heroImages.length]);
 
   // Reset progress & restart timer when slide changes
   useEffect(() => {
@@ -198,7 +192,7 @@ export function HeroSection() {
             className="absolute inset-0"
           >
             <img
-              src={HERO_IMAGES[currentIndex]}
+              src={heroImages[currentIndex] ?? heroImages[0]}
               alt={`Luxury car gallery ${currentIndex + 1}`}
               className="w-full h-full object-cover"
               loading={currentIndex < 2 ? 'eager' : 'lazy'}
@@ -453,7 +447,7 @@ export function HeroSection() {
 
       {/* ── Image counter dots / indicators ── */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5">
-        {HERO_IMAGES.map((_, index) => (
+        {heroImages.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}

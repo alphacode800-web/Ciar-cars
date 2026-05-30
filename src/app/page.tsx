@@ -12,11 +12,13 @@ import { FeaturedCarsSection } from '@/components/home/FeaturedCarsSection';
 import { StatsSection } from '@/components/home/StatsSection';
 import { TestimonialsSection } from '@/components/home/TestimonialsSection';
 import { CTASection } from '@/components/home/CTASection';
+import { PaymentMethodsBanner } from '@/components/home/PaymentMethodsBanner';
 
 import CarListingView from '@/views/CarListingView';
 import CarDetailView from '@/views/CarDetailView';
 import SearchView from '@/views/SearchView';
 import AuthView from '@/views/AuthView';
+import AdminAuthView from '@/views/AdminAuthView';
 import AdminDashboardView from '@/views/AdminDashboardView';
 import UserDashboardView from '@/views/UserDashboardView';
 import ChatView from '@/views/ChatView';
@@ -58,6 +60,7 @@ function HomePage() {
       <FeaturedCarsSection />
       <StatsSection />
       <TestimonialsSection />
+      <PaymentMethodsBanner />
       <CTASection />
     </>
   );
@@ -103,6 +106,8 @@ function ViewRouter() {
         return <SearchView />;
       case 'auth':
         return <AuthView />;
+      case 'admin-auth':
+        return <AdminAuthView />;
       case 'admin':
         return <AdminDashboardView />;
       case 'dashboard':
@@ -161,20 +166,39 @@ function ScrollToTop() {
   return null;
 }
 
+function ViewFromQuerySync() {
+  const { setView } = useAppStore();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get('view');
+    if (view === 'admin') {
+      setView('admin');
+      window.history.replaceState({}, '', '/');
+    }
+  }, [setView]);
+
+  return null;
+}
+
 export default function App() {
   const { currentView } = useAppStore();
-  const isAdminView = currentView === 'admin';
+  const hideSiteChrome =
+    currentView === 'admin' ||
+    currentView === 'admin-auth' ||
+    currentView === 'auth';
 
   return (
     <>
       <ScrollToTop />
-      {!isAdminView && <Navbar />}
-      <main className={!isAdminView ? 'pt-16' : ''}>
+      <ViewFromQuerySync />
+      {!hideSiteChrome && <Navbar />}
+      <main className={!hideSiteChrome ? 'pt-16' : ''}>
         <React.Suspense fallback={<ViewLoader />}>
           <ViewRouter />
         </React.Suspense>
       </main>
-      {!isAdminView && <Footer />}
+      {!hideSiteChrome && <Footer />}
     </>
   );
 }

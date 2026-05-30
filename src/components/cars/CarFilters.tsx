@@ -49,6 +49,7 @@ import {
 } from '@/lib/constants';
 import type { CarSearchFilters } from '@/types';
 import { BodyType } from '@/types';
+import { COUNTRY_NAMES } from '@/lib/countries';
 
 // ============ Types ============
 
@@ -67,29 +68,6 @@ interface FilterSectionProps {
 }
 
 // ============ Constants ============
-
-const COUNTRIES = [
-  'United States',
-  'United Arab Emirates',
-  'United Kingdom',
-  'Germany',
-  'Japan',
-  'France',
-  'Canada',
-  'Australia',
-  'Saudi Arabia',
-  'South Korea',
-  'Switzerland',
-  'Spain',
-  'Italy',
-  'Netherlands',
-  'Brazil',
-  'India',
-  'Singapore',
-  'Turkey',
-  'Thailand',
-  'Sweden',
-] as const;
 
 const CITIES = [
   'Dubai',
@@ -515,7 +493,7 @@ export default function CarFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">All Countries</SelectItem>
-                {COUNTRIES.map((country) => (
+                {COUNTRY_NAMES.map((country) => (
                   <SelectItem key={country} value={country}>
                     {country}
                   </SelectItem>
