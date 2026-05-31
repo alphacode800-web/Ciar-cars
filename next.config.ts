@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  outputFileTracingIncludes: {
+    "/*": ["./db/custom.db"],
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
