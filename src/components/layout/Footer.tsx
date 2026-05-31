@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Car, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube, Send, ArrowUp } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube, Send, ArrowUp } from 'lucide-react';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/app-store';
@@ -70,22 +71,7 @@ export function Footer() {
         >
           {/* Company Info */}
           <motion.div variants={item} className="sm:col-span-2 lg:col-span-1">
-            <button
-              onClick={() => handleNav('home')}
-              className="flex items-center gap-2.5 mb-5 group"
-            >
-              <motion.div
-                whileHover={{ rotate: [0, -5, 5, 0] }}
-                transition={{ duration: 0.5 }}
-                className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-1.5 shadow-lg shadow-emerald-500/20"
-              >
-                <Car className="h-5 w-5 text-white" />
-              </motion.div>
-              <span className="text-xl text-white">
-                <span className="font-bold tracking-tight">CIAR</span>
-                <span className="font-extralight text-zinc-400"> Cars</span>
-              </span>
-            </button>
+            <BrandLogo size="md" showWordmark onClick={() => handleNav('home')} className="mb-5" />
             <p className="text-sm text-zinc-400 leading-relaxed mb-6">
               {t('footer.description')}
             </p>

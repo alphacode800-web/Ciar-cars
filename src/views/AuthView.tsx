@@ -37,6 +37,7 @@ import { useAppStore } from '@/store/app-store';
 import { toast } from 'sonner';
 import { CURRENCY } from '@/lib/constants';
 import { UserRole } from '@/types';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { PAGE_HERO_IMAGES } from '@/lib/car-images';
 
 const roles = [
@@ -225,14 +226,9 @@ export default function AuthView() {
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
-            className="flex items-center gap-2 mb-4"
+            className="mb-4"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-              <Car className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-              CIAR Cars
-            </span>
+            <BrandLogo size="lg" showWordmark={false} />
           </motion.div>
           <button
             onClick={() => setView('home')}

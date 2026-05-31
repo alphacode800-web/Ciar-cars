@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Car,
   Search,
   Sun,
   Moon,
@@ -18,7 +17,6 @@ import {
   CarFront,
   CalendarCheck,
   Menu,
-  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +40,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import type { AppView } from '@/types';
 import { cn } from '@/lib/utils';
 import { ADMIN_LOGIN_PATH, isAdminRole } from '@/lib/auth-helpers';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 const NAV_VIEWS: { view: AppView; labelKey: string }[] = [
@@ -128,31 +127,9 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <motion.button
-              onClick={() => handleNavClick('home')}
-              className="flex items-center gap-2.5 group"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="relative">
-                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-1.5 shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-shadow">
-                  <Car className="h-5 w-5 text-white" />
-                </div>
-                <motion.div
-                  className="absolute -inset-1 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 opacity-0 group-hover:opacity-20 blur-sm"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              </div>
-              <span className="text-xl">
-                <span className="font-bold tracking-tight bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                  CIAR
-                </span>
-                <span className="font-extralight text-muted-foreground">
-                  Cars
-                </span>
-              </span>
-            </motion.button>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <BrandLogo size="md" showWordmark onClick={() => handleNavClick('home')} />
+            </motion.div>
 
             {/* Center Nav Links - Desktop */}
             <nav className="hidden md:flex items-center gap-1">
@@ -400,13 +377,8 @@ export function Navbar() {
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side={isRTL ? 'right' : 'left'} className="w-[min(100vw-2rem,20rem)] p-0 flex flex-col max-h-[100dvh]">
           <SheetHeader className="p-4 pb-2 shrink-0">
-            <SheetTitle className="flex items-center gap-2">
-              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg p-1.5">
-                <Car className="h-4 w-4 text-white" />
-              </div>
-              <span className="font-bold tracking-tight">CIAR</span>
-              <span className="font-extralight text-muted-foreground">Cars</span>
-            </SheetTitle>
+            <SheetTitle className="sr-only">RCiAR Cars</SheetTitle>
+            <BrandLogo size="sm" showWordmark={false} onClick={() => handleNavClick('home')} />
           </SheetHeader>
 
           <form
