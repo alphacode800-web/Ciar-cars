@@ -63,6 +63,7 @@ const ar: TranslationDictionary = {
     darkMode: "الوضع الداكن",
     admin: "لوحة الإدارة",
     menu: "القائمة",
+    currency: "العملة",
   },
 
   adminAuth: {

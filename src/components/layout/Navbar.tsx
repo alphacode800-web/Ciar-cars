@@ -19,8 +19,6 @@ import {
   CalendarCheck,
   Menu,
   X,
-  CircleDollarSign,
-  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,9 +35,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher';
+import { CurrencySwitcher } from '@/components/layout/CurrencySwitcher';
 import { useAppStore } from '@/store/app-store';
 import { useAuthStore } from '@/store/auth-store';
-import { useCurrencyStore, CURRENCIES } from '@/store/currency-store';
 import { useTranslation } from '@/hooks/use-translation';
 import type { AppView } from '@/types';
 import { cn } from '@/lib/utils';
@@ -70,7 +68,6 @@ const floatingDots = {
 export function Navbar() {
   const { currentView, setView, searchQuery, setSearchQuery } = useAppStore();
   const { user, isAuthenticated, logout } = useAuthStore();
-  const { currency, setCurrency } = useCurrencyStore();
   const { theme, setTheme } = useTheme();
   const { t, isRTL } = useTranslation();
   const [mounted, setMounted] = useState(false);
@@ -217,60 +214,19 @@ export function Navbar() {
                 </Button>
               </motion.div>
 
-              {/* Currency — desktop & tablet only */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <motion.div whileTap={{ scale: 0.9 }} className="hidden sm:block">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground hover:text-foreground gap-1.5 px-2"
-                    >
-                      <CircleDollarSign className="h-4 w-4" />
-                      <span className="text-sm font-medium">
-                        {currency.flag} {currency.symbol}{currency.code}
-                      </span>
-                    </Button>
-                  </motion.div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 max-h-80 overflow-y-auto" align="end">
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">
-                    Select Currency
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {CURRENCIES.map((c) => (
-                    <DropdownMenuItem
-                      key={c.code}
-                      onClick={() => setCurrency(c)}
-                      className={cn(
-                        'gap-2 cursor-pointer',
-                        c.code === currency.code && 'bg-primary/5 font-medium'
-                      )}
-                    >
-                      <span className="text-base leading-none">{c.flag}</span>
-                      <span className="flex-1">
-                        <span className="font-medium">{c.symbol}</span>{' '}
-                        <span className="text-muted-foreground">{c.code}</span>
-                      </span>
-                      <span className="text-xs text-muted-foreground hidden sm:inline">
-                        {c.name}
-                      </span>
-                      {c.code === currency.code && (
-                        <Check className="h-4 w-4 text-primary ml-auto" />
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Currency — desktop only */}
+              <div className="hidden md:block">
+                <CurrencySwitcher />
+              </div>
 
-              {/* Language Switcher — tablet+ */}
-              <div className="hidden sm:block">
+              {/* Language — desktop only */}
+              <div className="hidden md:block">
                 <LanguageSwitcher />
               </div>
 
-              {/* Theme Toggle — tablet+ */}
+              {/* Theme — desktop only */}
               {mounted && (
-                <motion.div whileTap={{ scale: 0.9, rotate: 180 }} className="hidden sm:block">
+                <motion.div whileTap={{ scale: 0.9, rotate: 180 }} className="hidden md:block">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -562,9 +518,13 @@ export function Navbar() {
           <Separator />
 
           <div className="p-4 shrink-0 space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <div className="flex items-center justify-between gap-2">
+            <div className="space-y-2">
               <span className="text-xs text-muted-foreground">{t('nav.language')}</span>
-              <LanguageSwitcher />
+              <LanguageSwitcher menuMode />
+            </div>
+            <div className="space-y-2">
+              <span className="text-xs text-muted-foreground">{t('nav.currency')}</span>
+              <CurrencySwitcher menuMode />
             </div>
             {mounted && (
               <Button

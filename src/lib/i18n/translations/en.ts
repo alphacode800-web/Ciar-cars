@@ -63,6 +63,7 @@ const en: TranslationDictionary = {
     darkMode: "Dark Mode",
     admin: "Admin Panel",
     menu: "Menu",
+    currency: "Currency",
   },
 
   adminAuth: {
