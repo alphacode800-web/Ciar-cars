@@ -384,19 +384,20 @@ export default function CarListingView() {
             {isMobile && (
               <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" className="h-11 gap-2 rounded-xl">
+                  <Button className="h-11 gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex-1 sm:flex-none min-h-[44px]">
                     <SlidersHorizontal className="w-4 h-4" />
                     Filters
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[320px] sm:w-[360px] p-0">
-                  <SheetHeader className="px-5 py-4 border-b border-border/50">
+                <SheetContent side="bottom" className="h-[85dvh] rounded-t-2xl p-0">
+                  <div className="mx-auto w-12 h-1.5 rounded-full bg-muted-foreground/30 mt-3 mb-1" />
+                  <SheetHeader className="px-5 py-3 border-b border-border/50">
                     <SheetTitle className="text-base font-semibold flex items-center gap-2">
                       <SlidersHorizontal className="w-4 h-4" />
                       Filters
                     </SheetTitle>
                   </SheetHeader>
-                  <div className="px-4 py-3">
+                  <div className="overflow-y-auto px-4 py-3 max-h-[calc(85dvh-8rem)]">
                     <CarFilters
                       filters={filters}
                       onChange={(patch) => {
@@ -407,14 +408,14 @@ export default function CarListingView() {
                         setMobileFiltersOpen(false);
                       }}
                     />
-                    <div className="pt-3 pb-4">
-                      <Button
-                        className="w-full"
-                        onClick={() => setMobileFiltersOpen(false)}
-                      >
-                        Show {totalCount > 0 ? `${totalCount} Results` : 'Results'}
-                      </Button>
-                    </div>
+                  </div>
+                  <div className="sticky bottom-0 p-4 border-t bg-background pb-[max(1rem,env(safe-area-inset-bottom))]">
+                    <Button
+                      className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white"
+                      onClick={() => setMobileFiltersOpen(false)}
+                    >
+                      Show {totalCount > 0 ? `${totalCount} Results` : 'Results'}
+                    </Button>
                   </div>
                 </SheetContent>
               </Sheet>

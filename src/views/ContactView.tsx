@@ -29,6 +29,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/app-store';
+import { PageHero } from '@/components/ui/page-hero';
+import { PAGE_HERO_IMAGES } from '@/lib/car-images';
 
 // ============ Contact Info ============
 
@@ -186,26 +188,18 @@ export default function ContactView() {
 
   return (
     <div className="min-h-screen">
-      {/* ========== Hero Section ========== */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background py-16 md:py-20">
-        <div className="mx-auto max-w-4xl px-4 text-center md:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Badge className="mb-4">Contact Us</Badge>
-            <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-              We&apos;d Love to{' '}
-              <span className="text-primary">Hear From You</span>
-            </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-              Have a question, suggestion, or need help? Our team is here to assist you
-              every step of the way.
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <PageHero
+        badge="Contact Us"
+        compact
+        title={
+          <>
+            We&apos;d Love to{' '}
+            <span className="text-emerald-600 dark:text-emerald-400">Hear From You</span>
+          </>
+        }
+        subtitle="Have a question, suggestion, or need help? Our team is here to assist you every step of the way."
+        image={PAGE_HERO_IMAGES.contact}
+      />
 
       {/* ========== Contact Info Cards ========== */}
       <section className="py-12">

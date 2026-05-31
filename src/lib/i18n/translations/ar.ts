@@ -62,6 +62,7 @@ const ar: TranslationDictionary = {
     language: "اللغة",
     darkMode: "الوضع الداكن",
     admin: "لوحة الإدارة",
+    menu: "القائمة",
   },
 
   adminAuth: {

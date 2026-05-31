@@ -20,6 +20,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAppStore } from '@/store/app-store';
 import { cn } from '@/lib/utils';
+import { PageHero } from '@/components/ui/page-hero';
+import { PAGE_HERO_IMAGES, TEAM_PORTRAITS } from '@/lib/car-images';
 
 // ============ Team Members ============
 
@@ -28,25 +30,25 @@ const TEAM_MEMBERS = [
     name: 'Ahmed El-Sayed',
     role: 'CEO & Founder',
     bio: 'Automotive industry veteran with 15+ years of experience in digital transformation.',
-    avatar: 'https://placehold.co/200x200/1a1a2e/e2e8f0?text=AE',
+    avatar: TEAM_PORTRAITS[0],
   },
   {
     name: 'Sarah Hassan',
     role: 'CTO',
     bio: 'Full-stack engineer passionate about building scalable platforms for the automotive market.',
-    avatar: 'https://placehold.co/200x200/1a1a2e/e2e8f0?text=SH',
+    avatar: TEAM_PORTRAITS[1],
   },
   {
     name: 'Mohamed Ali',
     role: 'Head of Operations',
     bio: 'Operations expert ensuring seamless experiences for buyers and sellers around the world.',
-    avatar: 'https://placehold.co/200x200/1a1a2e/e2e8f0?text=MA',
+    avatar: TEAM_PORTRAITS[2],
   },
   {
     name: 'Nour El-Din',
     role: 'Head of Design',
     bio: 'UX/UI designer crafting intuitive interfaces that make car buying a pleasure.',
-    avatar: 'https://placehold.co/200x200/1a1a2e/e2e8f0?text=NE',
+    avatar: TEAM_PORTRAITS[3],
   },
 ];
 
@@ -162,41 +164,29 @@ export default function AboutView() {
 
   return (
     <div className="min-h-screen">
-      {/* ========== Hero Section ========== */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background py-20 md:py-28">
-        {/* Decorative circles */}
-        <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-primary/5" />
-        <div className="absolute -right-10 bottom-0 h-48 w-48 rounded-full bg-primary/3" />
-
-        <div className="relative mx-auto max-w-4xl px-4 text-center md:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Badge className="mb-4">About CIAR Cars</Badge>
-            <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
-              The World&apos;s Premier{' '}
-              <span className="text-primary">Car Marketplace</span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl">
-              We&apos;re on a mission to make buying, selling, and renting cars worldwide
-              as easy, transparent, and enjoyable as possible.
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <PageHero
+        badge="About CIAR Cars"
+        title={
+          <>
+            The World&apos;s Premier{' '}
+            <span className="text-emerald-600 dark:text-emerald-400">Car Marketplace</span>
+          </>
+        }
+        subtitle="We're on a mission to make buying, selling, and renting cars worldwide as easy, transparent, and enjoyable as possible."
+        image={PAGE_HERO_IMAGES.about}
+      />
 
       {/* ========== Story Section ========== */}
       <Section>
         <div className="mx-auto max-w-5xl px-4 md:px-6">
           <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
             <motion.div {...fadeInUp}>
-              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-xl">
                 <img
-                  src="https://placehold.co/800x600/1a1a2e/e2e8f0?text=Our+Story"
+                  src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&h=600&fit=crop&q=80"
                   alt="CIAR Cars story"
                   className="h-full w-full object-cover"
+                />
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent" />
               </div>

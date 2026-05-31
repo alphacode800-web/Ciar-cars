@@ -37,11 +37,7 @@ import { useAppStore } from '@/store/app-store';
 import { toast } from 'sonner';
 import { CURRENCY } from '@/lib/constants';
 import { UserRole } from '@/types';
-import {
-  isAdminRole,
-  signInWithCredentials,
-  syncAuthStoreFromSession,
-} from '@/lib/auth-helpers';
+import { PAGE_HERO_IMAGES } from '@/lib/car-images';
 
 const roles = [
   {
@@ -208,11 +204,14 @@ export default function AuthView() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Gradient Background - Emerald/Teal */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950" />
-      <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-200/30 dark:bg-emerald-900/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-teal-200/30 dark:bg-teal-900/20 rounded-full blur-3xl" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-emerald-100/20 to-teal-100/20 dark:from-emerald-800/10 dark:to-teal-800/10 rounded-full blur-3xl" />
+      <img
+        src={PAGE_HERO_IMAGES.auth}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/90 via-gray-950/85 to-teal-950/90 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-emerald-950/95" />
+      <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -265,7 +264,7 @@ export default function AuthView() {
               transition={{ duration: 0.25 }}
             >
               <TabsContent value="login">
-                <Card className="border-0 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
+                <Card className="border-0 shadow-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl">
                   <CardHeader className="text-center pb-2">
                     <CardTitle className="text-xl">Welcome Back</CardTitle>
                     <CardDescription>
@@ -417,7 +416,7 @@ export default function AuthView() {
               transition={{ duration: 0.25 }}
             >
               <TabsContent value="register">
-                <Card className="border-0 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
+                <Card className="border-0 shadow-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl">
                   <CardHeader className="text-center pb-2">
                     <CardTitle className="text-xl">Create Account</CardTitle>
                     <CardDescription>

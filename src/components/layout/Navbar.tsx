@@ -44,6 +44,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import type { AppView } from '@/types';
 import { cn } from '@/lib/utils';
 import { ADMIN_LOGIN_PATH, isAdminRole } from '@/lib/auth-helpers';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 const NAV_VIEWS: { view: AppView; labelKey: string }[] = [
   { view: 'home', labelKey: 'nav.home' },
@@ -74,7 +75,6 @@ export function Navbar() {
   const { t, isRTL } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
 
   React.useEffect(() => setMounted(true), []);
 
@@ -82,7 +82,7 @@ export function Navbar() {
     e.preventDefault();
     if (searchQuery.trim()) {
       setView('search', { query: searchQuery.trim() });
-      setSearchOpen(false);
+      setMobileOpen(false);
     }
   };
 
@@ -204,44 +204,23 @@ export function Navbar() {
                 />
               </motion.form>
 
-              {/* Search - Mobile Toggle */}
-              <AnimatePresence>
-                {searchOpen ? (
-                  <motion.div
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 'auto', opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    className="md:hidden overflow-hidden"
-                  >
-                    <form onSubmit={handleSearch} className="relative">
-                      <Search className={cn("absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground", isRTL ? "right-3" : "left-3")} />
-                      <Input
-                        placeholder={t('hero.searchPlaceholder')}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className={cn("w-48 h-9 bg-muted/50 border-0", isRTL ? "pr-9" : "pl-9")}
-                        autoFocus
-                      />
-                    </form>
-                  </motion.div>
-                ) : (
-                  <motion.div whileTap={{ scale: 0.9 }} className="md:hidden">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSearchOpen(true)}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <Search className="h-5 w-5" />
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Search — mobile */}
+              <motion.div whileTap={{ scale: 0.9 }} className="md:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMobileOpen(true)}
+                  className="text-muted-foreground hover:text-foreground h-10 w-10"
+                  aria-label={t('common.search')}
+                >
+                  <Search className="h-5 w-5" />
+                </Button>
+              </motion.div>
 
-              {/* Currency Selector */}
+              {/* Currency — desktop & tablet only */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <motion.div whileTap={{ scale: 0.9 }}>
+                  <motion.div whileTap={{ scale: 0.9 }} className="hidden sm:block">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -284,12 +263,14 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Language Switcher */}
-              <LanguageSwitcher />
+              {/* Language Switcher — tablet+ */}
+              <div className="hidden sm:block">
+                <LanguageSwitcher />
+              </div>
 
-              {/* Theme Toggle */}
+              {/* Theme Toggle — tablet+ */}
               {mounted && (
-                <motion.div whileTap={{ scale: 0.9, rotate: 180 }}>
+                <motion.div whileTap={{ scale: 0.9, rotate: 180 }} className="hidden sm:block">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -324,8 +305,8 @@ export function Navbar() {
                 </motion.div>
               )}
 
-              {/* Notifications */}
-              <motion.div whileTap={{ scale: 0.9 }}>
+              {/* Notifications — desktop only */}
+              <motion.div whileTap={{ scale: 0.9 }} className="hidden md:block">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -367,11 +348,11 @@ export function Navbar() {
                 </div>
               )}
 
-              {/* Auth - Authenticated */}
+              {/* Auth - Authenticated (desktop) */}
               {isAuthenticated && user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="hidden md:block">
                       <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-2 ring-transparent hover:ring-emerald-500/30 transition-all">
                         <Avatar className="h-9 w-9">
                           <AvatarImage src={user.avatar || undefined} alt={user.name || ''} />
@@ -442,15 +423,16 @@ export function Navbar() {
                 </DropdownMenu>
               )}
 
-              {/* Mobile Menu Trigger */}
+              {/* Mobile Menu Trigger — always visible */}
               <motion.div whileTap={{ scale: 0.9 }} className="md:hidden">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="icon"
                   onClick={() => setMobileOpen(true)}
+                  className="h-10 w-10 border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400"
+                  aria-label={t('nav.menu')}
                 >
                   <Menu className="h-5 w-5" />
-                  <span className="sr-only">{t('common.search')}</span>
                 </Button>
               </motion.div>
             </div>
@@ -460,8 +442,8 @@ export function Navbar() {
 
       {/* Mobile Nav Sheet */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side={isRTL ? 'right' : 'left'} className="w-80 p-0">
-          <SheetHeader className="p-4 pb-2">
+        <SheetContent side={isRTL ? 'right' : 'left'} className="w-[min(100vw-2rem,20rem)] p-0 flex flex-col max-h-[100dvh]">
+          <SheetHeader className="p-4 pb-2 shrink-0">
             <SheetTitle className="flex items-center gap-2">
               <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg p-1.5">
                 <Car className="h-4 w-4 text-white" />
@@ -470,61 +452,148 @@ export function Navbar() {
               <span className="font-extralight text-muted-foreground">Cars</span>
             </SheetTitle>
           </SheetHeader>
+
+          <form
+            onSubmit={handleSearch}
+            className="px-4 pb-3 shrink-0 relative"
+          >
+            <Search className={cn('absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground', isRTL ? 'right-7' : 'left-7')} />
+            <Input
+              placeholder={t('hero.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={cn('h-10 bg-muted/50', isRTL ? 'pr-9' : 'pl-9')}
+            />
+          </form>
+
           <Separator />
-          <div className="p-4 space-y-1">
-            {NAV_VIEWS.map((link, i) => (
-              <motion.button
+
+          <div className="flex-1 overflow-y-auto py-2 px-3 space-y-1">
+            {NAV_VIEWS.map((link) => (
+              <button
                 key={link.view}
+                type="button"
                 onClick={() => handleNavClick(link.view)}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
                 className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  'w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors min-h-[44px]',
                   currentView === link.view
                     ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}
               >
                 {t(link.labelKey)}
-              </motion.button>
+              </button>
             ))}
+
+            <Separator className="my-2" />
+
+            {[
+              { view: 'about' as AppView, label: t('nav.about') },
+              { view: 'contact' as AppView, label: t('nav.contact') },
+            ].map((item) => (
+              <button
+                key={item.view}
+                type="button"
+                onClick={() => handleNavClick(item.view)}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent min-h-[44px]"
+              >
+                {item.label}
+              </button>
+            ))}
+
+            {isAuthenticated && user && (
+              <>
+                <Separator className="my-2" />
+                <div className="flex items-center gap-3 px-3 py-2">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={user.avatar || undefined} alt={user.name || ''} />
+                    <AvatarFallback className="bg-emerald-100 text-emerald-700 text-sm font-semibold">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{user.name || 'User'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                </div>
+                {[
+                  { view: 'profile' as AppView, label: t('nav.profile'), icon: User },
+                  { view: 'my-listings' as AppView, label: t('dashboard.myListings'), icon: CarFront },
+                  { view: 'my-bookings' as AppView, label: t('dashboard.myBookings'), icon: CalendarCheck },
+                  { view: 'wallet' as AppView, label: t('nav.wallet'), icon: Wallet },
+                  { view: 'chat' as AppView, label: t('nav.messages'), icon: MessageCircle },
+                  { view: 'favorites' as AppView, label: t('nav.favorites'), icon: Heart },
+                ].map(({ view, label, icon: Icon }) => (
+                  <button
+                    key={view}
+                    type="button"
+                    onClick={() => handleNavClick(view)}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent min-h-[44px]"
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    {label}
+                  </button>
+                ))}
+                {isAdminRole(user.role) && (
+                  <button
+                    type="button"
+                    onClick={handleAdminAccess}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent min-h-[44px]"
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    {t('nav.admin')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    setMobileOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 min-h-[44px]"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {t('nav.logout')}
+                </button>
+              </>
+            )}
           </div>
+
           <Separator />
-          <div className="p-4 space-y-1">
-            <button
-              onClick={() => handleNavClick('about')}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent"
-            >
-              {t('nav.about')}
-            </button>
-            <button
-              onClick={() => handleNavClick('contact')}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent"
-            >
-              {t('nav.contact')}
-            </button>
-          </div>
-          <Separator />
-          {!isAuthenticated && (
-            <div className="p-4 space-y-2">
+
+          <div className="p-4 shrink-0 space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">{t('nav.language')}</span>
+              <LanguageSwitcher />
+            </div>
+            {mounted && (
               <Button
                 variant="outline"
-                className="w-full"
-                onClick={() => handleNavClick('auth')}
+                className="w-full justify-start gap-2"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               >
-                {t('nav.login')}
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {t('nav.darkMode')}
               </Button>
-              <Button
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
-                onClick={() => handleNavClick('auth')}
-              >
-                {t('nav.register')}
-              </Button>
-            </div>
-          )}
+            )}
+            {!isAuthenticated && (
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" onClick={() => handleNavClick('auth')}>
+                  {t('nav.login')}
+                </Button>
+                <Button
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
+                  onClick={() => handleNavClick('auth')}
+                >
+                  {t('nav.register')}
+                </Button>
+              </div>
+            )}
+          </div>
         </SheetContent>
       </Sheet>
+
+      <MobileBottomNav onMenuOpen={() => setMobileOpen(true)} />
     </>
   );
 }

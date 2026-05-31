@@ -193,7 +193,13 @@ export default function App() {
       <ScrollToTop />
       <ViewFromQuerySync />
       {!hideSiteChrome && <Navbar />}
-      <main className={!hideSiteChrome ? 'pt-16' : ''}>
+      <main
+        className={
+          !hideSiteChrome
+            ? 'pt-16 pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0'
+            : ''
+        }
+      >
         <React.Suspense fallback={<ViewLoader />}>
           <ViewRouter />
         </React.Suspense>

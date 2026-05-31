@@ -19,35 +19,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAppStore } from '@/store/app-store';
 import { CURRENCY } from '@/lib/constants';
 import { useTranslation } from '@/hooks/use-translation';
+import { getCarImageById } from '@/lib/car-images';
 import type { CarListItem } from '@/types';
 
-// ============ Unsplash Car Images Pool ============
-
-const UNSPLASH_CAR_IMAGES = [
-  'https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1626668011687-8a114cf5a34c?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1606611013016-969c19ba27bb?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1542362567-b07e54358753?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1525609004556-c46c40d4f174?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1614200187524-dc4b892acf16?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1580414057403-c5f451f30e1c?w=600&h=400&fit=crop',
-  'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=600&h=400&fit=crop',
-];
-
 function getCarPrimaryImage(car: CarListItem): string {
-  if (car.primaryImage) return car.primaryImage;
-  const hash = car.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return UNSPLASH_CAR_IMAGES[hash % UNSPLASH_CAR_IMAGES.length];
+  return getCarImageById(car.id, car.primaryImage);
 }
 
 function CarImage({
