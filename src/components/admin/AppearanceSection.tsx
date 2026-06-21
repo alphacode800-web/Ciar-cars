@@ -13,7 +13,9 @@ import {
   Layers,
   Pencil,
   AlertCircle,
+  Megaphone,
 } from 'lucide-react';
+import NewsTickerSection from '@/components/admin/NewsTickerSection';
 import { toast } from 'sonner';
 import {
   getSettings,
@@ -239,6 +241,10 @@ export default function AppearanceSection() {
             <Layers className="h-4 w-4" />
             {t('appearance.tabHomepage')}
           </TabsTrigger>
+          <TabsTrigger value="news-ticker" className="gap-1.5">
+            <Megaphone className="h-4 w-4" />
+            {t('appearance.tabNewsTicker')}
+          </TabsTrigger>
           <TabsTrigger value="settings" className="gap-1.5">
             <Settings className="h-4 w-4" />
             {t('appearance.tabSettings')}
@@ -372,6 +378,10 @@ export default function AppearanceSection() {
           <p className="text-xs text-muted-foreground mt-3">
             {t('appearance.homepageHint')}
           </p>
+        </TabsContent>
+
+        <TabsContent value="news-ticker" className="mt-4">
+          <NewsTickerSection />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4">

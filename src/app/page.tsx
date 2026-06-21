@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
+import { NewsTicker } from '@/components/layout/NewsTicker';
 
 import { HeroSection } from '@/components/home/HeroSection';
 import { BannerSection } from '@/components/home/BannerSection';
@@ -193,10 +194,11 @@ export default function App() {
       <ScrollToTop />
       <ViewFromQuerySync />
       {!hideSiteChrome && <Navbar />}
+      {!hideSiteChrome && <NewsTicker />}
       <main
         className={
           !hideSiteChrome
-            ? 'pt-16 pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0'
+            ? 'pt-[calc(4rem+var(--news-ticker-h,0px))] pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0'
             : ''
         }
       >

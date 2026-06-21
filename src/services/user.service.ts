@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { DEFAULT_COUNTRY } from '@/lib/countries';
 import { db } from '@/lib/db';
 import { AppError, NotFoundError } from '@/lib/errors';
 import type { RegisterInput } from '@/validators/auth.schema';
@@ -27,7 +28,7 @@ export const userService = {
         phone: input.phone,
         role: input.role,
         city: input.city,
-        country: input.country ?? 'Egypt',
+        country: input.country ?? DEFAULT_COUNTRY,
         isActive: true,
       },
       select: {

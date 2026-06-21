@@ -66,7 +66,7 @@ const DEFAULT_SETTINGS: SettingsState = {
   enable_registration: true,
   enable_reviews: true,
   maintenance_mode: false,
-  default_country: '',
+  default_country: 'Sudan',
   default_city: '',
   max_listing_images: 10,
   support_email: '',

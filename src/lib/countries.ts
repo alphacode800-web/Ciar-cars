@@ -76,6 +76,88 @@ export const COUNTRY_NAMES = COUNTRIES.map((c) => c.nameEn);
 
 export const DEFAULT_COUNTRY = 'Sudan';
 
+export const DEFAULT_PHONE_COUNTRY_CODE = 'SD';
+
+/** ITU dial codes keyed by ISO 3166-1 alpha-2 */
+export const COUNTRY_DIAL_CODES: Record<string, string> = {
+  SD: '+249',
+  SY: '+963',
+  EG: '+20',
+  SA: '+966',
+  AE: '+971',
+  QA: '+974',
+  KW: '+965',
+  BH: '+973',
+  OM: '+968',
+  YE: '+967',
+  IQ: '+964',
+  JO: '+962',
+  LB: '+961',
+  PS: '+970',
+  LY: '+218',
+  TN: '+216',
+  DZ: '+213',
+  MA: '+212',
+  MR: '+222',
+  SO: '+252',
+  DJ: '+253',
+  US: '+1',
+  GB: '+44',
+  DE: '+49',
+  FR: '+33',
+  IT: '+39',
+  ES: '+34',
+  NL: '+31',
+  BE: '+32',
+  CH: '+41',
+  SE: '+46',
+  NO: '+47',
+  DK: '+45',
+  FI: '+358',
+  PL: '+48',
+  TR: '+90',
+  RU: '+7',
+  CA: '+1',
+  MX: '+52',
+  BR: '+55',
+  AR: '+54',
+  CL: '+56',
+  CO: '+57',
+  IN: '+91',
+  PK: '+92',
+  BD: '+880',
+  CN: '+86',
+  JP: '+81',
+  KR: '+82',
+  SG: '+65',
+  MY: '+60',
+  ID: '+62',
+  TH: '+66',
+  VN: '+84',
+  PH: '+63',
+  AU: '+61',
+  NZ: '+64',
+  ZA: '+27',
+  NG: '+234',
+  KE: '+254',
+  ET: '+251',
+  GH: '+233',
+};
+
+export function getCountryByCode(code: string): CountryOption | undefined {
+  return COUNTRIES.find((c) => c.code === code);
+}
+
+export function getDialCode(code: string): string {
+  return COUNTRY_DIAL_CODES[code] ?? '+1';
+}
+
+export function formatPhoneWithDialCode(countryCode: string, localNumber: string): string {
+  const digits = localNumber.replace(/\D/g, '');
+  if (!digits) return '';
+  return `${getDialCode(countryCode)} ${digits}`;
+}
+
 export const SELECTED_COUNTRY_STORAGE_KEY = 'ciar-selected-country';
 
 export function getCountryByName(name: string): CountryOption | undefined {

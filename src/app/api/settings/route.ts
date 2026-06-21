@@ -13,6 +13,10 @@ const PUBLIC_SETTING_KEYS = new Set([
   "social_facebook",
   "social_instagram",
   "social_twitter",
+  "news_ticker_enabled",
+  "news_ticker_items",
+  "news_ticker_speed",
+  "news_ticker_style",
 ]);
 
 // ============ GET: Settings (admin = all, public = safe subset) ============

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { DEFAULT_HERO_BACKGROUNDS } from '@/lib/countries';
+import { parseNewsTicker, NEWS_TICKER_KEYS } from '@/lib/news-ticker';
 
 export async function GET() {
   try {
@@ -8,7 +9,16 @@ export async function GET() {
       db.siteSetting.findMany({
         where: {
           key: {
-            in: ['hero_backgrounds', 'site_name', 'site_description', 'default_country'],
+            in: [
+              'hero_backgrounds',
+              'site_name',
+              'site_description',
+              'default_country',
+              NEWS_TICKER_KEYS.enabled,
+              NEWS_TICKER_KEYS.items,
+              NEWS_TICKER_KEYS.speed,
+              NEWS_TICKER_KEYS.style,
+            ],
           },
         },
       }),
@@ -46,6 +56,7 @@ export async function GET() {
         banners,
         homepageSections,
         settings: settingsMap,
+        newsTicker: parseNewsTicker(settingsMap),
       },
     });
   } catch (error) {

@@ -36,7 +36,21 @@ import { useAuthStore } from '@/store/auth-store';
 import { useAppStore } from '@/store/app-store';
 import { toast } from 'sonner';
 import { CURRENCY } from '@/lib/constants';
+import {
+  COUNTRIES,
+  DEFAULT_PHONE_COUNTRY_CODE,
+  formatPhoneWithDialCode,
+  getCountryByCode,
+  getDialCode,
+} from '@/lib/countries';
 import { UserRole } from '@/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { PAGE_HERO_IMAGES } from '@/lib/car-images';
 
@@ -85,6 +99,7 @@ export default function AuthView() {
   const [registerForm, setRegisterForm] = useState({
     fullName: '',
     email: '',
+    phoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
     phone: '',
     password: '',
     confirmPassword: '',
@@ -170,15 +185,17 @@ export default function AuthView() {
     }
     setRegisterLoading(true);
     try {
+      const selectedCountry = getCountryByCode(registerForm.phoneCountryCode);
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: registerForm.fullName,
           email: registerForm.email,
-          phone: registerForm.phone,
+          phone: formatPhoneWithDialCode(registerForm.phoneCountryCode, registerForm.phone),
           password: registerForm.password,
           role: registerForm.role === 'seller' ? UserRole.SELLER : UserRole.USER,
+          country: selectedCountry?.nameEn,
         }),
       });
       const data = await res.json();
@@ -456,17 +473,51 @@ export default function AuthView() {
 
                       <div className="space-y-2">
                         <Label htmlFor="reg-phone">Phone</Label>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="reg-phone"
-                            placeholder="+20 1xx xxx xxxx"
-                            value={registerForm.phone}
-                            onChange={(e) =>
-                              setRegisterForm({ ...registerForm, phone: e.target.value })
+                        <div className="flex gap-2">
+                          <Select
+                            value={registerForm.phoneCountryCode}
+                            onValueChange={(value) =>
+                              setRegisterForm({ ...registerForm, phoneCountryCode: value })
                             }
-                            className="pl-10"
-                          />
+                          >
+                            <SelectTrigger className="w-[7.5rem] shrink-0 px-2">
+                              <SelectValue>
+                                {(() => {
+                                  const c = getCountryByCode(registerForm.phoneCountryCode);
+                                  return c ? (
+                                    <span className="flex items-center gap-1.5">
+                                      <span>{c.flag}</span>
+                                      <span>{getDialCode(c.code)}</span>
+                                    </span>
+                                  ) : null;
+                                })()}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {COUNTRIES.map((country) => (
+                                <SelectItem key={country.code} value={country.code}>
+                                  <span className="flex items-center gap-2">
+                                    <span>{country.flag}</span>
+                                    <span>{getDialCode(country.code)}</span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <div className="relative flex-1">
+                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                              id="reg-phone"
+                              type="tel"
+                              inputMode="tel"
+                              placeholder="9xx xxx xxx"
+                              value={registerForm.phone}
+                              onChange={(e) =>
+                                setRegisterForm({ ...registerForm, phone: e.target.value })
+                              }
+                              className="pl-10"
+                            />
+                          </div>
                         </div>
                       </div>
 
