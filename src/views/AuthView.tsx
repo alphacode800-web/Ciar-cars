@@ -51,7 +51,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { BrandLogo } from '@/components/brand/BrandLogo';
+import { BrandWordmark } from '@/components/brand/BrandWordmark';
 import { PAGE_HERO_IMAGES } from '@/lib/car-images';
 
 const roles = [
@@ -245,7 +245,7 @@ export default function AuthView() {
             transition={{ type: 'spring', stiffness: 200 }}
             className="mb-4"
           >
-            <BrandLogo size="lg" showWordmark={false} />
+            <BrandWordmark size="lg" showSecondary={false} />
           </motion.div>
           <button
             onClick={() => setView('home')}

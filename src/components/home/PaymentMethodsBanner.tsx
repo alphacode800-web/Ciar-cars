@@ -9,6 +9,8 @@ import { useTranslation } from '@/hooks/use-translation';
 const PAYMENT_METHODS = [
   { id: 'visa', name: 'Visa', src: '/payments/visa.svg' },
   { id: 'mastercard', name: 'Mastercard', src: '/payments/mastercard.svg' },
+  { id: 'wish', name: 'Wish', src: '/payments/wish.png' },
+  { id: 'ciar-prepaid', name: 'CIAR Prepaid Card', src: '/payments/ciar-prepaid.png' },
   { id: 'mada', name: 'Mada', src: '/payments/mada.svg' },
   { id: 'applepay', name: 'Apple Pay', src: '/payments/apple-pay.svg' },
   { id: 'googlepay', name: 'Google Pay', src: '/payments/google-pay.svg' },

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { DEFAULT_HERO_BACKGROUNDS } from '@/lib/countries';
 import { parseNewsTicker, NEWS_TICKER_KEYS } from '@/lib/news-ticker';
+import { parseBrandWordmark, BRAND_WORDMARK_KEY } from '@/lib/brand-wordmark';
 
 export async function GET() {
   try {
@@ -18,6 +19,7 @@ export async function GET() {
               NEWS_TICKER_KEYS.items,
               NEWS_TICKER_KEYS.speed,
               NEWS_TICKER_KEYS.style,
+              BRAND_WORDMARK_KEY,
             ],
           },
         },
@@ -57,6 +59,7 @@ export async function GET() {
         homepageSections,
         settings: settingsMap,
         newsTicker: parseNewsTicker(settingsMap),
+        brandWordmark: parseBrandWordmark(settingsMap),
       },
     });
   } catch (error) {

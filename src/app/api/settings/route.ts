@@ -17,6 +17,7 @@ const PUBLIC_SETTING_KEYS = new Set([
   "news_ticker_items",
   "news_ticker_speed",
   "news_ticker_style",
+  "brand_wordmark",
 ]);
 
 // ============ GET: Settings (admin = all, public = safe subset) ============

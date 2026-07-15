@@ -14,8 +14,10 @@ import {
   Pencil,
   AlertCircle,
   Megaphone,
+  Sparkles,
 } from 'lucide-react';
 import NewsTickerSection from '@/components/admin/NewsTickerSection';
+import BrandWordmarkSection from '@/components/admin/BrandWordmarkSection';
 import { toast } from 'sonner';
 import {
   getSettings,
@@ -241,6 +243,10 @@ export default function AppearanceSection() {
             <Layers className="h-4 w-4" />
             {t('appearance.tabHomepage')}
           </TabsTrigger>
+          <TabsTrigger value="brand" className="gap-1.5">
+            <Sparkles className="h-4 w-4" />
+            {t('appearance.tabBrand')}
+          </TabsTrigger>
           <TabsTrigger value="news-ticker" className="gap-1.5">
             <Megaphone className="h-4 w-4" />
             {t('appearance.tabNewsTicker')}
@@ -378,6 +384,10 @@ export default function AppearanceSection() {
           <p className="text-xs text-muted-foreground mt-3">
             {t('appearance.homepageHint')}
           </p>
+        </TabsContent>
+
+        <TabsContent value="brand" className="mt-4">
+          <BrandWordmarkSection />
         </TabsContent>
 
         <TabsContent value="news-ticker" className="mt-4">

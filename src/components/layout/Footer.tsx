@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube, Send, ArrowUp } from 'lucide-react';
-import { BrandLogo } from '@/components/brand/BrandLogo';
+import { BrandWordmark } from '@/components/brand/BrandWordmark';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/app-store';
@@ -71,7 +71,7 @@ export function Footer() {
         >
           {/* Company Info */}
           <motion.div variants={item} className="sm:col-span-2 lg:col-span-1">
-            <BrandLogo size="md" showWordmark onClick={() => handleNav('home')} className="mb-5" />
+            <BrandWordmark size="md" showSecondary onClick={() => handleNav('home')} className="mb-5" />
             <p className="text-sm text-zinc-400 leading-relaxed mb-6">
               {t('footer.description')}
             </p>

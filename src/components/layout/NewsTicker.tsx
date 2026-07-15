@@ -11,6 +11,13 @@ import {
 } from '@/lib/news-ticker';
 import { NewsTickerBar } from '@/components/layout/NewsTickerBar';
 
+const ARABIC_HEADLINES_BY_LINK: Record<string, string> = {
+  listing: 'أكثر من 3,100 سيارة موثقة عبر 60+ دولة — تصفح الآن',
+  'sell-car': 'أعلن عن سيارتك مجاناً ووصل إلى آلاف المشترين',
+  rental: 'تأجير مرن يومي وأسبوعي وشهري بأسعار منافسة',
+  wallet: 'محفظة CIAR الآمنة للدفع والتحصيل بثقة كاملة',
+};
+
 export function NewsTicker() {
   const { isRTL } = useTranslation();
   const { setView } = useAppStore();
@@ -61,5 +68,25 @@ export function NewsTicker() {
 
   if (!visible || !config) return null;
 
-  return <NewsTickerBar config={config} isRTL={isRTL} onItemClick={handleItemClick} />;
+  const localizedConfig: NewsTickerConfig = isRTL
+    ? {
+        ...config,
+        items: config.items.map((item) => {
+          const key = (item.link ?? '').replace(/^\//, '').split('?')[0];
+          return {
+            ...item,
+            text: ARABIC_HEADLINES_BY_LINK[key] ?? item.text,
+          };
+        }),
+        style: {
+          ...config.style,
+          labelText:
+            config.style.labelText.toLowerCase() === 'breaking' || config.style.labelText.toLowerCase() === 'live'
+              ? 'عاجل'
+              : config.style.labelText,
+        },
+      }
+    : config;
+
+  return <NewsTickerBar config={localizedConfig} isRTL={isRTL} onItemClick={handleItemClick} />;
 }

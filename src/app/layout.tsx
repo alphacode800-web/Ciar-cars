@@ -40,15 +40,13 @@ export const metadata: Metadata = {
     "car dealer",
   ],
   icons: {
-    icon: [{ url: '/brand/rciar-logo.png', type: 'image/png' }],
-    apple: '/apple-touch-icon.png',
+    icon: [{ url: '/logo.svg', type: 'image/svg+xml' }],
   },
   openGraph: {
     title: "RCiAR Cars",
     description: "The World's Premier Car Marketplace",
     siteName: "RCiAR Cars",
     type: "website",
-    images: [{ url: '/brand/rciar-logo.png', width: 512, height: 512, alt: 'RCiAR' }],
   },
 };
 

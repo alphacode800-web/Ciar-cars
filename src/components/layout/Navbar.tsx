@@ -32,6 +32,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher';
 import { CurrencySwitcher } from '@/components/layout/CurrencySwitcher';
 import { useAppStore } from '@/store/app-store';
@@ -40,7 +47,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import type { AppView } from '@/types';
 import { cn } from '@/lib/utils';
 import { ADMIN_LOGIN_PATH, isAdminRole } from '@/lib/auth-helpers';
-import { BrandLogo } from '@/components/brand/BrandLogo';
+import { BrandWordmark } from '@/components/brand/BrandWordmark';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 const NAV_VIEWS: { view: AppView; labelKey: string }[] = [
@@ -71,6 +78,7 @@ export function Navbar() {
   const { t, isRTL } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   React.useEffect(() => setMounted(true), []);
 
@@ -79,8 +87,15 @@ export function Navbar() {
     if (searchQuery.trim()) {
       setView('search', { query: searchQuery.trim() });
       setMobileOpen(false);
+      setSearchOpen(false);
     }
   };
+
+  const quickSearchViews: { view: AppView; label: string }[] = [
+    { view: 'listing', label: t('nav.listing') },
+    { view: 'rental', label: t('nav.rental') },
+    { view: 'sell-car', label: t('nav.sell') },
+  ];
 
   const handleNavClick = (view: AppView) => {
     setView(view);
@@ -128,7 +143,7 @@ export function Navbar() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <BrandLogo size="md" showWordmark onClick={() => handleNavClick('home')} />
+              <BrandWordmark size="md" showSecondary onClick={() => handleNavClick('home')} />
             </motion.div>
 
             {/* Center Nav Links - Desktop */}
@@ -161,22 +176,22 @@ export function Navbar() {
 
             {/* Right Section */}
             <div className="flex items-center gap-1.5">
-              {/* Search - Desktop */}
-              <motion.form
-                onSubmit={handleSearch}
-                className="hidden md:flex items-center relative"
+              {/* Search - Desktop (logo/icon trigger + popup) */}
+              <motion.button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                className={cn(
+                  'hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full border',
+                  'border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400',
+                  'hover:bg-emerald-500/15 transition-colors'
+                )}
+                aria-label={t('common.search')}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <Search className={cn("absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground", isRTL ? "right-3" : "left-3")} />
-                <Input
-                  placeholder={t('hero.searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={cn("w-56 lg:w-72 h-9 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-emerald-500/30", isRTL ? "pr-9" : "pl-9")}
-                />
-              </motion.form>
+                <Search className="h-4.5 w-4.5 shrink-0" />
+              </motion.button>
 
               {/* Search — mobile */}
               <motion.div whileTap={{ scale: 0.9 }} className="md:hidden">
@@ -378,7 +393,7 @@ export function Navbar() {
         <SheetContent side={isRTL ? 'right' : 'left'} className="w-[min(100vw-2rem,20rem)] p-0 flex flex-col max-h-[100dvh]">
           <SheetHeader className="p-4 pb-2 shrink-0">
             <SheetTitle className="sr-only">RCiAR Cars</SheetTitle>
-            <BrandLogo size="sm" showWordmark={false} onClick={() => handleNavClick('home')} />
+            <BrandWordmark size="sm" showSecondary={false} onClick={() => handleNavClick('home')} />
           </SheetHeader>
 
           <form
@@ -524,6 +539,54 @@ export function Navbar() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle>{t('common.search')}</DialogTitle>
+            <DialogDescription>{t('hero.searchPlaceholder')}</DialogDescription>
+          </DialogHeader>
+          <div className="px-6 pb-6 space-y-4">
+            <form onSubmit={handleSearch} className="relative">
+              <Search className={cn('absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground', isRTL ? 'right-3' : 'left-3')} />
+              <Input
+                placeholder={t('hero.searchPlaceholder')}
+                autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={cn('h-11 bg-muted/40 border-emerald-500/20', isRTL ? 'pr-9' : 'pl-9')}
+              />
+            </form>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {quickSearchViews.map((item) => (
+                <Button
+                  key={item.view}
+                  type="button"
+                  variant="outline"
+                  className="justify-start rounded-xl"
+                  onClick={() => {
+                    setView(item.view);
+                    setSearchOpen(false);
+                  }}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </div>
+            <Button
+              type="button"
+              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
+              onClick={() => {
+                if (!searchQuery.trim()) return;
+                setView('search', { query: searchQuery.trim() });
+                setSearchOpen(false);
+              }}
+            >
+              {t('common.search')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <MobileBottomNav onMenuOpen={() => setMobileOpen(true)} />
     </>
