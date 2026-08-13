@@ -3,10 +3,14 @@ import { db } from '@/lib/db';
 import { DEFAULT_HERO_BACKGROUNDS } from '@/lib/countries';
 import { parseNewsTicker, NEWS_TICKER_KEYS } from '@/lib/news-ticker';
 import { parseBrandWordmark, BRAND_WORDMARK_KEY } from '@/lib/brand-wordmark';
+import { cmsService } from '@/services/cms.service';
+import { CMS_SETTING_KEYS } from '@/lib/cms-content';
 
 export async function GET() {
   try {
-    const [settings, banners, homepageSections] = await Promise.all([
+    await cmsService.ensureCmsDefaults();
+
+    const [settings, cmsBundle] = await Promise.all([
       db.siteSetting.findMany({
         where: {
           key: {
@@ -15,23 +19,23 @@ export async function GET() {
               'site_name',
               'site_description',
               'default_country',
+              'support_email',
+              'support_phone',
+              'site_phone',
+              'support_whatsapp',
               NEWS_TICKER_KEYS.enabled,
               NEWS_TICKER_KEYS.items,
               NEWS_TICKER_KEYS.speed,
               NEWS_TICKER_KEYS.style,
               BRAND_WORDMARK_KEY,
+              CMS_SETTING_KEYS.socialLinks,
+              CMS_SETTING_KEYS.pageBackgrounds,
+              CMS_SETTING_KEYS.footerCopy,
             ],
           },
         },
       }),
-      db.banner.findMany({
-        where: { isActive: true },
-        orderBy: { order: 'asc' },
-      }),
-      db.homepageSection.findMany({
-        where: { isActive: true },
-        orderBy: { order: 'asc' },
-      }),
+      cmsService.getPublicSiteBundle(),
     ]);
 
     const settingsMap: Record<string, string> = {};
@@ -55,11 +59,16 @@ export async function GET() {
       success: true,
       data: {
         heroBackgrounds,
-        banners,
-        homepageSections,
+        banners: cmsBundle.banners,
+        homepageSections: cmsBundle.homepageSections,
         settings: settingsMap,
         newsTicker: parseNewsTicker(settingsMap),
         brandWordmark: parseBrandWordmark(settingsMap),
+        navigation: cmsBundle.navigation,
+        paymentMethods: cmsBundle.paymentMethods,
+        socialLinks: cmsBundle.socialLinks,
+        pageBackgrounds: cmsBundle.pageBackgrounds,
+        pages: cmsBundle.pages,
       },
     });
   } catch (error) {

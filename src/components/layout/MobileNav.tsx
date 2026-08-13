@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Car, Search, User, LogIn, LayoutDashboard, Heart, MessageCircle, Wallet, CarFront, CalendarCheck, LogOut, X } from 'lucide-react';
+import { Car, Search, User, LogIn, LayoutDashboard, Heart, MessageCircle, Wallet, CarFront, CalendarCheck, LogOut, X, Megaphone } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import { ADMIN_LOGIN_PATH, isAdminRole } from '@/lib/auth-helpers';
 const NAV_LINKS: { label: string; view: AppView; icon: React.ElementType }[] = [
   { label: 'Home', view: 'home', icon: Car },
   { label: 'Buy Cars', view: 'listing', icon: Search },
+  { label: 'Ads', view: 'advertisements', icon: Megaphone },
   { label: 'Rent Cars', view: 'rental', icon: CalendarCheck },
   { label: 'Sell Car', view: 'sell-car', icon: CarFront },
 ];

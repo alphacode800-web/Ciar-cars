@@ -1,7 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { Megaphone, Palette, Plus, Save, Trash2, GripVertical, Type } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  ChevronDown,
+  ChevronUp,
+  Megaphone,
+  Palette,
+  Plus,
+  Save,
+  Trash2,
+  Type,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { getSettings, saveSettings } from '@/lib/admin-api';
 import {
@@ -35,38 +44,48 @@ function newItem(): NewsTickerItem {
 
 function ColorField({
   label,
+  hint,
   value,
   onChange,
-  allowAlpha,
 }: {
   label: string;
+  hint: string;
   value: string;
   onChange: (v: string) => void;
-  allowAlpha?: boolean;
 }) {
   const pickerValue = value.startsWith('#') && value.length >= 7 ? value.slice(0, 7) : '#000000';
 
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs">{label}</Label>
-      <div className="flex gap-2">
-        {!allowAlpha && (
-          <input
-            type="color"
-            value={pickerValue}
-            onChange={(e) => onChange(e.target.value)}
-            className="h-9 w-11 shrink-0 cursor-pointer rounded-md border bg-background p-0.5"
-          />
-        )}
-        <Input
-          value={value}
+    <label className="group flex cursor-pointer items-center gap-3 rounded-xl border bg-card p-3 transition-colors hover:bg-muted/50">
+      <span
+        className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border-2 border-background shadow-sm ring-1 ring-border"
+        style={{ backgroundColor: pickerValue }}
+      >
+        <input
+          type="color"
+          value={pickerValue}
           onChange={(e) => onChange(e.target.value)}
-          className="font-mono text-xs h-9"
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          aria-label={label}
         />
-      </div>
-    </div>
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-medium">{label}</span>
+        <span className="block text-xs text-muted-foreground">{hint}</span>
+      </span>
+    </label>
   );
 }
+
+const TICKER_LINK_OPTIONS = [
+  { value: 'none', labelKey: 'none' },
+  { value: 'listing', labelKey: 'listing' },
+  { value: 'sell-car', labelKey: 'sell' },
+  { value: 'rental', labelKey: 'rental' },
+  { value: 'wallet', labelKey: 'wallet' },
+  { value: 'contact', labelKey: 'contact' },
+  { value: 'about', labelKey: 'about' },
+] as const;
 
 export default function NewsTickerSection() {
   const { t } = useAdminTranslation();
@@ -74,17 +93,19 @@ export default function NewsTickerSection() {
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  const load = useCallback(async () => {
-    const res = await getSettings();
-    if (res.success && res.data) {
-      setConfig(parseNewsTicker(res.data as Record<string, string>));
-    }
-    setLoaded(true);
-  }, []);
-
   useEffect(() => {
-    load();
-  }, [load]);
+    let cancelled = false;
+    getSettings().then((res) => {
+      if (cancelled) return;
+      if (res.success && res.data) {
+        setConfig(parseNewsTicker(res.data as Record<string, string>));
+      }
+      setLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const updateStyle = (patch: Partial<NewsTickerStyle>) => {
     setConfig((prev) => ({ ...prev, style: { ...prev.style, ...patch } }));
@@ -126,6 +147,16 @@ export default function NewsTickerSection() {
 
   const removeItem = (id: string) => {
     setConfig((prev) => ({ ...prev, items: prev.items.filter((item) => item.id !== id) }));
+  };
+
+  const moveItem = (index: number, direction: -1 | 1) => {
+    setConfig((prev) => {
+      const target = index + direction;
+      if (target < 0 || target >= prev.items.length) return prev;
+      const items = [...prev.items];
+      [items[index], items[target]] = [items[target], items[index]];
+      return { ...prev, items };
+    });
   };
 
   const { style } = config;
@@ -211,39 +242,45 @@ export default function NewsTickerSection() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <ColorField
               label={t('newsTicker.bgStart')}
+              hint={t('newsTicker.colorHint')}
               value={style.backgroundColor}
               onChange={(v) => updateStyle({ backgroundColor: v })}
             />
             <ColorField
               label={t('newsTicker.bgEnd')}
+              hint={t('newsTicker.colorHint')}
               value={style.backgroundColorEnd}
               onChange={(v) => updateStyle({ backgroundColorEnd: v })}
             />
             <ColorField
               label={t('newsTicker.textColor')}
+              hint={t('newsTicker.colorHint')}
               value={style.textColor}
               onChange={(v) => updateStyle({ textColor: v })}
             />
             <ColorField
               label={t('newsTicker.accentColor')}
+              hint={t('newsTicker.colorHint')}
               value={style.accentColor}
               onChange={(v) => updateStyle({ accentColor: v })}
             />
             <ColorField
               label={t('newsTicker.labelBg')}
+              hint={t('newsTicker.colorHint')}
               value={style.labelBackgroundColor}
               onChange={(v) => updateStyle({ labelBackgroundColor: v })}
             />
             <ColorField
               label={t('newsTicker.labelTextColor')}
+              hint={t('newsTicker.colorHint')}
               value={style.labelTextColor}
               onChange={(v) => updateStyle({ labelTextColor: v })}
             />
             <ColorField
               label={t('newsTicker.borderColor')}
+              hint={t('newsTicker.colorHint')}
               value={style.borderColor}
               onChange={(v) => updateStyle({ borderColor: v })}
-              allowAlpha
             />
           </div>
 
@@ -322,11 +359,11 @@ export default function NewsTickerSection() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(['400', '500', '600', '700', '800'] as const).map((w) => (
-                  <SelectItem key={w} value={w}>
-                    {w}
-                  </SelectItem>
-                ))}
+                <SelectItem value="400">{t('newsTicker.weightNormal')}</SelectItem>
+                <SelectItem value="500">{t('newsTicker.weightMedium')}</SelectItem>
+                <SelectItem value="600">{t('newsTicker.weightSemiBold')}</SelectItem>
+                <SelectItem value="700">{t('newsTicker.weightBold')}</SelectItem>
+                <SelectItem value="800">{t('newsTicker.weightExtraBold')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -464,18 +501,51 @@ export default function NewsTickerSection() {
                 key={item.id}
                 className="flex flex-col sm:flex-row gap-2 sm:items-start rounded-lg border p-3 bg-muted/30"
               >
-                <GripVertical className="h-4 w-4 text-muted-foreground mt-2.5 hidden sm:block shrink-0" />
                 <div className="flex-1 grid gap-2 sm:grid-cols-2">
                   <Input
                     placeholder={t('newsTicker.textPlaceholder')}
                     value={item.text}
                     onChange={(e) => updateItem(item.id, { text: e.target.value })}
                   />
-                  <Input
-                    placeholder={t('newsTicker.linkPlaceholder')}
-                    value={item.link ?? ''}
-                    onChange={(e) => updateItem(item.id, { link: e.target.value })}
-                  />
+                  <Select
+                    value={item.link || 'none'}
+                    onValueChange={(value) =>
+                      updateItem(item.id, { link: value === 'none' ? '' : value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('newsTicker.linkDestination')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TICKER_LINK_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {t(`newsTicker.linkOptions.${option.labelKey}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex shrink-0 self-end sm:self-start">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={index === 0}
+                    onClick={() => moveItem(index, -1)}
+                    aria-label={t('newsTicker.moveUp')}
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={index === config.items.length - 1}
+                    onClick={() => moveItem(index, 1)}
+                    aria-label={t('newsTicker.moveDown')}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
                 </div>
                 <Button
                   type="button"

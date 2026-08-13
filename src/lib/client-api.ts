@@ -81,6 +81,71 @@ export async function searchSuggest(q: string) {
   return userFetch(`/api/search/suggest?q=${encodeURIComponent(q)}`);
 }
 
+// ============ ADVERTISEMENTS ============
+export async function getAdvertisements(params?: Record<string, string | number | boolean | undefined>) {
+  const q = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') q.set(k, String(v));
+    });
+  }
+  return userFetch(`/api/advertisements?${q.toString()}`);
+}
+
+export async function getAdvertisement(id: string) {
+  return userFetch(`/api/advertisements/${id}`);
+}
+
+export async function createAdvertisement(data: Record<string, unknown>) {
+  return userFetch('/api/advertisements', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateAdvertisement(id: string, data: Record<string, unknown>) {
+  return userFetch(`/api/advertisements/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteAdvertisement(id: string) {
+  return userFetch(`/api/advertisements/${id}`, { method: 'DELETE' });
+}
+
+export async function payAdvertisement(
+  id: string,
+  data: { method: 'wallet' | 'bank_transfer'; proofUrl?: string }
+) {
+  return userFetch(`/api/advertisements/${id}/pay`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getAdPlans() {
+  return userFetch('/api/advertisements/plans');
+}
+
+export async function uploadAdMedia(file: File, kind: 'image' | 'video' = 'image') {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('folder', 'advertisements');
+  form.append('kind', kind);
+  try {
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      credentials: 'include',
+      body: form,
+    });
+    return await res.json();
+  } catch {
+    return { success: false, error: 'Network error' };
+  }
+}
+
+
 export async function getHealth() {
   return userFetch('/api/health');
 }

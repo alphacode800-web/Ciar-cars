@@ -73,6 +73,44 @@ export const authOptions: NextAuthOptions = {
           credentials.loginType === "admin" ? "admin" : "user";
 
         if (loginType === "admin") {
+          // Prefer database admin accounts; hardcoded bootstrap only as fallback
+          const dbAdmin = await db.user.findUnique({
+            where: { email: credentials.email },
+          });
+
+          if (dbAdmin && dbAdmin.password) {
+            if (dbAdmin.role !== "admin" && dbAdmin.role !== "super_admin") {
+              throw new Error("This account is not authorized for admin access");
+            }
+
+            if (!dbAdmin.isActive) {
+              throw new Error("This admin account has been deactivated");
+            }
+
+            if (dbAdmin.isBanned) {
+              throw new Error(
+                dbAdmin.bannedReason || "This admin account has been suspended"
+              );
+            }
+
+            const isPasswordValid = await bcrypt.compare(
+              credentials.password,
+              dbAdmin.password
+            );
+
+            if (!isPasswordValid) {
+              throw new Error("Invalid password");
+            }
+
+            return {
+              id: dbAdmin.id,
+              email: dbAdmin.email,
+              name: dbAdmin.name,
+              image: dbAdmin.avatar,
+              role: dbAdmin.role,
+            };
+          }
+
           const adminUser = ADMIN_CREDENTIALS.find(
             (a) => a.email === credentials.email
           );
@@ -82,59 +120,40 @@ export const authOptions: NextAuthOptions = {
               credentials.password,
               adminUser.password
             );
-            if (isValid) {
+            if (!isValid) {
+              throw new Error("Invalid password");
+            }
+
+            // If a DB account exists without a password, adopt it: store the
+            // bootstrap hash so future logins go through the database path.
+            if (dbAdmin) {
+              if (!dbAdmin.isActive || dbAdmin.isBanned) {
+                throw new Error("This admin account has been deactivated");
+              }
+              await db.user
+                .update({
+                  where: { id: dbAdmin.id },
+                  data: { password: adminUser.password },
+                })
+                .catch(() => undefined);
               return {
-                id: adminUser.id,
-                email: adminUser.email,
-                name: adminUser.name,
-                role: adminUser.role,
+                id: dbAdmin.id,
+                email: dbAdmin.email,
+                name: dbAdmin.name,
+                image: dbAdmin.avatar,
+                role: dbAdmin.role,
               };
             }
-            throw new Error("Invalid password");
+
+            return {
+              id: adminUser.id,
+              email: adminUser.email,
+              name: adminUser.name,
+              role: adminUser.role,
+            };
           }
 
-          const dbAdmin = await db.user.findUnique({
-            where: { email: credentials.email },
-          });
-
-          if (!dbAdmin) {
-            throw new Error("No admin account found with this email");
-          }
-
-          if (dbAdmin.role !== "admin" && dbAdmin.role !== "super_admin") {
-            throw new Error("This account is not authorized for admin access");
-          }
-
-          if (!dbAdmin.password) {
-            throw new Error("Admin account password is not configured");
-          }
-
-          if (!dbAdmin.isActive) {
-            throw new Error("This admin account has been deactivated");
-          }
-
-          if (dbAdmin.isBanned) {
-            throw new Error(
-              dbAdmin.bannedReason || "This admin account has been suspended"
-            );
-          }
-
-          const isPasswordValid = await bcrypt.compare(
-            credentials.password,
-            dbAdmin.password
-          );
-
-          if (!isPasswordValid) {
-            throw new Error("Invalid password");
-          }
-
-          return {
-            id: dbAdmin.id,
-            email: dbAdmin.email,
-            name: dbAdmin.name,
-            image: dbAdmin.avatar,
-            role: dbAdmin.role,
-          };
+          throw new Error("No admin account found with this email");
         }
 
         if (ADMIN_EMAILS.has(credentials.email)) {

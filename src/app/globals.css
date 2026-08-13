@@ -418,6 +418,10 @@
   will-change: transform;
 }
 
+[dir='rtl'] .animate-news-ticker {
+  animation-direction: reverse;
+}
+
 @keyframes ticker-shine {
   0% {
     transform: translateX(-120%);

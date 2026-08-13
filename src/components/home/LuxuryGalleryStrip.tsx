@@ -143,7 +143,7 @@ const headingVariants = {
 // Component
 // ---------------------------------------------------------------------------
 
-export function LuxuryGalleryStrip() {
+export function LuxuryGalleryStrip({ cmsContent: _cmsContent }: { cmsContent?: unknown } = {}) {
   const setView = useAppStore((s) => s.setView);
   const { t } = useTranslation();
   const stripRef = useRef<HTMLDivElement>(null);

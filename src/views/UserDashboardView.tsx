@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Car,
@@ -17,25 +17,18 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowUpRight,
-  Send,
   Clock,
-  CheckCircle2,
   XCircle,
   AlertCircle,
-  Package,
-  CreditCard,
   ChevronRight,
-  Shield,
   User,
   Bell,
   Lock,
   MoreHorizontal,
-  LogOut,
   ImageIcon,
   Zap,
   Crown,
-  Ban,
-  Search,
+  Megaphone,
 } from 'lucide-react';
 import {
   Card,
@@ -54,7 +47,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Table,
@@ -71,13 +63,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -100,11 +85,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useAuthStore } from '@/store/auth-store';
 import { useAppStore } from '@/store/app-store';
+import { useTranslation } from '@/hooks/use-translation';
 import { toast } from 'sonner';
 import { CURRENCY } from '@/lib/constants';
 import { useUserDashboard } from '@/hooks/use-user-dashboard';
-import { updateUserProfile, topUpWallet } from '@/lib/client-api';
-import type { WalletTransactionType } from '@/types';
+import { updateUserProfile, topUpWallet, getAdvertisements, deleteAdvertisement } from '@/lib/client-api';
+
+type TrFn = (ar: string, en: string) => string;
 
 const mockFavorites = [
   { id: '1', title: 'Audi A4 2023', brand: 'Audi', price: 1100000, year: 2023, primaryImage: null },
@@ -118,7 +105,24 @@ function formatPrice(price: number) {
   return `${CURRENCY.symbol}${price.toLocaleString()}`;
 }
 
-function StatusBadge({ status }: { status: string }) {
+function translateStatus(status: string, tr: TrFn): string {
+  const map: Record<string, [string, string]> = {
+    active: ['نشط', 'active'],
+    pending: ['قيد الانتظار', 'pending'],
+    sold: ['مباع', 'sold'],
+    confirmed: ['مؤكد', 'confirmed'],
+    completed: ['مكتمل', 'completed'],
+    cancelled: ['ملغى', 'cancelled'],
+    published: ['منشور', 'published'],
+    rejected: ['مرفوض', 'rejected'],
+    draft: ['مسودة', 'draft'],
+    expired: ['منتهي', 'expired'],
+  };
+  const pair = map[status];
+  return pair ? tr(pair[0], pair[1]) : status;
+}
+
+function StatusBadge({ status, tr }: { status: string; tr: TrFn }) {
   const config: Record<string, string> = {
     active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
     pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -126,22 +130,25 @@ function StatusBadge({ status }: { status: string }) {
     confirmed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
     completed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
     cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    published: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+    rejected: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    draft: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
   };
   return (
-    <Badge variant="secondary" className={config[status] || ''}>{status}</Badge>
+    <Badge variant="secondary" className={config[status] || ''}>{translateStatus(status, tr)}</Badge>
   );
 }
 
-function TransactionTypeBadge({ type }: { type: string }) {
-  const config: Record<string, { label: string; className: string }> = {
-    topup: { label: 'Top-Up', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
-    purchase: { label: 'Purchase', className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-    earning: { label: 'Earning', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-    refund: { label: 'Refund', className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-    withdrawal: { label: 'Withdrawal', className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+function TransactionTypeBadge({ type, tr }: { type: string; tr: TrFn }) {
+  const config: Record<string, { label: [string, string]; className: string }> = {
+    topup: { label: ['شحن', 'Top-Up'], className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+    purchase: { label: ['شراء', 'Purchase'], className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+    earning: { label: ['أرباح', 'Earning'], className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    refund: { label: ['استرداد', 'Refund'], className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+    withdrawal: { label: ['سحب', 'Withdrawal'], className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
   };
   const c = config[type] || config.purchase;
-  return <Badge variant="secondary" className={c.className}>{c.label}</Badge>;
+  return <Badge variant="secondary" className={c.className}>{tr(c.label[0], c.label[1])}</Badge>;
 }
 
 function CarPlaceholderCard() {
@@ -156,10 +163,16 @@ function CarPlaceholderCard() {
 export default function UserDashboardView() {
   const { user } = useAuthStore();
   const { setView } = useAppStore();
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = React.useCallback((ar: string, other: string) => (isAr ? ar : other), [isAr]);
+
   const { loading, stats, listings, bookings, activities, transactions, chatRooms, profile, refresh } =
     useUserDashboard();
   const [activeTab, setActiveTab] = useState('overview');
   const [favorites, setFavorites] = useState(mockFavorites);
+  const [myAds, setMyAds] = useState<any[]>([]);
+  const [adsLoading, setAdsLoading] = useState(false);
   const [profileForm, setProfileForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -200,6 +213,18 @@ export default function UserDashboardView() {
     }
   }, [profile]);
 
+  const loadMyAds = useCallback(async () => {
+    setAdsLoading(true);
+    const res = await getAdvertisements({ mine: true, page: 1, limit: 50 });
+    setAdsLoading(false);
+    if (res.success && Array.isArray(res.data)) setMyAds(res.data);
+    else setMyAds([]);
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'ads') void loadMyAds();
+  }, [activeTab, loadMyAds]);
+
   const handleSaveProfile = useCallback(async () => {
     setSavingProfile(true);
     try {
@@ -211,41 +236,41 @@ export default function UserDashboardView() {
         country: profileForm.country || undefined,
       });
       if (res.success) {
-        toast.success(res.message || 'Profile updated!');
+        toast.success(res.message || tr('تم تحديث الملف الشخصي!', 'Profile updated!'));
         refresh();
       } else {
-        toast.error(res.error || 'Failed to update profile');
+        toast.error(res.error || tr('فشل تحديث الملف الشخصي', 'Failed to update profile'));
       }
     } finally {
       setSavingProfile(false);
     }
-  }, [profileForm, refresh]);
+  }, [profileForm, refresh, tr]);
 
   const handleTopUp = useCallback(async () => {
     const amount = Number(topUpAmount);
     if (!amount || amount < 1) {
-      toast.error('Please enter a valid amount');
+      toast.error(tr('يرجى إدخال مبلغ صالح', 'Please enter a valid amount'));
       return;
     }
     setTopUpSubmitting(true);
     try {
       const res = await topUpWallet(amount, 'card');
       if (res.success) {
-        toast.success(`Wallet topped up with ${formatPrice(amount)}`);
+        toast.success(tr(`تم شحن المحفظة بمبلغ ${formatPrice(amount)}`, `Wallet topped up with ${formatPrice(amount)}`));
         setShowTopUpDialog(false);
         setTopUpAmount('');
         refresh();
       } else {
-        toast.error(res.error || 'Top-up failed');
+        toast.error(res.error || tr('فشل الشحن', 'Top-up failed'));
       }
     } finally {
       setTopUpSubmitting(false);
     }
-  }, [topUpAmount, refresh]);
+  }, [topUpAmount, refresh, tr]);
 
   const removeFavorite = (id: string) => {
     setFavorites((prev) => prev.filter((f) => f.id !== id));
-    toast.success('Removed from favorites');
+    toast.success(tr('تمت الإزالة من المفضلة', 'Removed from favorites'));
   };
 
   const currentBalance = stats.walletBalance;
@@ -263,10 +288,10 @@ export default function UserDashboardView() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">
-            Welcome back, {user?.name || 'User'}! 👋
+            {tr(`مرحبًا بعودتك، ${user?.name || tr('مستخدم', 'User')}! 👋`, `Welcome back, ${user?.name || 'User'}! 👋`)}
           </h2>
           <p className="text-muted-foreground">
-            Here&apos;s an overview of your activity on CIAR Cars.
+            {tr('إليك نظرة عامة على نشاطك في CIAR Cars.', "Here's an overview of your activity on CIAR Cars.")}
           </p>
         </div>
         <div className="flex gap-2">
@@ -274,8 +299,8 @@ export default function UserDashboardView() {
             className="bg-gradient-to-r from-orange-500 to-amber-600 text-white"
             onClick={() => setView('sell-car')}
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Car
+            <Plus className="w-4 h-4 me-2" />
+            {tr('إضافة سيارة جديدة', 'Add New Car')}
           </Button>
         </div>
       </div>
@@ -283,10 +308,10 @@ export default function UserDashboardView() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Active Listings', value: String(stats.activeListings), change: `+${stats.totalListings - stats.activeListings}`, up: true, icon: Car, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
-          { label: 'Total Views', value: String(stats.totalViews), change: '+0', up: true, icon: Eye, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/30' },
-          { label: 'Messages', value: String(stats.unreadNotifications), change: '+0', up: true, icon: MessageSquare, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/30' },
-          { label: 'Wallet Balance', value: formatPrice(currentBalance), change: '', up: true, icon: Wallet, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/30' },
+          { label: tr('الإعلانات النشطة', 'Active Listings'), value: String(stats.activeListings), change: `+${stats.totalListings - stats.activeListings}`, up: true, icon: Car, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
+          { label: tr('إجمالي المشاهدات', 'Total Views'), value: String(stats.totalViews), change: '+0', up: true, icon: Eye, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/30' },
+          { label: tr('الرسائل', 'Messages'), value: String(stats.unreadNotifications), change: '+0', up: true, icon: MessageSquare, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/30' },
+          { label: tr('رصيد المحفظة', 'Wallet Balance'), value: formatPrice(currentBalance), change: '', up: true, icon: Wallet, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/30' },
         ].map((stat) => (
           <Card key={stat.label}>
             <CardContent className="p-5">
@@ -310,14 +335,14 @@ export default function UserDashboardView() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">Recent Activity</CardTitle>
+            <CardTitle className="text-base">{tr('النشاط الأخير', 'Recent Activity')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {loading ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
+                <p className="text-sm text-muted-foreground">{tr('جاري التحميل...', 'Loading...')}</p>
               ) : activities.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No recent activity</p>
+                <p className="text-sm text-muted-foreground">{tr('لا يوجد نشاط حديث', 'No recent activity')}</p>
               ) : (
                 activities.map((activity) => (
                   <div key={activity.id} className="flex items-start gap-3">
@@ -340,7 +365,7 @@ export default function UserDashboardView() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Quick Actions</CardTitle>
+            <CardTitle className="text-base">{tr('إجراءات سريعة', 'Quick Actions')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <Button
@@ -351,11 +376,11 @@ export default function UserDashboardView() {
               <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
                 <Plus className="w-4 h-4 text-emerald-600" />
               </div>
-              <div className="text-left">
-                <p className="text-sm font-medium">Add New Car</p>
-                <p className="text-xs text-muted-foreground">List a vehicle for sale</p>
+              <div className="text-start">
+                <p className="text-sm font-medium">{tr('إضافة سيارة جديدة', 'Add New Car')}</p>
+                <p className="text-xs text-muted-foreground">{tr('اعرض سيارة للبيع', 'List a vehicle for sale')}</p>
               </div>
-              <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
+              <ChevronRight className={`w-4 h-4 ms-auto text-muted-foreground ${isRTL ? 'rotate-180' : ''}`} />
             </Button>
             <Button
               variant="outline"
@@ -365,11 +390,11 @@ export default function UserDashboardView() {
               <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30">
                 <MessageSquare className="w-4 h-4 text-blue-600" />
               </div>
-              <div className="text-left">
-                <p className="text-sm font-medium">View Messages</p>
-                <p className="text-xs text-muted-foreground">4 unread messages</p>
+              <div className="text-start">
+                <p className="text-sm font-medium">{tr('عرض الرسائل', 'View Messages')}</p>
+                <p className="text-xs text-muted-foreground">{tr('4 رسائل غير مقروءة', '4 unread messages')}</p>
               </div>
-              <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
+              <ChevronRight className={`w-4 h-4 ms-auto text-muted-foreground ${isRTL ? 'rotate-180' : ''}`} />
             </Button>
             <Button
               variant="outline"
@@ -379,11 +404,11 @@ export default function UserDashboardView() {
               <div className="p-2 rounded-lg bg-red-50 dark:bg-red-950/30">
                 <Heart className="w-4 h-4 text-red-600" />
               </div>
-              <div className="text-left">
-                <p className="text-sm font-medium">My Favorites</p>
-                <p className="text-xs text-muted-foreground">4 saved cars</p>
+              <div className="text-start">
+                <p className="text-sm font-medium">{tr('مفضلتي', 'My Favorites')}</p>
+                <p className="text-xs text-muted-foreground">{tr('4 سيارات محفوظة', '4 saved cars')}</p>
               </div>
-              <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
+              <ChevronRight className={`w-4 h-4 ms-auto text-muted-foreground ${isRTL ? 'rotate-180' : ''}`} />
             </Button>
             <Button
               variant="outline"
@@ -393,11 +418,11 @@ export default function UserDashboardView() {
               <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/30">
                 <Wallet className="w-4 h-4 text-purple-600" />
               </div>
-              <div className="text-left">
-                <p className="text-sm font-medium">My Wallet</p>
+              <div className="text-start">
+                <p className="text-sm font-medium">{tr('محفظتي', 'My Wallet')}</p>
                 <p className="text-xs text-muted-foreground">{formatPrice(currentBalance)}</p>
               </div>
-              <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
+              <ChevronRight className={`w-4 h-4 ms-auto text-muted-foreground ${isRTL ? 'rotate-180' : ''}`} />
             </Button>
           </CardContent>
         </Card>
@@ -416,35 +441,35 @@ export default function UserDashboardView() {
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">My Listings</h2>
-          <p className="text-muted-foreground">Manage your car listings.</p>
+          <h2 className="text-2xl font-bold tracking-tight">{tr('إعلاناتي', 'My Listings')}</h2>
+          <p className="text-muted-foreground">{tr('إدارة إعلانات سياراتك.', 'Manage your car listings.')}</p>
         </div>
         <Button
           className="bg-gradient-to-r from-orange-500 to-amber-600 text-white"
           onClick={() => setView('sell-car')}
         >
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Car
+          <Plus className="w-4 h-4 me-2" />
+          {tr('إضافة سيارة جديدة', 'Add New Car')}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          <p className="text-sm text-muted-foreground col-span-full">Loading listings...</p>
+          <p className="text-sm text-muted-foreground col-span-full">{tr('جاري تحميل الإعلانات...', 'Loading listings...')}</p>
         ) : listings.length === 0 ? (
           <Card className="col-span-full">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
               <Car className="w-12 h-12 text-muted-foreground/40 mb-4" />
-              <p className="text-lg font-medium text-muted-foreground">No listings yet</p>
+              <p className="text-lg font-medium text-muted-foreground">{tr('لا توجد إعلانات بعد', 'No listings yet')}</p>
               <p className="text-sm text-muted-foreground mt-1 mb-4">
-                List your first car to start selling on CIAR Cars.
+                {tr('اعرض سيارتك الأولى للبدء بالبيع على CIAR Cars.', 'List your first car to start selling on CIAR Cars.')}
               </p>
               <Button
                 className="bg-gradient-to-r from-orange-500 to-amber-600 text-white"
                 onClick={() => setView('sell-car')}
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Add New Car
+                <Plus className="w-4 h-4 me-2" />
+                {tr('إضافة سيارة جديدة', 'Add New Car')}
               </Button>
             </CardContent>
           </Card>
@@ -453,15 +478,15 @@ export default function UserDashboardView() {
           <Card key={listing.id} className="overflow-hidden group">
             <div className="relative">
               <CarPlaceholderCard />
-              <div className="absolute top-2 left-2 flex gap-1.5">
-                <StatusBadge status={listing.status} />
+              <div className="absolute top-2 start-2 flex gap-1.5">
+                <StatusBadge status={listing.status} tr={tr} />
                 {listing.isFeatured && (
                   <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                    <Crown className="w-3 h-3 mr-0.5" />Featured
+                    <Crown className="w-3 h-3 me-0.5" />{tr('مميز', 'Featured')}
                   </Badge>
                 )}
               </div>
-              <div className="absolute top-2 right-2">
+              <div className="absolute top-2 end-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/90 dark:bg-black/60 backdrop-blur-sm">
@@ -470,22 +495,22 @@ export default function UserDashboardView() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem>
-                      <Eye className="w-4 h-4 mr-2" />View
+                      <Eye className="w-4 h-4 me-2" />{tr('عرض', 'View')}
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Edit className="w-4 h-4 mr-2" />Edit
+                      <Edit className="w-4 h-4 me-2" />{tr('تعديل', 'Edit')}
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Zap className="w-4 h-4 mr-2 text-amber-600" />
-                      <span className="text-amber-600">Boost</span>
+                      <Zap className="w-4 h-4 me-2 text-amber-600" />
+                      <span className="text-amber-600">{tr('تعزيز', 'Boost')}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Star className="w-4 h-4 mr-2 text-amber-600" />
-                      <span className="text-amber-600">Feature</span>
+                      <Star className="w-4 h-4 me-2 text-amber-600" />
+                      <span className="text-amber-600">{tr('تمييز', 'Feature')}</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-red-600">
-                      <Trash2 className="w-4 h-4 mr-2" />Delete
+                      <Trash2 className="w-4 h-4 me-2" />{tr('حذف', 'Delete')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -506,6 +531,98 @@ export default function UserDashboardView() {
     </motion.div>
   );
 
+  // ============ MY ADS TAB ============
+  const renderMyAds = () => (
+    <motion.div
+      key="ads"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">{tr('إعلاناتي', 'My Ads')}</h2>
+          <p className="text-muted-foreground">{tr('إدارة إعلاناتك المدفوعة ومتابعة حالتها.', 'Manage your paid ads and track their status.')}</p>
+        </div>
+        <Button onClick={() => setView('create-advertisement')}>
+          <Plus className="w-4 h-4 me-2" />
+          {tr('إعلان جديد', 'New Ad')}
+        </Button>
+      </div>
+
+      <div className="space-y-3">
+        {adsLoading ? (
+          <p className="text-sm text-muted-foreground">{tr('جاري التحميل...', 'Loading...')}</p>
+        ) : myAds.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <Megaphone className="w-12 h-12 text-muted-foreground/40 mb-4" />
+              <p className="text-lg font-medium text-muted-foreground">{tr('لا توجد إعلانات بعد', 'No ads yet')}</p>
+              <Button className="mt-4" onClick={() => setView('create-advertisement')}>
+                <Plus className="w-4 h-4 me-2" />
+                {tr('أنشئ إعلانك الأول', 'Create your first ad')}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          myAds.map((ad) => (
+            <Card key={ad.id}>
+              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{ad.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {ad.category} · {ad.price} {ad.currency} · {tr('مشاهدات', 'Views')} {ad.viewsCount || 0}
+                  </p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    <StatusBadge status={ad.status} tr={tr} />
+                    <Badge variant="outline">{ad.paymentStatus}</Badge>
+                    {ad.rejectedReason && (
+                      <Badge variant="destructive" className="max-w-[220px] truncate">
+                        {ad.rejectedReason}
+                      </Badge>
+                    )}
+                    {ad.endsAt && (
+                      <Badge variant="secondary">
+                        {tr('حتى', 'Until')} {new Date(ad.endsAt).toLocaleDateString()}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {ad.status === 'published' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setView('advertisement-detail', { id: ad.id })}
+                    >
+                      <Eye className="w-3.5 h-3.5 me-1" />
+                      {tr('عرض', 'View')}
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive"
+                    onClick={async () => {
+                      const res = await deleteAdvertisement(ad.id);
+                      if (res.success) {
+                        toast.success(tr('تم حذف الإعلان', 'Ad deleted'));
+                        void loadMyAds();
+                      } else toast.error(res.error || tr('فشل الحذف', 'Delete failed'));
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    </motion.div>
+  );
+
   // ============ MY BOOKINGS TAB ============
   const renderMyBookings = () => (
     <motion.div
@@ -516,20 +633,20 @@ export default function UserDashboardView() {
       className="space-y-6"
     >
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">My Bookings</h2>
-        <p className="text-muted-foreground">Track your rental bookings and reservations.</p>
+        <h2 className="text-2xl font-bold tracking-tight">{tr('حجوزاتي', 'My Bookings')}</h2>
+        <p className="text-muted-foreground">{tr('تتبع حجوزات الإيجار والحجوزات الخاصة بك.', 'Track your rental bookings and reservations.')}</p>
       </div>
 
       <div className="space-y-4">
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading bookings...</p>
+          <p className="text-sm text-muted-foreground">{tr('جاري تحميل الحجوزات...', 'Loading bookings...')}</p>
         ) : bookings.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
               <CalendarCheck className="w-12 h-12 text-muted-foreground/40 mb-4" />
-              <p className="text-lg font-medium text-muted-foreground">No bookings yet</p>
+              <p className="text-lg font-medium text-muted-foreground">{tr('لا توجد حجوزات بعد', 'No bookings yet')}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Browse cars available for rent to make your first booking.
+                {tr('تصفح السيارات المتاحة للإيجار لإجراء أول حجز.', 'Browse cars available for rent to make your first booking.')}
               </p>
             </CardContent>
           </Card>
@@ -541,46 +658,49 @@ export default function UserDashboardView() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold text-sm">{booking.car}</h3>
-                    <StatusBadge status={booking.status} />
+                    <StatusBadge status={booking.status} tr={tr} />
                   </div>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Owner: {booking.owner}
+                    {tr('المالك', 'Owner')}: {booking.owner}
                   </p>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />
                       {booking.startDate} — {booking.endDate}
                     </span>
-                    <span>{booking.totalDays} days</span>
+                    <span>{booking.totalDays} {tr('أيام', 'days')}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="text-right">
+                  <div className="text-end">
                     <p className="text-lg font-bold">{formatPrice(booking.totalPrice)}</p>
-                    <p className="text-xs text-muted-foreground">Total</p>
+                    <p className="text-xs text-muted-foreground">{tr('الإجمالي', 'Total')}</p>
                   </div>
                   <div className="flex gap-2">
                     {booking.status === 'pending' && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30">
-                            <XCircle className="w-3.5 h-3.5 mr-1" />Cancel
+                            <XCircle className="w-3.5 h-3.5 me-1" />{tr('إلغاء', 'Cancel')}
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent dir={isRTL ? 'rtl' : 'ltr'}>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+                            <AlertDialogTitle>{tr('إلغاء الحجز', 'Cancel Booking')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to cancel your booking for {booking.car}? This action cannot be undone.
+                              {tr(
+                                `هل أنت متأكد من إلغاء حجزك لـ ${booking.car}؟ لا يمكن التراجع عن هذا الإجراء.`,
+                                `Are you sure you want to cancel your booking for ${booking.car}? This action cannot be undone.`
+                              )}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+                            <AlertDialogCancel>{tr('الإبقاء على الحجز', 'Keep Booking')}</AlertDialogCancel>
                             <AlertDialogAction
                               className="bg-red-600 hover:bg-red-700"
-                              onClick={() => toast.success('Booking cancelled')}
+                              onClick={() => toast.success(tr('تم إلغاء الحجز', 'Booking cancelled'))}
                             >
-                              Cancel Booking
+                              {tr('إلغاء الحجز', 'Cancel Booking')}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -588,7 +708,7 @@ export default function UserDashboardView() {
                     )}
                     {booking.status === 'completed' && (
                       <Button variant="outline" size="sm" className="text-orange-600 border-orange-200 hover:bg-orange-50 dark:border-orange-800 dark:hover:bg-orange-950/30">
-                        <Star className="w-3.5 h-3.5 mr-1" />Review
+                        <Star className="w-3.5 h-3.5 me-1" />{tr('تقييم', 'Review')}
                       </Button>
                     )}
                   </div>
@@ -611,18 +731,18 @@ export default function UserDashboardView() {
       className="space-y-6"
     >
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">My Favorites</h2>
-        <p className="text-muted-foreground">Cars you&apos;ve saved for later.</p>
+        <h2 className="text-2xl font-bold tracking-tight">{tr('مفضلتي', 'My Favorites')}</h2>
+        <p className="text-muted-foreground">{tr('السيارات التي حفظتها لاحقًا.', "Cars you've saved for later.")}</p>
       </div>
 
       {favorites.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Heart className="w-12 h-12 text-muted-foreground/50 mb-4" />
-            <p className="text-lg font-medium text-muted-foreground">No favorites yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Start browsing and save cars you like!</p>
+            <p className="text-lg font-medium text-muted-foreground">{tr('لا توجد مفضلات بعد', 'No favorites yet')}</p>
+            <p className="text-sm text-muted-foreground mt-1">{tr('ابدأ التصفح واحفظ السيارات التي تعجبك!', 'Start browsing and save cars you like!')}</p>
             <Button className="mt-4 bg-gradient-to-r from-orange-500 to-amber-600 text-white" onClick={() => setView('listing')}>
-              Browse Cars
+              {tr('تصفح السيارات', 'Browse Cars')}
             </Button>
           </CardContent>
         </Card>
@@ -635,7 +755,7 @@ export default function UserDashboardView() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute top-2 right-2 h-8 w-8 bg-white/90 dark:bg-black/60 backdrop-blur-sm text-red-500 hover:text-red-600"
+                  className="absolute top-2 end-2 h-8 w-8 bg-white/90 dark:bg-black/60 backdrop-blur-sm text-red-500 hover:text-red-600"
                   onClick={() => removeFavorite(fav.id)}
                 >
                   <Heart className="w-4 h-4 fill-current" />
@@ -651,7 +771,7 @@ export default function UserDashboardView() {
                   className="w-full mt-3"
                   onClick={() => setView('detail')}
                 >
-                  View Details
+                  {tr('عرض التفاصيل', 'View Details')}
                 </Button>
               </CardContent>
             </Card>
@@ -671,8 +791,8 @@ export default function UserDashboardView() {
       className="space-y-6"
     >
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">My Wallet</h2>
-        <p className="text-muted-foreground">Manage your balance and transactions.</p>
+        <h2 className="text-2xl font-bold tracking-tight">{tr('محفظتي', 'My Wallet')}</h2>
+        <p className="text-muted-foreground">{tr('إدارة رصيدك ومعاملاتك.', 'Manage your balance and transactions.')}</p>
       </div>
 
       {/* Balance Card */}
@@ -680,7 +800,7 @@ export default function UserDashboardView() {
         <div className="bg-gradient-to-br from-orange-500 to-amber-600 p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm opacity-90">Available Balance</p>
+              <p className="text-sm opacity-90">{tr('الرصيد المتاح', 'Available Balance')}</p>
               <p className="text-3xl font-bold mt-1">{formatPrice(currentBalance)}</p>
             </div>
             <div className="p-3 rounded-full bg-white/20">
@@ -691,14 +811,14 @@ export default function UserDashboardView() {
             <Dialog open={showTopUpDialog} onOpenChange={setShowTopUpDialog}>
               <DialogTrigger asChild>
                 <Button variant="secondary" className="bg-white text-orange-600 hover:bg-orange-50 font-medium">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Top Up Wallet
+                  <Plus className="w-4 h-4 me-2" />
+                  {tr('شحن المحفظة', 'Top Up Wallet')}
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent dir={isRTL ? 'rtl' : 'ltr'}>
                 <DialogHeader>
-                  <DialogTitle>Top Up Wallet</DialogTitle>
-                  <DialogDescription>Add funds to your CIAR Cars wallet.</DialogDescription>
+                  <DialogTitle>{tr('شحن المحفظة', 'Top Up Wallet')}</DialogTitle>
+                  <DialogDescription>{tr('أضف رصيدًا إلى محفظة CIAR Cars.', 'Add funds to your CIAR Cars wallet.')}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="grid grid-cols-3 gap-2">
@@ -714,30 +834,30 @@ export default function UserDashboardView() {
                     ))}
                   </div>
                   <div className="space-y-2">
-                    <Label>Or enter custom amount</Label>
+                    <Label>{tr('أو أدخل مبلغًا مخصصًا', 'Or enter custom amount')}</Label>
                     <Input
                       type="number"
-                      placeholder="Enter amount"
+                      placeholder={tr('أدخل المبلغ', 'Enter amount')}
                       value={topUpAmount}
                       onChange={(e) => setTopUpAmount(e.target.value)}
                     />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowTopUpDialog(false)}>Cancel</Button>
+                  <Button variant="outline" onClick={() => setShowTopUpDialog(false)}>{tr('إلغاء', 'Cancel')}</Button>
                   <Button
                     className="bg-gradient-to-r from-orange-500 to-amber-600 text-white"
                     disabled={topUpSubmitting}
                     onClick={handleTopUp}
                   >
-                    {topUpSubmitting ? 'Processing...' : 'Top Up'}
+                    {topUpSubmitting ? tr('جاري المعالجة...', 'Processing...') : tr('شحن', 'Top Up')}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
             <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
-              <ArrowUpRight className="w-4 h-4 mr-2" />
-              Withdraw
+              <ArrowUpRight className="w-4 h-4 me-2" />
+              {tr('سحب', 'Withdraw')}
             </Button>
           </div>
         </div>
@@ -746,31 +866,31 @@ export default function UserDashboardView() {
       {/* Transactions */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Transaction History</CardTitle>
+          <CardTitle className="text-base">{tr('سجل المعاملات', 'Transaction History')}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Balance</TableHead>
-                <TableHead className="hidden sm:table-cell">Date</TableHead>
+                <TableHead>{tr('الوصف', 'Description')}</TableHead>
+                <TableHead>{tr('النوع', 'Type')}</TableHead>
+                <TableHead>{tr('المبلغ', 'Amount')}</TableHead>
+                <TableHead>{tr('الرصيد', 'Balance')}</TableHead>
+                <TableHead className="hidden sm:table-cell">{tr('التاريخ', 'Date')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {!loading && transactions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    No transactions yet
+                    {tr('لا توجد معاملات بعد', 'No transactions yet')}
                   </TableCell>
                 </TableRow>
               ) : null}
               {transactions.map((tx) => (
                 <TableRow key={tx.id}>
                   <TableCell className="font-medium text-sm max-w-[200px] truncate">{tx.description ?? '—'}</TableCell>
-                  <TableCell><TransactionTypeBadge type={tx.type} /></TableCell>
+                  <TableCell><TransactionTypeBadge type={tx.type} tr={tr} /></TableCell>
                   <TableCell className={`font-medium ${tx.amount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     {tx.amount >= 0 ? '+' : ''}{formatPrice(tx.amount)}
                   </TableCell>
@@ -797,8 +917,8 @@ export default function UserDashboardView() {
       className="space-y-6"
     >
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Messages</h2>
-        <p className="text-muted-foreground">Your conversations with other users.</p>
+        <h2 className="text-2xl font-bold tracking-tight">{tr('الرسائل', 'Messages')}</h2>
+        <p className="text-muted-foreground">{tr('محادثاتك مع المستخدمين الآخرين.', 'Your conversations with other users.')}</p>
       </div>
 
       <Card>
@@ -806,20 +926,20 @@ export default function UserDashboardView() {
           <ScrollArea className="max-h-[600px]">
             <div className="divide-y">
               {loading ? (
-                <p className="p-6 text-sm text-muted-foreground">Loading messages...</p>
+                <p className="p-6 text-sm text-muted-foreground">{tr('جاري تحميل الرسائل...', 'Loading messages...')}</p>
               ) : chatRooms.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <MessageSquare className="w-12 h-12 text-muted-foreground/40 mb-4" />
-                  <p className="text-lg font-medium text-muted-foreground">No messages yet</p>
+                  <p className="text-lg font-medium text-muted-foreground">{tr('لا توجد رسائل بعد', 'No messages yet')}</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Start a conversation from a car listing.
+                    {tr('ابدأ محادثة من صفحة إعلان سيارة.', 'Start a conversation from a car listing.')}
                   </p>
                 </div>
               ) : (
               chatRooms.map((room) => (
                 <button
                   key={room.id}
-                  className="w-full flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors text-left"
+                  className="w-full flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors text-start"
                   onClick={() => setView('chat')}
                 >
                   <Avatar className="h-11 w-11 shrink-0">
@@ -833,7 +953,7 @@ export default function UserDashboardView() {
                       <span className="text-xs text-muted-foreground shrink-0">{room.time}</span>
                     </div>
                     {room.carTitle && (
-                      <p className="text-xs text-muted-foreground truncate mb-0.5">Re: {room.carTitle}</p>
+                      <p className="text-xs text-muted-foreground truncate mb-0.5">{tr('بخصوص', 'Re')}: {room.carTitle}</p>
                     )}
                     <p className="text-sm text-muted-foreground truncate">{room.lastMessage}</p>
                   </div>
@@ -861,22 +981,22 @@ export default function UserDashboardView() {
       className="space-y-6"
     >
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+        <h2 className="text-2xl font-bold tracking-tight">{tr('الإعدادات', 'Settings')}</h2>
+        <p className="text-muted-foreground">{tr('إدارة إعدادات حسابك وتفضيلاتك.', 'Manage your account settings and preferences.')}</p>
       </div>
 
       {/* Profile */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <User className="w-4 h-4" />Profile Information
+            <User className="w-4 h-4" />{tr('معلومات الملف الشخصي', 'Profile Information')}
           </CardTitle>
-          <CardDescription>Update your personal details.</CardDescription>
+          <CardDescription>{tr('حدّث بياناتك الشخصية.', 'Update your personal details.')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="settings-name">Full Name</Label>
+              <Label htmlFor="settings-name">{tr('الاسم الكامل', 'Full Name')}</Label>
               <Input
                 id="settings-name"
                 value={profileForm.name}
@@ -884,7 +1004,7 @@ export default function UserDashboardView() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="settings-email">Email</Label>
+              <Label htmlFor="settings-email">{tr('البريد الإلكتروني', 'Email')}</Label>
               <Input
                 id="settings-email"
                 type="email"
@@ -894,7 +1014,7 @@ export default function UserDashboardView() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="settings-phone">Phone</Label>
+              <Label htmlFor="settings-phone">{tr('الهاتف', 'Phone')}</Label>
               <Input
                 id="settings-phone"
                 value={profileForm.phone}
@@ -902,7 +1022,7 @@ export default function UserDashboardView() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="settings-city">City</Label>
+              <Label htmlFor="settings-city">{tr('المدينة', 'City')}</Label>
               <Input
                 id="settings-city"
                 value={profileForm.city}
@@ -911,12 +1031,12 @@ export default function UserDashboardView() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="settings-bio">Bio</Label>
+            <Label htmlFor="settings-bio">{tr('نبذة', 'Bio')}</Label>
             <Textarea
               id="settings-bio"
               value={profileForm.bio}
               onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-              placeholder="Tell us about yourself..."
+              placeholder={tr('أخبرنا عن نفسك...', 'Tell us about yourself...')}
               rows={3}
             />
           </div>
@@ -927,7 +1047,7 @@ export default function UserDashboardView() {
             disabled={savingProfile}
             onClick={handleSaveProfile}
           >
-            {savingProfile ? 'Saving...' : 'Save Changes'}
+            {savingProfile ? tr('جاري الحفظ...', 'Saving...') : tr('حفظ التغييرات', 'Save Changes')}
           </Button>
         </CardFooter>
       </Card>
@@ -936,13 +1056,13 @@ export default function UserDashboardView() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Lock className="w-4 h-4" />Change Password
+            <Lock className="w-4 h-4" />{tr('تغيير كلمة المرور', 'Change Password')}
           </CardTitle>
-          <CardDescription>Update your password for security.</CardDescription>
+          <CardDescription>{tr('حدّث كلمة المرور لأمان حسابك.', 'Update your password for security.')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="current-password">Current Password</Label>
+            <Label htmlFor="current-password">{tr('كلمة المرور الحالية', 'Current Password')}</Label>
             <Input
               id="current-password"
               type="password"
@@ -952,7 +1072,7 @@ export default function UserDashboardView() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
+              <Label htmlFor="new-password">{tr('كلمة المرور الجديدة', 'New Password')}</Label>
               <Input
                 id="new-password"
                 type="password"
@@ -961,7 +1081,7 @@ export default function UserDashboardView() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm New Password</Label>
+              <Label htmlFor="confirm-password">{tr('تأكيد كلمة المرور الجديدة', 'Confirm New Password')}</Label>
               <Input
                 id="confirm-password"
                 type="password"
@@ -976,14 +1096,14 @@ export default function UserDashboardView() {
             className="bg-gradient-to-r from-orange-500 to-amber-600 text-white"
             onClick={() => {
               if (!passwordForm.current || !passwordForm.newPassword) {
-                toast.error('Please fill in all fields');
+                toast.error(tr('يرجى تعبئة جميع الحقول', 'Please fill in all fields'));
                 return;
               }
-              toast.success('Password changed successfully!');
+              toast.success(tr('تم تغيير كلمة المرور بنجاح!', 'Password changed successfully!'));
               setPasswordForm({ current: '', newPassword: '', confirm: '' });
             }}
           >
-            Update Password
+            {tr('تحديث كلمة المرور', 'Update Password')}
           </Button>
         </CardFooter>
       </Card>
@@ -992,18 +1112,18 @@ export default function UserDashboardView() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Bell className="w-4 h-4" />Notification Preferences
+            <Bell className="w-4 h-4" />{tr('تفضيلات الإشعارات', 'Notification Preferences')}
           </CardTitle>
-          <CardDescription>Choose what notifications you want to receive.</CardDescription>
+          <CardDescription>{tr('اختر الإشعارات التي تريد استلامها.', 'Choose what notifications you want to receive.')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <p className="text-sm font-medium mb-3">Email Notifications</p>
+            <p className="text-sm font-medium mb-3">{tr('إشعارات البريد الإلكتروني', 'Email Notifications')}</p>
             <div className="space-y-4">
               {[
-                { key: 'emailBookings' as const, label: 'Booking Updates', desc: 'Get notified about booking status changes' },
-                { key: 'emailMessages' as const, label: 'New Messages', desc: 'Receive email for new chat messages' },
-                { key: 'emailMarketing' as const, label: 'Marketing Emails', desc: 'Promotions, offers, and newsletters' },
+                { key: 'emailBookings' as const, label: tr('تحديثات الحجز', 'Booking Updates'), desc: tr('إشعار بتغيّر حالة الحجز', 'Get notified about booking status changes') },
+                { key: 'emailMessages' as const, label: tr('رسائل جديدة', 'New Messages'), desc: tr('استلام بريد عند رسائل الدردشة الجديدة', 'Receive email for new chat messages') },
+                { key: 'emailMarketing' as const, label: tr('رسائل تسويقية', 'Marketing Emails'), desc: tr('عروض وترويجات ونشرات', 'Promotions, offers, and newsletters') },
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -1022,12 +1142,12 @@ export default function UserDashboardView() {
           </div>
           <Separator />
           <div>
-            <p className="text-sm font-medium mb-3">Push Notifications</p>
+            <p className="text-sm font-medium mb-3">{tr('إشعارات الدفع', 'Push Notifications')}</p>
             <div className="space-y-4">
               {[
-                { key: 'pushBookings' as const, label: 'Booking Updates', desc: 'Real-time booking notifications' },
-                { key: 'pushMessages' as const, label: 'New Messages', desc: 'Real-time chat notifications' },
-                { key: 'pushPriceDrops' as const, label: 'Price Drops', desc: 'Alert when saved car prices drop' },
+                { key: 'pushBookings' as const, label: tr('تحديثات الحجز', 'Booking Updates'), desc: tr('إشعارات الحجز الفورية', 'Real-time booking notifications') },
+                { key: 'pushMessages' as const, label: tr('رسائل جديدة', 'New Messages'), desc: tr('إشعارات الدردشة الفورية', 'Real-time chat notifications') },
+                { key: 'pushPriceDrops' as const, label: tr('انخفاض الأسعار', 'Price Drops'), desc: tr('تنبيه عند انخفاض أسعار السيارات المحفوظة', 'Alert when saved car prices drop') },
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -1048,9 +1168,9 @@ export default function UserDashboardView() {
         <CardFooter>
           <Button
             className="bg-gradient-to-r from-orange-500 to-amber-600 text-white"
-            onClick={() => toast.success('Notification preferences saved!')}
+            onClick={() => toast.success(tr('تم حفظ تفضيلات الإشعارات!', 'Notification preferences saved!'))}
           >
-            Save Preferences
+            {tr('حفظ التفضيلات', 'Save Preferences')}
           </Button>
         </CardFooter>
       </Card>
@@ -1059,39 +1179,41 @@ export default function UserDashboardView() {
       <Card className="border-red-200 dark:border-red-900/50">
         <CardHeader>
           <CardTitle className="text-base text-red-600 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />Danger Zone
+            <AlertCircle className="w-4 h-4" />{tr('منطقة الخطر', 'Danger Zone')}
           </CardTitle>
-          <CardDescription>Irreversible actions for your account.</CardDescription>
+          <CardDescription>{tr('إجراءات لا يمكن التراجع عنها لحسابك.', 'Irreversible actions for your account.')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">Delete Account</p>
+              <p className="text-sm font-medium">{tr('حذف الحساب', 'Delete Account')}</p>
               <p className="text-xs text-muted-foreground">
-                Permanently delete your account and all associated data.
+                {tr('حذف حسابك نهائيًا وجميع البيانات المرتبطة به.', 'Permanently delete your account and all associated data.')}
               </p>
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30">
-                  Delete Account
+                  {tr('حذف الحساب', 'Delete Account')}
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent dir={isRTL ? 'rtl' : 'ltr'}>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogTitle>{tr('هل أنت متأكد تمامًا؟', 'Are you absolutely sure?')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete your account,
-                    all your listings, messages, and remove all associated data from our servers.
+                    {tr(
+                      'لا يمكن التراجع عن هذا الإجراء. سيتم حذف حسابك نهائيًا وجميع إعلاناتك ورسائلك وبياناتك المرتبطة من خوادمنا.',
+                      'This action cannot be undone. This will permanently delete your account, all your listings, messages, and remove all associated data from our servers.'
+                    )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>{tr('إلغاء', 'Cancel')}</AlertDialogCancel>
                   <AlertDialogAction
                     className="bg-red-600 hover:bg-red-700"
-                    onClick={() => toast.error('Account deletion requested. (Demo only)')}
+                    onClick={() => toast.error(tr('تم طلب حذف الحساب. (تجريبي فقط)', 'Account deletion requested. (Demo only)'))}
                   >
-                    Delete Account
+                    {tr('حذف الحساب', 'Delete Account')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -1103,29 +1225,29 @@ export default function UserDashboardView() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50/50 to-orange-50/30 dark:from-gray-950 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50/50 to-orange-50/30 dark:from-gray-950 dark:to-gray-900" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => setView('home')} className="h-9 w-9">
-              <ArrowUpRight className="w-4 h-4 rotate-180" />
+              <ArrowUpRight className={`w-4 h-4 ${isRTL ? '' : 'rotate-180'}`} />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">My Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Manage your cars, bookings, and profile</p>
+              <h1 className="text-2xl font-bold tracking-tight">{tr('لوحة التحكم', 'My Dashboard')}</h1>
+              <p className="text-sm text-muted-foreground">{tr('إدارة سياراتك وحجوزاتك وملفك الشخصي', 'Manage your cars, bookings, and profile')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="relative" onClick={() => setActiveTab('messages')}>
               <MessageSquare className="w-4 h-4" />
-              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+              <span className="absolute -top-0.5 -end-0.5 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
                 4
               </span>
             </Button>
             <Button variant="ghost" size="icon" className="relative" onClick={() => setView('notifications')}>
               <Bell className="w-4 h-4" />
-              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+              <span className="absolute -top-0.5 -end-0.5 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
                 2
               </span>
             </Button>
@@ -1137,40 +1259,45 @@ export default function UserDashboardView() {
           <TabsList className="w-full flex overflow-x-auto bg-muted/80 p-1 rounded-xl mb-6">
             <TabsTrigger value="overview" className="flex items-center gap-1.5 text-sm shrink-0">
               <Settings className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Overview</span>
+              <span className="hidden sm:inline">{tr('نظرة عامة', 'Overview')}</span>
             </TabsTrigger>
             <TabsTrigger value="listings" className="flex items-center gap-1.5 text-sm shrink-0">
               <Car className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">My Listings</span>
+              <span className="hidden sm:inline">{tr('إعلاناتي', 'My Listings')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="ads" className="flex items-center gap-1.5 text-sm shrink-0">
+              <Megaphone className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{tr('إعلاناتي المدفوعة', 'My Ads')}</span>
             </TabsTrigger>
             <TabsTrigger value="bookings" className="flex items-center gap-1.5 text-sm shrink-0">
               <CalendarCheck className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">My Bookings</span>
+              <span className="hidden sm:inline">{tr('حجوزاتي', 'My Bookings')}</span>
             </TabsTrigger>
             <TabsTrigger value="favorites" className="flex items-center gap-1.5 text-sm shrink-0">
               <Heart className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Favorites</span>
+              <span className="hidden sm:inline">{tr('المفضلة', 'Favorites')}</span>
             </TabsTrigger>
             <TabsTrigger value="wallet" className="flex items-center gap-1.5 text-sm shrink-0">
               <Wallet className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Wallet</span>
+              <span className="hidden sm:inline">{tr('المحفظة', 'Wallet')}</span>
             </TabsTrigger>
             <TabsTrigger value="messages" className="flex items-center gap-1.5 text-sm shrink-0 relative">
               <MessageSquare className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Messages</span>
+              <span className="hidden sm:inline">{tr('الرسائل', 'Messages')}</span>
               <span className="h-4 min-w-[16px] rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center px-1">
                 4
               </span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-1.5 text-sm shrink-0">
               <Settings className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Settings</span>
+              <span className="hidden sm:inline">{tr('الإعدادات', 'Settings')}</span>
             </TabsTrigger>
           </TabsList>
 
           <AnimatePresence mode="wait">
             <TabsContent value="overview">{renderOverview()}</TabsContent>
             <TabsContent value="listings">{renderMyListings()}</TabsContent>
+            <TabsContent value="ads">{renderMyAds()}</TabsContent>
             <TabsContent value="bookings">{renderMyBookings()}</TabsContent>
             <TabsContent value="favorites">{renderFavorites()}</TabsContent>
             <TabsContent value="wallet">{renderWallet()}</TabsContent>

@@ -9,11 +9,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/api-auth";
+import { auditService } from "@/services/audit.service";
+import { HOMEPAGE_SECTION_TYPES, parseSectionContent } from "@/lib/cms-content";
+import { cmsService } from "@/services/cms.service";
 
 // ============ GET: Homepage Sections ============
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const all = searchParams.get("all") === "true";
+
+    if (all) {
+      await requireAdmin(request);
+      await cmsService.ensureHomepageDefaults();
+      const sections = await db.homepageSection.findMany({
+        orderBy: { order: "asc" },
+      });
+      return NextResponse.json({
+        success: true,
+        data: sections.map((s) => ({ ...s, content: parseSectionContent(s.content) })),
+      });
+    }
+
     const sections = await db.homepageSection.findMany({
       where: { isActive: true },
       orderBy: { order: "asc" },
@@ -21,10 +39,16 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      data: sections,
+      data: sections.map((s) => ({ ...s, content: parseSectionContent(s.content) })),
     });
   } catch (error) {
     console.error("[HOMEPAGE_GET]", error);
+    if (error instanceof Error && error.name === "AuthError") {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 401 }
+      );
+    }
     return NextResponse.json(
       { success: false, error: "Failed to fetch homepage sections" },
       { status: 500 }
@@ -48,7 +72,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validTypes = ["hero", "featured_cars", "categories", "banner", "testimonials", "stats", "cta"];
+    const validTypes = [...HOMEPAGE_SECTION_TYPES];
     if (!validTypes.includes(type)) {
       return NextResponse.json(
         { success: false, error: `Invalid section type. Must be one of: ${validTypes.join(", ")}` },
@@ -67,8 +91,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    await auditService.log({
+      userId: user.id,
+      action: "homepage.create",
+      entity: "HomepageSection",
+      entityId: section.id,
+      details: { type },
+    });
+
     return NextResponse.json(
-      { success: true, data: section, message: "Section created successfully" },
+      {
+        success: true,
+        data: { ...section, content: parseSectionContent(section.content) },
+        message: "Section created successfully",
+      },
       { status: 201 }
     );
   } catch (error: unknown) {
@@ -93,6 +129,32 @@ export async function PUT(request: NextRequest) {
     const user = await requireAdmin(request);
 
     const body = await request.json();
+
+    // Bulk reorder support
+    if (Array.isArray(body.items)) {
+      await Promise.all(
+        body.items.map((it: { id: string; order: number; isActive?: boolean }) =>
+          db.homepageSection.update({
+            where: { id: it.id },
+            data: {
+              order: it.order,
+              ...(it.isActive !== undefined ? { isActive: it.isActive } : {}),
+            },
+          })
+        )
+      );
+      await auditService.log({
+        userId: user.id,
+        action: "homepage.reorder",
+        entity: "HomepageSection",
+      });
+      const sections = await db.homepageSection.findMany({ orderBy: { order: "asc" } });
+      return NextResponse.json({
+        success: true,
+        data: sections.map((s) => ({ ...s, content: parseSectionContent(s.content) })),
+      });
+    }
+
     const { id, type, title, subtitle, content, order, isActive } = body;
 
     if (!id) {
@@ -123,9 +185,17 @@ export async function PUT(request: NextRequest) {
       data: updateData,
     });
 
+    await auditService.log({
+      userId: user.id,
+      action: "homepage.update",
+      entity: "HomepageSection",
+      entityId: id,
+      details: updateData,
+    });
+
     return NextResponse.json({
       success: true,
-      data: section,
+      data: { ...section, content: parseSectionContent(section.content) },
       message: "Section updated successfully",
     });
   } catch (error: unknown) {
@@ -168,6 +238,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     await db.homepageSection.delete({ where: { id } });
+
+    await auditService.log({
+      userId: user.id,
+      action: "homepage.delete",
+      entity: "HomepageSection",
+      entityId: id,
+    });
 
     return NextResponse.json({
       success: true,

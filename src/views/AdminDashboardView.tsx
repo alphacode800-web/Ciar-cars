@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BarChart3,
   Users,
   Car,
   CalendarCheck,
@@ -26,7 +25,15 @@ import {
   Crown,
   Sparkles,
   ChevronLeft,
-  Boxes,
+  FileText,
+  ImageIcon,
+  Mail,
+  Star,
+  Wallet,
+  MessageSquare,
+  BadgePercent,
+  BarChart3,
+  Megaphone,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -56,7 +63,15 @@ import HomepageBuilderSection from '@/components/admin/HomepageBuilderSection';
 import NavigationSection from '@/components/admin/NavigationSection';
 import AuditLogsSection from '@/components/admin/AuditLogsSection';
 import AppearanceSection from '@/components/admin/AppearanceSection';
-import AdminComponentsSection from '@/components/admin/AdminComponentsSection';
+import PagesContentSection from '@/components/admin/PagesContentSection';
+import MediaLibrarySection from '@/components/admin/MediaLibrarySection';
+import ContactMessagesSection from '@/components/admin/ContactMessagesSection';
+import ReviewsSection from '@/components/admin/ReviewsSection';
+import WalletsSection from '@/components/admin/WalletsSection';
+import ChatAdminSection from '@/components/admin/ChatAdminSection';
+import PaymentMethodsAdminSection from '@/components/admin/PaymentMethodsAdminSection';
+import AiSuiteSection from '@/components/admin/AiSuiteSection';
+import AdvertisementsAdminSection from '@/components/admin/AdvertisementsAdminSection';
 
 type AdminSection =
   | 'overview'
@@ -64,12 +79,26 @@ type AdminSection =
   | 'cars'
   | 'bookings'
   | 'payments'
+  | 'wallets'
+  | 'reviews'
+  | 'chat'
+  | 'messages'
   | 'settings'
   | 'appearance'
   | 'homepage'
+  | 'pages'
+  | 'media'
+  | 'payment-methods'
   | 'navigation'
   | 'audit'
-  | 'components';
+  | 'ai'
+  | 'advertisements';
+
+const ALL_SECTIONS: AdminSection[] = [
+  'overview', 'users', 'cars', 'bookings', 'payments', 'wallets', 'reviews', 'chat',
+  'messages', 'settings', 'appearance', 'homepage', 'pages', 'media', 'payment-methods',
+  'navigation', 'audit', 'ai', 'advertisements',
+];
 
 const navKeyMap = {
   overview: 'nav.overview',
@@ -77,12 +106,20 @@ const navKeyMap = {
   cars: 'nav.cars',
   bookings: 'nav.bookings',
   payments: 'nav.payments',
+  wallets: 'nav.wallets',
+  reviews: 'nav.reviews',
+  chat: 'nav.chat',
+  messages: 'nav.messages',
   settings: 'nav.settings',
   appearance: 'nav.appearance',
   homepage: 'nav.homepage',
+  pages: 'nav.pages',
+  media: 'nav.media',
+  'payment-methods': 'nav.paymentMethods',
   navigation: 'nav.navigation',
   audit: 'nav.audit',
-  components: 'nav.components',
+  ai: 'nav.ai',
+  advertisements: 'nav.advertisements',
 } as const;
 
 type NavKey = keyof typeof navKeyMap;
@@ -105,6 +142,11 @@ const navGroups: { groupKey: string; items: NavItemDef[] }[] = [
       { id: 'cars', labelKey: 'cars', icon: Car },
       { id: 'bookings', labelKey: 'bookings', icon: CalendarCheck },
       { id: 'payments', labelKey: 'payments', icon: CreditCard },
+      { id: 'advertisements', labelKey: 'advertisements', icon: Megaphone },
+      { id: 'wallets', labelKey: 'wallets', icon: Wallet },
+      { id: 'reviews', labelKey: 'reviews', icon: Star },
+      { id: 'chat', labelKey: 'chat', icon: MessageSquare },
+      { id: 'messages', labelKey: 'messages', icon: Mail },
     ],
   },
   {
@@ -112,13 +154,16 @@ const navGroups: { groupKey: string; items: NavItemDef[] }[] = [
     items: [
       { id: 'appearance', labelKey: 'appearance', icon: Palette },
       { id: 'homepage', labelKey: 'homepage', icon: Home },
+      { id: 'pages', labelKey: 'pages', icon: FileText },
+      { id: 'media', labelKey: 'media', icon: ImageIcon },
+      { id: 'payment-methods', labelKey: 'payment-methods', icon: BadgePercent },
       { id: 'navigation', labelKey: 'navigation', icon: Navigation },
     ],
   },
   {
     groupKey: 'navGroup.system',
     items: [
-      { id: 'components', labelKey: 'components', icon: Boxes },
+      { id: 'ai', labelKey: 'ai', icon: Sparkles },
       { id: 'settings', labelKey: 'settings', icon: Settings },
       { id: 'audit', labelKey: 'audit', icon: ScrollText },
     ],
@@ -136,11 +181,25 @@ export default function AdminDashboardView() {
   const { user, logout, setUser } = useAuthStore();
   const { setView } = useAppStore();
   const { t, locale, setLocale, isRTL, ready } = useAdminTranslation();
-  const [activeSection, setActiveSection] = useState<AdminSection>('overview');
+  const [activeSection, setActiveSection] = useState<AdminSection>(() => {
+    if (typeof window === 'undefined') return 'overview';
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section') as AdminSection | null;
+    return section && ALL_SECTIONS.includes(section) ? section : 'overview';
+  });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const goToSection = (section: AdminSection) => {
+    setActiveSection(section);
+    setMobileOpen(false);
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', 'admin');
+    url.searchParams.set('section', section);
+    window.history.replaceState({}, '', url.toString());
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -186,18 +245,26 @@ export default function AdminDashboardView() {
 
   const renderSection = () => {
     switch (activeSection) {
-      case 'overview': return <OverviewSection onNavigate={(s) => setActiveSection(s as AdminSection)} />;
+      case 'overview': return <OverviewSection onNavigate={(s) => goToSection(s as AdminSection)} />;
       case 'users': return <UsersSection />;
       case 'cars': return <CarsSection />;
       case 'bookings': return <BookingsSection />;
       case 'payments': return <PaymentsSection />;
+      case 'wallets': return <WalletsSection />;
+      case 'reviews': return <ReviewsSection />;
+      case 'chat': return <ChatAdminSection />;
+      case 'messages': return <ContactMessagesSection />;
       case 'settings': return <SettingsSection />;
       case 'appearance': return <AppearanceSection />;
       case 'homepage': return <HomepageBuilderSection />;
+      case 'pages': return <PagesContentSection />;
+      case 'media': return <MediaLibrarySection />;
+      case 'payment-methods': return <PaymentMethodsAdminSection />;
       case 'navigation': return <NavigationSection />;
       case 'audit': return <AuditLogsSection />;
-      case 'components': return <AdminComponentsSection />;
-      default: return <OverviewSection onNavigate={(s) => setActiveSection(s as AdminSection)} />;
+      case 'ai': return <AiSuiteSection />;
+      case 'advertisements': return <AdvertisementsAdminSection />;
+      default: return <OverviewSection onNavigate={(s) => goToSection(s as AdminSection)} />;
     }
   };
 
@@ -209,10 +276,7 @@ export default function AdminDashboardView() {
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              onClick={() => {
-                setActiveSection(item.id);
-                setMobileOpen(false);
-              }}
+              onClick={() => goToSection(item.id)}
               className={cn(
                 'relative w-full flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200',
                 sidebarWide ? 'px-3 py-2.5' : 'px-2 py-2.5 justify-center',

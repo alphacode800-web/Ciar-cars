@@ -43,7 +43,7 @@ import {
   getCountryByCode,
   getDialCode,
 } from '@/lib/countries';
-import { UserRole } from '@/types';
+import { UserRole, type AppView } from '@/types';
 import {
   Select,
   SelectContent,
@@ -53,6 +53,12 @@ import {
 } from '@/components/ui/select';
 import { BrandWordmark } from '@/components/brand/BrandWordmark';
 import { PAGE_HERO_IMAGES } from '@/lib/car-images';
+import { useTranslation } from '@/hooks/use-translation';
+import {
+  isAdminRole,
+  signInWithCredentials,
+  syncAuthStoreFromSession,
+} from '@/lib/auth-helpers';
 
 const roles = [
   {
@@ -90,6 +96,9 @@ const roles = [
 export default function AuthView() {
   const { setUser } = useAuthStore();
   const { setView } = useAppStore();
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = React.useCallback((ar: string, other: string) => (isAr ? ar : other), [isAr]);
 
   const [loginForm, setLoginForm] = useState({
     email: '',
@@ -122,44 +131,53 @@ export default function AuthView() {
     if (/[0-9]/.test(pw)) score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
 
-    if (score <= 1) return { score: 20, label: 'Weak', color: 'bg-red-500' };
-    if (score === 2) return { score: 40, label: 'Fair', color: 'bg-yellow-500' };
-    if (score === 3) return { score: 60, label: 'Good', color: 'bg-yellow-500' };
-    if (score === 4) return { score: 80, label: 'Strong', color: 'bg-emerald-500' };
-    return { score: 100, label: 'Very Strong', color: 'bg-green-600' };
-  }, [registerForm.password]);
+    if (score <= 1) return { score: 20, label: tr('ضعيفة', 'Weak'), color: 'bg-red-500' };
+    if (score === 2) return { score: 40, label: tr('مقبولة', 'Fair'), color: 'bg-yellow-500' };
+    if (score === 3) return { score: 60, label: tr('جيدة', 'Good'), color: 'bg-yellow-500' };
+    if (score === 4) return { score: 80, label: tr('قوية', 'Strong'), color: 'bg-emerald-500' };
+    return { score: 100, label: tr('قوية جدًا', 'Very Strong'), color: 'bg-green-600' };
+  }, [registerForm.password, tr]);
+
+  const completeSignIn = async (
+    email: string,
+    password: string,
+    options?: { redirectView?: AppView; successMessage?: string }
+  ): Promise<boolean> => {
+    const result = await signInWithCredentials(email, password, 'user');
+
+    if (!result.ok) {
+      toast.error(result.error || tr('بيانات الدخول غير صحيحة', 'Invalid credentials'));
+      return false;
+    }
+
+    const user = await syncAuthStoreFromSession(setUser);
+    if (user && isAdminRole(user.role)) {
+      toast.error(tr('يرجى استخدام صفحة دخول الإدارة', 'Please use the admin login page'));
+      return false;
+    }
+
+    if (user) {
+      toast.success(
+        options?.successMessage || tr('مرحبًا بعودتك!', 'Welcome back!')
+      );
+      setView(options?.redirectView || 'dashboard');
+      return true;
+    }
+
+    return false;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginForm.email || !loginForm.password) {
-      toast.error('Please fill in all fields');
+      toast.error(tr('يرجى تعبئة جميع الحقول', 'Please fill in all fields'));
       return;
     }
     setLoginLoading(true);
     try {
-      const result = await signInWithCredentials(
-        loginForm.email,
-        loginForm.password,
-        'user'
-      );
-
-      if (!result.ok) {
-        toast.error(result.error || 'Invalid credentials');
-        return;
-      }
-
-      const user = await syncAuthStoreFromSession(setUser);
-      if (user && isAdminRole(user.role)) {
-        toast.error('Please use the admin login page');
-        return;
-      }
-
-      if (user) {
-        toast.success('Welcome back!');
-        setView('home');
-      }
+      await completeSignIn(loginForm.email, loginForm.password);
     } catch {
-      toast.error('Login failed. Please try again.');
+      toast.error(tr('فشل تسجيل الدخول. حاول مجددًا.', 'Login failed. Please try again.'));
     } finally {
       setLoginLoading(false);
     }
@@ -168,19 +186,19 @@ export default function AuthView() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!registerForm.fullName || !registerForm.email || !registerForm.password || !registerForm.role) {
-      toast.error('Please fill in all required fields');
+      toast.error(tr('يرجى تعبئة جميع الحقول المطلوبة', 'Please fill in all required fields'));
       return;
     }
     if (registerForm.password !== registerForm.confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error(tr('كلمتا المرور غير متطابقتين', 'Passwords do not match'));
       return;
     }
     if (registerForm.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+      toast.error(tr('يجب ألا تقل كلمة المرور عن 6 أحرف', 'Password must be at least 6 characters'));
       return;
     }
     if (!registerForm.agreeTerms) {
-      toast.error('Please agree to the terms and conditions');
+      toast.error(tr('يرجى الموافقة على الشروط والأحكام', 'Please agree to the terms and conditions'));
       return;
     }
     setRegisterLoading(true);
@@ -200,15 +218,24 @@ export default function AuthView() {
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success('Account created! Logging you in...');
-        await handleLogin({
-          preventDefault: () => {},
-        } as React.FormEvent);
+        const signedIn = await completeSignIn(registerForm.email, registerForm.password, {
+          redirectView: 'dashboard',
+          successMessage: tr('تم إنشاء حسابك بنجاح!', 'Account created successfully!'),
+        });
+        if (!signedIn) {
+          toast.info(
+            tr(
+              'تم إنشاء الحساب. يرجى تسجيل الدخول يدويًا.',
+              'Account created. Please sign in manually.'
+            )
+          );
+          setLoginForm((prev) => ({ ...prev, email: registerForm.email }));
+        }
       } else {
-        toast.error(data.error || 'Registration failed');
+        toast.error(data.error || tr('فشل إنشاء الحساب', 'Registration failed'));
       }
     } catch {
-      toast.error('Registration failed. Please try again.');
+      toast.error(tr('فشل إنشاء الحساب. حاول مجددًا.', 'Registration failed. Please try again.'));
     } finally {
       setRegisterLoading(false);
     }
@@ -221,7 +248,7 @@ export default function AuthView() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
       <img
         src={PAGE_HERO_IMAGES.auth}
         alt=""
@@ -251,18 +278,18 @@ export default function AuthView() {
             onClick={() => setView('home')}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
           >
-            <ArrowLeft className="w-3 h-3" />
-            Back to home
+            <ArrowLeft className={`w-3 h-3 ${isRTL ? 'rotate-180' : ''}`} />
+            {tr('العودة إلى الرئيسية', 'Back to home')}
           </button>
         </div>
 
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="w-full grid grid-cols-2 h-11">
             <TabsTrigger value="login" className="text-sm font-medium">
-              Sign In
+              {tr('تسجيل الدخول', 'Sign In')}
             </TabsTrigger>
             <TabsTrigger value="register" className="text-sm font-medium">
-              Create Account
+              {tr('إنشاء حساب', 'Create Account')}
             </TabsTrigger>
           </TabsList>
 
@@ -279,17 +306,17 @@ export default function AuthView() {
               <TabsContent value="login">
                 <Card className="border-0 shadow-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl">
                   <CardHeader className="text-center pb-2">
-                    <CardTitle className="text-xl">Welcome Back</CardTitle>
+                    <CardTitle className="text-xl">{tr('مرحبًا بعودتك', 'Welcome Back')}</CardTitle>
                     <CardDescription>
-                      Sign in to your {CURRENCY.symbol} CIAR Cars account
+                      {tr('سجّل الدخول إلى حسابك في CIAR Cars', `Sign in to your ${CURRENCY.symbol} CIAR Cars account`)}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleLogin} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="login-email">Email</Label>
+                        <Label htmlFor="login-email">{tr('البريد الإلكتروني', 'Email')}</Label>
                         <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Mail className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
                             id="login-email"
                             type="email"
@@ -298,37 +325,37 @@ export default function AuthView() {
                             onChange={(e) =>
                               setLoginForm({ ...loginForm, email: e.target.value })
                             }
-                            className="pl-10"
+                            className="ps-10"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <Label htmlFor="login-password">Password</Label>
+                          <Label htmlFor="login-password">{tr('كلمة المرور', 'Password')}</Label>
                           <button
                             type="button"
                             className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium"
                           >
-                            Forgot password?
+                            {tr('نسيت كلمة المرور؟', 'Forgot password?')}
                           </button>
                         </div>
                         <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
                             id="login-password"
                             type={showLoginPassword ? 'text' : 'password'}
-                            placeholder="Enter your password"
+                            placeholder={tr('أدخل كلمة المرور', 'Enter your password')}
                             value={loginForm.password}
                             onChange={(e) =>
                               setLoginForm({ ...loginForm, password: e.target.value })
                             }
-                            className="pl-10 pr-10"
+                            className="ps-10 pe-10"
                           />
                           <button
                             type="button"
                             onClick={() => setShowLoginPassword(!showLoginPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           >
                             {showLoginPassword ? (
                               <EyeOff className="w-4 h-4" />
@@ -348,7 +375,7 @@ export default function AuthView() {
                           }
                         />
                         <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
-                          Remember me
+                          {tr('تذكّرني', 'Remember me')}
                         </Label>
                       </div>
 
@@ -360,7 +387,7 @@ export default function AuthView() {
                         {loginLoading ? (
                           <Loader2 className="w-4 h-4 animate-spin mr-2" />
                         ) : null}
-                        Sign In
+                        {tr('تسجيل الدخول', 'Sign In')}
                       </Button>
                     </form>
 
@@ -371,7 +398,7 @@ export default function AuthView() {
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
                         <span className="bg-white dark:bg-gray-900 px-2 text-muted-foreground">
-                          Or continue with
+                          {tr('أو تابع باستخدام', 'Or continue with')}
                         </span>
                       </div>
                     </div>
@@ -381,7 +408,7 @@ export default function AuthView() {
                       <Button
                         variant="outline"
                         className="h-10 font-normal hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
-                        onClick={() => toast.info('Google login coming soon!')}
+                        onClick={() => toast.info(tr('تسجيل جوجل سيتوفر قريبًا', 'Google login coming soon!'))}
                       >
                         <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                           <path
@@ -406,7 +433,7 @@ export default function AuthView() {
                       <Button
                         variant="outline"
                         className="h-10 font-normal hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
-                        onClick={() => toast.info('Facebook login coming soon!')}
+                        onClick={() => toast.info(tr('تسجيل فيسبوك سيتوفر قريبًا', 'Facebook login coming soon!'))}
                       >
                         <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="#1877F2">
                           <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
@@ -431,33 +458,33 @@ export default function AuthView() {
               <TabsContent value="register">
                 <Card className="border-0 shadow-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl">
                   <CardHeader className="text-center pb-2">
-                    <CardTitle className="text-xl">Create Account</CardTitle>
+                    <CardTitle className="text-xl">{tr('إنشاء حساب', 'Create Account')}</CardTitle>
                     <CardDescription>
-                      Join the world&apos;s premier car marketplace
+                      {tr('انضم إلى سوق السيارات العالمي المميز', "Join the world's premier car marketplace")}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleRegister} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="reg-name">Full Name *</Label>
+                        <Label htmlFor="reg-name">{tr('الاسم الكامل *', 'Full Name *')}</Label>
                         <div className="relative">
-                          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <User className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
                             id="reg-name"
-                            placeholder="Ahmed Mohamed"
+                            placeholder={tr('أحمد محمد', 'Ahmed Mohamed')}
                             value={registerForm.fullName}
                             onChange={(e) =>
                               setRegisterForm({ ...registerForm, fullName: e.target.value })
                             }
-                            className="pl-10"
+                            className="ps-10"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="reg-email">Email *</Label>
+                        <Label htmlFor="reg-email">{tr('البريد الإلكتروني *', 'Email *')}</Label>
                         <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Mail className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
                             id="reg-email"
                             type="email"
@@ -466,13 +493,13 @@ export default function AuthView() {
                             onChange={(e) =>
                               setRegisterForm({ ...registerForm, email: e.target.value })
                             }
-                            className="pl-10"
+                            className="ps-10"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="reg-phone">Phone</Label>
+                        <Label htmlFor="reg-phone">{tr('رقم الهاتف', 'Phone')}</Label>
                         <div className="flex gap-2">
                           <Select
                             value={registerForm.phoneCountryCode}
@@ -505,7 +532,7 @@ export default function AuthView() {
                             </SelectContent>
                           </Select>
                           <div className="relative flex-1">
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Phone className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
                               id="reg-phone"
                               type="tel"
@@ -515,30 +542,30 @@ export default function AuthView() {
                               onChange={(e) =>
                                 setRegisterForm({ ...registerForm, phone: e.target.value })
                               }
-                              className="pl-10"
+                              className="ps-10"
                             />
                           </div>
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="reg-password">Password *</Label>
+                        <Label htmlFor="reg-password">{tr('كلمة المرور *', 'Password *')}</Label>
                         <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
                             id="reg-password"
                             type={showRegisterPassword ? 'text' : 'password'}
-                            placeholder="Min 6 characters"
+                            placeholder={tr('6 أحرف على الأقل', 'Min 6 characters')}
                             value={registerForm.password}
                             onChange={(e) =>
                               setRegisterForm({ ...registerForm, password: e.target.value })
                             }
-                            className="pl-10 pr-10"
+                            className="ps-10 pe-10"
                           />
                           <button
                             type="button"
                             onClick={() => setShowRegisterPassword(!showRegisterPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           >
                             {showRegisterPassword ? (
                               <EyeOff className="w-4 h-4" />
@@ -555,7 +582,7 @@ export default function AuthView() {
                           >
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-muted-foreground">
-                                Password strength
+                                {tr('قوة كلمة المرور', 'Password strength')}
                               </span>
                               <span
                                 className={`font-medium ${
@@ -572,16 +599,16 @@ export default function AuthView() {
                             <Progress value={passwordStrength.score} className="h-1.5" />
                             <div className="flex gap-3 text-xs text-muted-foreground">
                               <span className={registerForm.password.length >= 6 ? 'text-emerald-600' : ''}>
-                                6+ chars
+                                {tr('6+ أحرف', '6+ chars')}
                               </span>
                               <span className={/[A-Z]/.test(registerForm.password) ? 'text-emerald-600' : ''}>
-                                Uppercase
+                                {tr('حرف كبير', 'Uppercase')}
                               </span>
                               <span className={/[0-9]/.test(registerForm.password) ? 'text-emerald-600' : ''}>
-                                Number
+                                {tr('رقم', 'Number')}
                               </span>
                               <span className={/[^A-Za-z0-9]/.test(registerForm.password) ? 'text-emerald-600' : ''}>
-                                Special
+                                {tr('رمز خاص', 'Special')}
                               </span>
                             </div>
                           </motion.div>
@@ -589,13 +616,13 @@ export default function AuthView() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="reg-confirm">Confirm Password *</Label>
+                        <Label htmlFor="reg-confirm">{tr('تأكيد كلمة المرور *', 'Confirm Password *')}</Label>
                         <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
                             id="reg-confirm"
                             type={showConfirmPassword ? 'text' : 'password'}
-                            placeholder="Repeat your password"
+                            placeholder={tr('أعد كتابة كلمة المرور', 'Repeat your password')}
                             value={registerForm.confirmPassword}
                             onChange={(e) =>
                               setRegisterForm({
@@ -603,14 +630,14 @@ export default function AuthView() {
                                 confirmPassword: e.target.value,
                               })
                             }
-                            className="pl-10 pr-10"
+                            className="ps-10 pe-10"
                           />
                           <button
                             type="button"
                             onClick={() =>
                               setShowConfirmPassword(!showConfirmPassword)
                             }
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           >
                             {showConfirmPassword ? (
                               <EyeOff className="w-4 h-4" />
@@ -628,10 +655,10 @@ export default function AuthView() {
                             {registerForm.password === registerForm.confirmPassword ? (
                               <>
                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                                <span className="text-emerald-600">Passwords match</span>
+                                <span className="text-emerald-600">{tr('كلمتا المرور متطابقتان', 'Passwords match')}</span>
                               </>
                             ) : (
-                              <span className="text-red-500">Passwords do not match</span>
+                              <span className="text-red-500">{tr('كلمتا المرور غير متطابقتين', 'Passwords do not match')}</span>
                             )}
                           </motion.div>
                         )}
@@ -639,7 +666,7 @@ export default function AuthView() {
 
                       {/* Role Selection - Visual Cards */}
                       <div className="space-y-2">
-                        <Label>I want to...</Label>
+                        <Label>{tr('أريد أن...', 'I want to...')}</Label>
                         <div className="grid grid-cols-2 gap-3">
                           {roles.map((role) => {
                             const isSelected = registerForm.role === role.value;
@@ -710,7 +737,7 @@ export default function AuthView() {
                                       : 'text-gray-600 dark:text-gray-400'
                                   }`}
                                 >
-                                  {role.label}
+                                  {role.value === 'user' ? tr('مشتري', 'Buyer') : tr('بائع', 'Seller')}
                                 </span>
 
                                 {/* Description */}
@@ -721,7 +748,9 @@ export default function AuthView() {
                                       : 'text-gray-400 dark:text-gray-500'
                                   }`}
                                 >
-                                  {role.description}
+                                  {role.value === 'user'
+                                    ? tr('أريد البحث عن سيارتي القادمة وشرائها', 'I want to find and buy my next car')
+                                    : tr('أريد عرض المركبات وبيعها', 'I want to list and sell vehicles')}
                                 </span>
                               </motion.button>
                             );
@@ -745,13 +774,29 @@ export default function AuthView() {
                           htmlFor="terms"
                           className="text-sm text-muted-foreground leading-snug cursor-pointer"
                         >
-                          I agree to the{' '}
-                          <button type="button" className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline font-medium">
-                            Terms of Service
+                          {tr('أوافق على ', 'I agree to the ')}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setView('terms');
+                            }}
+                            className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline font-medium"
+                          >
+                            {tr('شروط الخدمة', 'Terms of Service')}
                           </button>{' '}
-                          and{' '}
-                          <button type="button" className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline font-medium">
-                            Privacy Policy
+                          {tr(' و', ' and ')}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setView('privacy');
+                            }}
+                            className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline font-medium"
+                          >
+                            {tr('سياسة الخصوصية', 'Privacy Policy')}
                           </button>
                         </Label>
                       </div>
@@ -764,7 +809,7 @@ export default function AuthView() {
                         {registerLoading ? (
                           <Loader2 className="w-4 h-4 animate-spin mr-2" />
                         ) : null}
-                        Create Account
+                        {tr('إنشاء حساب', 'Create Account')}
                       </Button>
                     </form>
 
@@ -775,7 +820,7 @@ export default function AuthView() {
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
                         <span className="bg-white dark:bg-gray-900 px-2 text-muted-foreground">
-                          Or sign up with
+                          {tr('أو أنشئ حسابًا باستخدام', 'Or sign up with')}
                         </span>
                       </div>
                     </div>
@@ -785,7 +830,7 @@ export default function AuthView() {
                       <Button
                         variant="outline"
                         className="h-10 font-normal hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
-                        onClick={() => toast.info('Google signup coming soon!')}
+                        onClick={() => toast.info(tr('التسجيل عبر جوجل سيتوفر قريبًا', 'Google signup coming soon!'))}
                       >
                         <Chrome className="w-4 h-4 mr-2" />
                         Google
@@ -793,7 +838,7 @@ export default function AuthView() {
                       <Button
                         variant="outline"
                         className="h-10 font-normal hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
-                        onClick={() => toast.info('Facebook signup coming soon!')}
+                        onClick={() => toast.info(tr('التسجيل عبر فيسبوك سيتوفر قريبًا', 'Facebook signup coming soon!'))}
                       >
                         <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="#1877F2">
                           <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
@@ -804,16 +849,16 @@ export default function AuthView() {
                   </CardContent>
                   <CardFooter className="justify-center">
                     <p className="text-sm text-muted-foreground">
-                      Already have an account?{' '}
+                      {tr('لديك حساب بالفعل؟ ', 'Already have an account? ')}
                       <button
                         className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline font-medium"
                         onClick={() =>
                           document.querySelector('[data-state="active"]')?.parentElement
-                            ?.querySelector('[value="login"]')
+                            ?.querySelector<HTMLElement>('[value="login"]')
                             ?.click()
                         }
                       >
-                        Sign in
+                        {tr('تسجيل الدخول', 'Sign in')}
                       </button>
                     </p>
                   </CardFooter>

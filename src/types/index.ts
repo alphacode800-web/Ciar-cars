@@ -48,6 +48,11 @@ export enum BodyType {
   WAGON = "wagon",
 }
 
+export enum VehicleType {
+  CAR = "car",
+  MOTORCYCLE = "motorcycle",
+}
+
 export enum CarStatus {
   ACTIVE = "active",
   PENDING = "pending",
@@ -188,7 +193,13 @@ export type AppView =
   | "sell-car"
   | "wallet"
   | "about"
-  | "contact";
+  | "contact"
+  | "privacy"
+  | "terms"
+  | "cookies"
+  | "advertisements"
+  | "advertisement-detail"
+  | "create-advertisement";
 
 // ============ USER TYPES ============
 
@@ -262,6 +273,7 @@ export interface Car {
   brand: string;
   model: string;
   year: number;
+  vehicleType?: VehicleType | string;
   condition: CarCondition;
   mileage?: number | null;
   exteriorColor?: string | null;
@@ -336,6 +348,7 @@ export type CarListItem = Pick<
   | "model"
   | "year"
   | "condition"
+  | "vehicleType"
   | "price"
   | "currency"
   | "mileage"
@@ -673,13 +686,14 @@ export interface CarSearchFilters {
   brand?: string;
   model?: string;
   year?: { min?: number; max?: number };
+  vehicleType?: VehicleType | 'car' | 'motorcycle';
   condition?: CarCondition;
 
   // Specs
   fuelType?: FuelType;
   transmission?: TransmissionType;
   drivetrain?: DrivetrainType;
-  bodyType?: BodyType;
+  bodyType?: BodyType | string;
   engineSize?: string;
   horsepower?: { min?: number; max?: number };
 

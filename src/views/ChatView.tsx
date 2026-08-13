@@ -34,7 +34,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuthStore } from '@/store/auth-store';
 import { useAppStore } from '@/store/app-store';
-import type { ChatRoom, ChatMessage, ChatSocketEvents } from '@/types';
+import { useTranslation } from '@/hooks/use-translation';
+import type { ChatMessage, ChatSocketEvents } from '@/types';
 import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday, isSameDay, parseISO } from 'date-fns';
 
@@ -72,25 +73,27 @@ interface TypingUser {
   userName: string;
 }
 
+type TrFn = (ar: string, en: string) => string;
+
 // ============ Helper Functions ============
 
-function formatMessageTime(date: string | Date): string {
+function formatMessageTime(date: string | Date, tr: TrFn): string {
   const d = typeof date === 'string' ? parseISO(date) : date;
   if (isToday(d)) return format(d, 'HH:mm');
-  if (isYesterday(d)) return 'Yesterday';
+  if (isYesterday(d)) return tr('أمس', 'Yesterday');
   return format(d, 'MMM d');
 }
 
-function formatChatListTime(date: string | Date | null): string {
+function formatChatListTime(date: string | Date | null, tr: TrFn): string {
   if (!date) return '';
   const d = typeof date === 'string' ? parseISO(date) : date;
   if (isToday(d)) return format(d, 'HH:mm');
-  if (isYesterday(d)) return 'Yesterday';
+  if (isYesterday(d)) return tr('أمس', 'Yesterday');
   return format(d, 'MMM d, yyyy');
 }
 
-function getDateSeparator(messages: ChatMessage[], index: number): string | null {
-  if (index === 0) return 'Today';
+function getDateSeparator(messages: ChatMessage[], index: number, tr: TrFn): string | null {
+  if (index === 0) return tr('اليوم', 'Today');
   const curr = typeof messages[index].createdAt === 'string'
     ? parseISO(messages[index].createdAt as string)
     : new Date(messages[index].createdAt);
@@ -99,8 +102,8 @@ function getDateSeparator(messages: ChatMessage[], index: number): string | null
     : new Date(messages[index - 1].createdAt);
 
   if (!isSameDay(curr, prev)) {
-    if (isToday(curr)) return 'Today';
-    if (isYesterday(curr)) return 'Yesterday';
+    if (isToday(curr)) return tr('اليوم', 'Today');
+    if (isYesterday(curr)) return tr('أمس', 'Yesterday');
     return format(curr, 'EEEE, MMMM d, yyyy');
   }
   return null;
@@ -166,6 +169,7 @@ function MessageBubble({
   senderName,
   senderAvatar,
   isFirstInGroup,
+  tr,
 }: {
   message: ChatMessage;
   isOwn: boolean;
@@ -174,6 +178,7 @@ function MessageBubble({
   senderName: string;
   senderAvatar: string | null;
   isFirstInGroup: boolean;
+  tr: TrFn;
 }) {
   return (
     <motion.div
@@ -199,7 +204,7 @@ function MessageBubble({
 
       <div className={cn('max-w-[75%] md:max-w-[60%]', isOwn && 'flex flex-col items-end')}>
         {showSenderName && !isOwn && (
-          <span className="mb-1 ml-2 text-xs font-medium text-muted-foreground">
+          <span className="mb-1 ms-2 text-xs font-medium text-muted-foreground">
             {senderName}
           </span>
         )}
@@ -225,7 +230,7 @@ function MessageBubble({
               {message.type === 'image' && message.imageUrl ? (
                 <img
                   src={message.imageUrl}
-                  alt="Shared image"
+                  alt={tr('صورة مشاركة', 'Shared image')}
                   className="max-h-64 rounded-lg object-cover"
                 />
               ) : (
@@ -240,7 +245,7 @@ function MessageBubble({
               )}
             >
               <span className="text-[10px] text-muted-foreground/70">
-                {formatMessageTime(message.createdAt)}
+                {formatMessageTime(message.createdAt, tr)}
               </span>
               {isOwn && (
                 <span className="text-muted-foreground/70">
@@ -261,16 +266,16 @@ function MessageBubble({
 
 // ============ Empty State ============
 
-function EmptyChatState() {
+function EmptyChatState({ tr }: { tr: TrFn }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
       <div className="rounded-full bg-muted p-6">
         <MessageSquare className="h-10 w-10 text-muted-foreground" />
       </div>
       <div>
-        <h3 className="text-lg font-semibold text-foreground">Select a conversation</h3>
+        <h3 className="text-lg font-semibold text-foreground">{tr('اختر محادثة', 'Select a conversation')}</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Choose a chat from the sidebar to start messaging
+          {tr('اختر محادثة من القائمة الجانبية لبدء المراسلة', 'Choose a chat from the sidebar to start messaging')}
         </p>
       </div>
     </div>
@@ -282,6 +287,9 @@ function EmptyChatState() {
 export default function ChatView() {
   const { user } = useAuthStore();
   const { viewParams } = useAppStore();
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
 
   const [rooms, setRooms] = useState<ChatRoomListItem[]>([]);
   const [filteredRooms, setFilteredRooms] = useState<ChatRoomListItem[]>([]);
@@ -301,6 +309,8 @@ export default function ChatView() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const trRef = useRef(tr);
+  trRef.current = tr;
 
   // ============ Initialize Socket ============
 
@@ -350,7 +360,7 @@ export default function ChatView() {
           if (prev.find((u) => u.userId === payload.userId)) return prev;
           const room = rooms.find((r) => r.id === payload.roomId);
           const participant = room?.participants.find((p) => p.id === payload.userId);
-          return [...prev, { userId: payload.userId, userName: participant?.name || 'Someone' }];
+          return [...prev, { userId: payload.userId, userName: participant?.name || trRef.current('شخص ما', 'Someone') }];
         });
       }
     });
@@ -542,7 +552,7 @@ export default function ChatView() {
   // ============ Render ============
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border bg-background shadow-sm">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border bg-background shadow-sm" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* ========== Left Sidebar ========== */}
       <AnimatePresence>
         {showMobileSidebar && (
@@ -551,23 +561,23 @@ export default function ChatView() {
             animate={{ width: 380, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="flex h-full flex-col border-r bg-background md:block"
+            className="flex h-full flex-col border-e bg-background md:block"
           >
             {/* Sidebar Header */}
             <div className="border-b p-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Messages</h2>
+                <h2 className="text-lg font-semibold">{tr('الرسائل', 'Messages')}</h2>
                 <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setShowMobileSidebar(false)}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
               <div className="relative mt-3">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search conversations..."
+                  placeholder={tr('البحث في المحادثات...', 'Search conversations...')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className="ps-9"
                 />
               </div>
             </div>
@@ -580,7 +590,9 @@ export default function ChatView() {
                 <div className="flex flex-col items-center justify-center p-8 text-center">
                   <MessageSquare className="mb-2 h-8 w-8 text-muted-foreground/50" />
                   <p className="text-sm text-muted-foreground">
-                    {searchQuery ? 'No conversations found' : 'No conversations yet'}
+                    {searchQuery
+                      ? tr('لا توجد محادثات', 'No conversations found')
+                      : tr('لا توجد محادثات بعد', 'No conversations yet')}
                   </p>
                 </div>
               ) : (
@@ -593,10 +605,10 @@ export default function ChatView() {
                       <motion.button
                         key={room.id}
                         onClick={() => selectRoom(room)}
-                        whileHover={{ x: 2 }}
+                        whileHover={{ x: isRTL ? -2 : 2 }}
                         whileTap={{ scale: 0.98 }}
                         className={cn(
-                          'flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors',
+                          'flex w-full items-start gap-3 rounded-lg p-3 text-start transition-colors',
                           isActive
                             ? 'bg-primary/10 text-foreground'
                             : 'hover:bg-muted/50 text-foreground'
@@ -607,7 +619,7 @@ export default function ChatView() {
                           <Avatar className="h-12 w-12">
                             <AvatarImage
                               src={participant?.avatar || undefined}
-                              alt={participant?.name || 'User'}
+                              alt={participant?.name || tr('مستخدم', 'User')}
                             />
                             <AvatarFallback className="bg-primary/10 text-sm font-medium">
                               {participant?.name?.charAt(0)?.toUpperCase() || '?'}
@@ -619,10 +631,10 @@ export default function ChatView() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
                             <span className="truncate text-sm font-semibold">
-                              {participant?.name || 'Unknown User'}
+                              {participant?.name || tr('مستخدم غير معروف', 'Unknown User')}
                             </span>
                             <span className="shrink-0 text-[11px] text-muted-foreground">
-                              {formatChatListTime(room.lastMessageAt)}
+                              {formatChatListTime(room.lastMessageAt, tr)}
                             </span>
                           </div>
 
@@ -645,7 +657,7 @@ export default function ChatView() {
                           {/* Last message */}
                           <div className="mt-0.5 flex items-center justify-between gap-2">
                             <p className="truncate text-xs text-muted-foreground">
-                              {room.lastMessage || 'No messages yet'}
+                              {room.lastMessage || tr('لا توجد رسائل بعد', 'No messages yet')}
                             </p>
                             {room.unreadCount > 0 && (
                               <Badge className="shrink-0 h-5 min-w-5 rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground flex items-center justify-center">
@@ -682,7 +694,7 @@ export default function ChatView() {
                   className="md:hidden"
                   onClick={() => setShowMobileSidebar(true)}
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ChevronLeft className={cn('h-5 w-5', isRTL && 'rotate-180')} />
                 </Button>
 
                 <Avatar className="h-10 w-10">
@@ -693,7 +705,7 @@ export default function ChatView() {
                 </Avatar>
 
                 <div>
-                  <h3 className="text-sm font-semibold">{otherUser?.name || 'Unknown User'}</h3>
+                  <h3 className="text-sm font-semibold">{otherUser?.name || tr('مستخدم غير معروف', 'Unknown User')}</h3>
                   {selectedRoom.car && (
                     <button
                       onClick={() =>
@@ -720,25 +732,27 @@ export default function ChatView() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem>
-                      <Archive className="mr-2 h-4 w-4" />
-                      {selectedRoom.isArchived ? 'Unarchive' : 'Archive'}
+                      <Archive className="me-2 h-4 w-4" />
+                      {selectedRoom.isArchived
+                        ? tr('إلغاء الأرشفة', 'Unarchive')
+                        : tr('أرشفة', 'Archive')}
                     </DropdownMenuItem>
                     <DropdownMenuItem>
                       {selectedRoom.isMuted ? (
                         <>
-                          <Bell className="mr-2 h-4 w-4" />
-                          Unmute
+                          <Bell className="me-2 h-4 w-4" />
+                          {tr('إلغاء كتم الصوت', 'Unmute')}
                         </>
                       ) : (
                         <>
-                          <BellOff className="mr-2 h-4 w-4" />
-                          Mute
+                          <BellOff className="me-2 h-4 w-4" />
+                          {tr('كتم الصوت', 'Mute')}
                         </>
                       )}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-destructive focus:text-destructive">
-                      Clear History
+                      {tr('مسح السجل', 'Clear History')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -762,13 +776,13 @@ export default function ChatView() {
                     <MessageSquare className="h-8 w-8 text-muted-foreground/50" />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    No messages yet. Say hello!
+                    {tr('لا توجد رسائل بعد. قل مرحبًا!', 'No messages yet. Say hello!')}
                   </p>
                 </div>
               ) : (
                 <div className="pb-4">
                   {messages.map((msg, idx) => {
-                    const dateSep = getDateSeparator(messages, idx);
+                    const dateSep = getDateSeparator(messages, idx, tr);
                     const prevMsg = idx > 0 ? messages[idx - 1] : null;
                     const isOwn = msg.senderId === user?.id;
                     const isFirstInGroup =
@@ -799,9 +813,10 @@ export default function ChatView() {
                             isOwn={isOwn}
                             showAvatar={isFirstInGroup}
                             showSenderName={isFirstInGroup}
-                            senderName={msg.sender?.name || 'Unknown'}
+                            senderName={msg.sender?.name || tr('غير معروف', 'Unknown')}
                             senderAvatar={msg.sender?.avatar || null}
                             isFirstInGroup={isFirstInGroup}
+                            tr={tr}
                           />
                         )}
                       </div>
@@ -833,8 +848,8 @@ export default function ChatView() {
                     onClick={scrollToBottom}
                     className="rounded-full shadow-lg"
                   >
-                    New messages
-                    <ChevronLeft className="ml-1 h-3 w-3 rotate-90" />
+                    {tr('رسائل جديدة', 'New messages')}
+                    <ChevronLeft className="ms-1 h-3 w-3 rotate-90" />
                   </Button>
                 </motion.div>
               )}
@@ -858,7 +873,7 @@ export default function ChatView() {
                     value={messageText}
                     onChange={handleTextareaChange}
                     onKeyDown={handleKeyDown}
-                    placeholder="Type a message..."
+                    placeholder={tr('اكتب رسالة...', 'Type a message...')}
                     rows={1}
                     className="flex w-full resize-none rounded-xl border border-input bg-transparent px-4 py-2.5 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     style={{ maxHeight: '120px' }}
@@ -876,13 +891,13 @@ export default function ChatView() {
                       : 'bg-muted text-muted-foreground'
                   )}
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className={cn('h-4 w-4', isRTL && 'rotate-180')} />
                 </Button>
               </div>
             </div>
           </>
         ) : (
-          <EmptyChatState />
+          <EmptyChatState tr={tr} />
         )}
       </div>
     </div>

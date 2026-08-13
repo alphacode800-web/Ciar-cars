@@ -2,21 +2,22 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube, Send, ArrowUp } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, ArrowUp } from 'lucide-react';
 import { BrandWordmark } from '@/components/brand/BrandWordmark';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/app-store';
 import { useTranslation } from '@/hooks/use-translation';
+import { useSiteContent } from '@/hooks/use-site-content';
+import {
+  resolveAppViewFromUrl,
+  resolveNavDisplayLabel,
+  DEFAULT_SOCIAL_LINKS,
+  type SocialLinksConfig,
+} from '@/lib/cms-content';
+import { SOCIAL_PLATFORMS, toSocialHref } from '@/lib/social-platforms';
 import { cn } from '@/lib/utils';
 import type { AppView } from '@/types';
-
-const SOCIAL_LINKS = [
-  { icon: Facebook, href: '#', label: 'Facebook' },
-  { icon: Twitter, href: '#', label: 'Twitter' },
-  { icon: Instagram, href: '#', label: 'Instagram' },
-  { icon: Youtube, href: '#', label: 'Youtube' },
-];
 
 const container = {
   hidden: { opacity: 0 },
@@ -31,9 +32,14 @@ const item = {
   show: { opacity: 1, y: 0 },
 };
 
+function resolveFooterView(url?: string | null): AppView | null {
+  return resolveAppViewFromUrl(url) as AppView | null;
+}
+
 export function Footer() {
   const { setView } = useAppStore();
   const { t, isRTL, locale } = useTranslation();
+  const { data } = useSiteContent();
 
   const handleNav = (view: AppView) => {
     setView(view);
@@ -44,17 +50,48 @@ export function Footer() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const quickLinks = [
-    { label: t('nav.listing'), view: 'listing' as AppView },
-    { label: t('nav.rental'), view: 'rental' as AppView },
-    { label: t('nav.sell'), view: 'sell-car' as AppView },
-    { label: t('nav.about'), view: 'about' as AppView },
-    { label: t('nav.contact'), view: 'contact' as AppView },
-  ];
+  const cmsFooter = data?.navigation?.footer || [];
+  const quickLinks =
+    cmsFooter.length > 0
+      ? cmsFooter
+          .map((navItem) => {
+            const view = resolveFooterView(navItem.url);
+            if (!view) return null;
+            return {
+              label: resolveNavDisplayLabel(navItem.label, locale, view, t),
+              view,
+            };
+          })
+          .filter(Boolean) as { label: string; view: AppView }[]
+      : [
+          { label: t('nav.listing'), view: 'listing' as AppView },
+          { label: t('nav.rental'), view: 'rental' as AppView },
+          { label: t('nav.sell'), view: 'sell-car' as AppView },
+          { label: t('nav.about'), view: 'about' as AppView },
+          { label: t('nav.contact'), view: 'contact' as AppView },
+        ];
+
+  const linksConfig: SocialLinksConfig = {
+    ...DEFAULT_SOCIAL_LINKS,
+    ...(data?.socialLinks || {}),
+  };
+
+  const socialLinks = SOCIAL_PLATFORMS.map((platform) => {
+    const raw = linksConfig[platform.key];
+    const href =
+      toSocialHref(raw, platform.key) ||
+      toSocialHref(DEFAULT_SOCIAL_LINKS[platform.key], platform.key) ||
+      '#';
+    return {
+      key: platform.key,
+      label: platform.label,
+      Icon: platform.Icon,
+      href,
+    };
+  });
 
   return (
     <footer className="relative bg-zinc-950 text-zinc-300 mt-auto overflow-hidden">
-      {/* Animated background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-teal-500/5 rounded-full blur-3xl" />
@@ -69,20 +106,18 @@ export function Footer() {
           viewport={{ once: true, margin: '-100px' }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12"
         >
-          {/* Company Info */}
           <motion.div variants={item} className="sm:col-span-2 lg:col-span-1">
             <BrandWordmark size="md" showSecondary onClick={() => handleNav('home')} className="mb-5" />
             <p className="text-sm text-zinc-400 leading-relaxed mb-6">
               {t('footer.description')}
             </p>
 
-            {/* Newsletter */}
             <div className="mb-6">
               <p className="text-sm font-medium text-white mb-2">{t('footer.newsletter')}</p>
               <p className="text-xs text-zinc-500 mb-3">{t('footer.newsletterText')}</p>
               <form
                 onSubmit={(e) => e.preventDefault()}
-                className={cn("flex gap-2", isRTL && "flex-row-reverse")}
+                className={cn('flex gap-2', isRTL && 'flex-row-reverse')}
               >
                 <Input
                   placeholder={t('footer.emailPlaceholder')}
@@ -97,21 +132,23 @@ export function Footer() {
               </form>
             </div>
 
-            {/* Social Links */}
-            <div className="flex items-center gap-2">
-              {SOCIAL_LINKS.map((social, i) => {
-                const Icon = social.icon;
+            <div className="flex flex-wrap items-center gap-2 max-w-xs">
+              {socialLinks.map((social, i) => {
+                const Icon = social.Icon;
                 return (
                   <motion.a
-                    key={social.label}
+                    key={social.key}
                     href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     aria-label={social.label}
+                    title={social.label}
                     whileHover={{ y: -3, scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
+                    transition={{ delay: Math.min(i * 0.04, 0.4) }}
                     className="h-9 w-9 rounded-lg bg-zinc-900 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-teal-600 flex items-center justify-center transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/20"
                   >
                     <Icon className="h-4 w-4" />
@@ -121,7 +158,6 @@ export function Footer() {
             </div>
           </motion.div>
 
-          {/* Quick Links */}
           <motion.div variants={item}>
             <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
               <div className="h-1 w-5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" />
@@ -141,7 +177,6 @@ export function Footer() {
             </ul>
           </motion.div>
 
-          {/* Company */}
           <motion.div variants={item}>
             <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
               <div className="h-1 w-5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" />
@@ -168,7 +203,6 @@ export function Footer() {
             </ul>
           </motion.div>
 
-          {/* Contact */}
           <motion.div variants={item}>
             <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
               <div className="h-1 w-5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" />
@@ -177,9 +211,7 @@ export function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <MapPin className="h-4 w-4 mt-0.5 text-emerald-500 shrink-0" />
-                <span className="text-sm text-zinc-400">
-                  {t('contact.address')}
-                </span>
+                <span className="text-sm text-zinc-400">{t('contact.address')}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -191,7 +223,6 @@ export function Footer() {
               </li>
             </ul>
 
-            {/* Trust badges */}
             <div className="mt-6 flex items-center gap-2">
               <div className="px-3 py-1.5 bg-zinc-900 rounded-lg text-[10px] text-zinc-400 font-medium">
                 🔒 SSL Secured
@@ -203,23 +234,26 @@ export function Footer() {
           </motion.div>
         </motion.div>
 
-        {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-zinc-800/50">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-zinc-500">
               © {new Date().getFullYear()} {t('common.appName')}. {t('footer.rights')}
             </p>
             <div className="flex items-center gap-4">
-              {[
-                t('footer.privacyPolicy'),
-                t('footer.termsOfService'),
-                t('footer.cookiePolicy'),
-              ].map((label) => (
+              {(
+                [
+                  { label: t('footer.privacyPolicy'), view: 'privacy' as AppView },
+                  { label: t('footer.termsOfService'), view: 'terms' as AppView },
+                  { label: t('footer.cookiePolicy'), view: 'cookies' as AppView },
+                ] as const
+              ).map((link) => (
                 <button
-                  key={label}
+                  key={link.view}
+                  type="button"
+                  onClick={() => handleNav(link.view)}
                   className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
                 >
-                  {label}
+                  {link.label}
                 </button>
               ))}
             </div>
@@ -227,7 +261,6 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Scroll to top button */}
       <motion.button
         onClick={scrollToTop}
         whileHover={{ y: -2 }}

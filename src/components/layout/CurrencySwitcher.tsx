@@ -35,12 +35,17 @@ export function CurrencySwitcher({ menuMode, className }: CurrencySwitcherProps)
             className
           )}
         >
-          <span className="flex items-center gap-2 min-w-0">
+          <span className="flex items-center gap-1.5 min-w-0">
             <CircleDollarSign className="h-4 w-4 shrink-0" />
-            <span className={cn('truncate', menuMode ? 'text-sm font-medium' : 'text-sm font-medium')}>
-              {currency.flag} {currency.symbol}
-              {menuMode ? ` ${currency.code}` : currency.code}
-            </span>
+            {menuMode ? (
+              <span className="truncate text-sm font-medium">
+                {currency.flag} {currency.symbol} {currency.code}
+              </span>
+            ) : (
+              <span className="hidden lg:inline truncate text-sm font-medium whitespace-nowrap">
+                {currency.symbol}{currency.code}
+              </span>
+            )}
           </span>
           {menuMode && <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />}
         </Button>

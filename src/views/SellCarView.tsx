@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Car,
+  Bike,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -13,7 +14,6 @@ import {
   Upload,
   DollarSign,
   Settings2,
-  MapPin,
   Loader2,
   CheckCircle,
   ArrowRight,
@@ -40,6 +40,8 @@ import { useAppStore } from '@/store/app-store';
 import {
   CAR_BRANDS,
   CAR_BODY_TYPES,
+  MOTORCYCLE_BRANDS,
+  MOTORCYCLE_BODY_TYPES,
   FUEL_TYPES,
   TRANSMISSION_TYPES,
   DRIVETRAIN_TYPES,
@@ -48,69 +50,180 @@ import {
   UPLOAD_LIMITS,
 } from '@/lib/constants';
 import { cn } from '@/lib/utils';
-import type { CarCondition, FuelType, TransmissionType, DrivetrainType, BodyType } from '@/types';
+import { useTranslation } from '@/hooks/use-translation';
+
+type TrFn = (ar: string, en: string) => string;
 
 // ============ Schema ============
 
-const sellCarSchema = z.object({
-  // Step 1: Basic Info
-  title: z.string().min(3, 'Title must be at least 3 characters').max(100, 'Title too long'),
-  brand: z.string().min(1, 'Select a brand'),
-  model: z.string().min(1, 'Enter a model'),
-  year: z.number().min(2000).max(2025),
-  condition: z.enum(['new', 'used']),
-  mileage: z.number().optional(),
-  description: z.string().optional(),
+function createSellCarSchema(tr: TrFn) {
+  return z.object({
+    // Step 1: Basic Info
+    title: z
+      .string()
+      .min(3, tr('يجب ألا يقل العنوان عن 3 أحرف', 'Title must be at least 3 characters'))
+      .max(100, tr('العنوان طويل جدًا', 'Title too long')),
+    brand: z.string().min(1, tr('اختر علامة تجارية', 'Select a brand')),
+    model: z.string().min(1, tr('أدخل الطراز', 'Enter a model')),
+    year: z.number().min(2000).max(2025),
+    condition: z.enum(['new', 'used']),
+    vehicleType: z.enum(['car', 'motorcycle']).default('car'),
+    mileage: z.number().optional(),
+    description: z.string().optional(),
 
-  // Step 2: Specifications
-  fuelType: z.string().optional(),
-  transmission: z.string().optional(),
-  engineSize: z.string().optional(),
-  horsepower: z.number().optional(),
-  drivetrain: z.string().optional(),
-  bodyType: z.string().optional(),
-  doors: z.number().optional(),
-  seats: z.number().optional(),
-  exteriorColor: z.string().optional(),
-  interiorColor: z.string().optional(),
+    // Step 2: Specifications
+    fuelType: z.string().optional(),
+    transmission: z.string().optional(),
+    engineSize: z.string().optional(),
+    horsepower: z.number().optional(),
+    drivetrain: z.string().optional(),
+    bodyType: z.string().optional(),
+    doors: z.number().optional(),
+    seats: z.number().optional(),
+    exteriorColor: z.string().optional(),
+    interiorColor: z.string().optional(),
 
-  // Step 3: Pricing & Location
-  price: z.number().min(1, 'Price must be at least 1'),
-  isNegotiable: z.boolean(),
-  city: z.string().min(1, 'City is required'),
-  address: z.string().optional(),
+    // Step 3: Pricing & Location
+    price: z.number().min(1, tr('يجب ألا يقل السعر عن 1', 'Price must be at least 1')),
+    isNegotiable: z.boolean(),
+    city: z.string().min(1, tr('المدينة مطلوبة', 'City is required')),
+    address: z.string().optional(),
 
-  // Step 4: Images (handled separately)
-  images: z.array(z.object({ url: z.string(), alt: z.string().optional(), isPrimary: z.boolean() })).optional(),
+    // Step 4: Images (handled separately)
+    images: z
+      .array(z.object({ url: z.string(), alt: z.string().optional(), isPrimary: z.boolean() }))
+      .optional(),
 
-  // Step 5: Rental Options
-  isAvailableForRent: z.boolean(),
-  rentalPriceDaily: z.number().optional(),
-  rentalPriceWeekly: z.number().optional(),
-  rentalPriceMonthly: z.number().optional(),
-});
+    // Step 5: Rental Options
+    isAvailableForRent: z.boolean(),
+    rentalPriceDaily: z.number().optional(),
+    rentalPriceWeekly: z.number().optional(),
+    rentalPriceMonthly: z.number().optional(),
+  });
+}
 
-type SellCarFormData = z.infer<typeof sellCarSchema>;
+type SellCarFormData = z.infer<ReturnType<typeof createSellCarSchema>>;
 
 // ============ Steps ============
 
-const STEPS = [
-  { id: 1, title: 'Basic Info', icon: Car },
-  { id: 2, title: 'Specifications', icon: Settings2 },
-  { id: 3, title: 'Pricing & Location', icon: DollarSign },
-  { id: 4, title: 'Images', icon: ImagePlus },
-  { id: 5, title: 'Rental Options', icon: Star },
-];
+function getSteps(tr: TrFn, isMotorcycle: boolean) {
+  const steps = [
+    { id: 1, title: tr('المعلومات الأساسية', 'Basic Info'), icon: isMotorcycle ? Bike : Car },
+    { id: 2, title: tr('المواصفات', 'Specifications'), icon: Settings2 },
+    { id: 3, title: tr('السعر والموقع', 'Pricing & Location'), icon: DollarSign },
+    { id: 4, title: tr('الصور', 'Images'), icon: ImagePlus },
+    { id: 5, title: tr('خيارات الإيجار', 'Rental Options'), icon: Star },
+  ];
+  return isMotorcycle ? steps.filter((s) => s.id !== 5) : steps;
+}
 
 // ============ Cities ============
 
 const CITIES = [
-  'Dubai', 'London', 'Tokyo', 'New York', 'Paris', 'Berlin', 'Sydney', 'Toronto', 'Singapore', 'Mumbai', 'São Paulo', 'Seoul', 'Los Angeles', 'Zurich', 'Madrid', 'Milan', 'Amsterdam', 'Bangkok', 'Istanbul', 'Barcelona',
+  'Dubai',
+  'London',
+  'Tokyo',
+  'New York',
+  'Paris',
+  'Berlin',
+  'Sydney',
+  'Toronto',
+  'Singapore',
+  'Mumbai',
+  'São Paulo',
+  'Seoul',
+  'Los Angeles',
+  'Zurich',
+  'Madrid',
+  'Milan',
+  'Amsterdam',
+  'Bangkok',
+  'Istanbul',
+  'Barcelona',
 ];
+
+const CITY_LABELS_AR: Record<string, string> = {
+  Dubai: 'دبي',
+  London: 'لندن',
+  Tokyo: 'طوكيو',
+  'New York': 'نيويورك',
+  Paris: 'باريس',
+  Berlin: 'برلين',
+  Sydney: 'سيدني',
+  Toronto: 'تورونتو',
+  Singapore: 'سنغافورة',
+  Mumbai: 'مومباي',
+  'São Paulo': 'ساو باولو',
+  Seoul: 'سيول',
+  'Los Angeles': 'لوس أنجلوس',
+  Zurich: 'زيورخ',
+  Madrid: 'مدريد',
+  Milan: 'ميلانو',
+  Amsterdam: 'أمستردام',
+  Bangkok: 'بانكوك',
+  Istanbul: 'إسطنبول',
+  Barcelona: 'برشلونة',
+};
+
+const COLOR_LABELS_AR: Record<string, string> = {
+  White: 'أبيض',
+  Black: 'أسود',
+  Silver: 'فضي',
+  Gray: 'رمادي',
+  Red: 'أحمر',
+  Blue: 'أزرق',
+  Brown: 'بني',
+  Beige: 'بيج',
+  Green: 'أخضر',
+  Gold: 'ذهبي',
+  Orange: 'برتقالي',
+  Yellow: 'أصفر',
+  Purple: 'بنفسجي',
+  Bronze: 'برونزي',
+  Maroon: 'كستنائي',
+  Navy: 'كحلي',
+};
+
+const FUEL_LABELS_AR: Record<string, string> = {
+  petrol: 'بنزين',
+  diesel: 'ديزل',
+  electric: 'كهربائي',
+  hybrid: 'هجين',
+};
+
+const TRANSMISSION_LABELS_AR: Record<string, string> = {
+  automatic: 'أوتوماتيك',
+  manual: 'يدوي',
+  cvt: 'CVT',
+};
+
+const DRIVETRAIN_LABELS_AR: Record<string, string> = {
+  fwd: 'دفع أمامي (FWD)',
+  rwd: 'دفع خلفي (RWD)',
+  awd: 'دفع رباعي مستمر (AWD)',
+  '4wd': 'دفع رباعي (4WD)',
+};
+
+const BODY_LABELS_AR: Record<string, string> = {
+  sedan: 'سيدان',
+  suv: 'SUV',
+  coupe: 'كوبيه',
+  truck: 'شاحنة',
+  van: 'فان / ميني فان',
+  convertible: 'مكشوفة',
+  hatchback: 'هاتشباك',
+  wagon: 'ستيشن / واجن',
+};
 
 // ============ Stepper ============
 
-function StepStepper({ currentStep, steps }: { currentStep: number; steps: typeof STEPS }) {
+function StepStepper({
+  currentStep,
+  steps,
+}: {
+  currentStep: number;
+  steps: ReturnType<typeof getSteps>;
+}) {
   return (
     <div className="flex items-center justify-center">
       {steps.map((step, idx) => {
@@ -126,7 +239,7 @@ function StepStepper({ currentStep, steps }: { currentStep: number; steps: typeo
               }}
               className={cn(
                 'flex flex-col items-center gap-1.5',
-                idx < steps.length - 1 && 'pr-2 md:pr-4'
+                idx < steps.length - 1 && 'pe-2 md:pe-4'
               )}
             >
               <div
@@ -137,11 +250,7 @@ function StepStepper({ currentStep, steps }: { currentStep: number; steps: typeo
                   !isCompleted && !isCurrent && 'border-muted-foreground/30 text-muted-foreground'
                 )}
               >
-                {isCompleted ? (
-                  <Check className="h-5 w-5" />
-                ) : (
-                  <Icon className="h-5 w-5" />
-                )}
+                {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
               </div>
               <span
                 className={cn(
@@ -175,61 +284,77 @@ function StepStepper({ currentStep, steps }: { currentStep: number; steps: typeo
 function StepBasicInfo({
   form,
   errors,
+  tr,
+  isMotorcycle,
 }: {
   form: ReturnType<typeof useForm<SellCarFormData>>;
-  errors: Record<string, string | undefined>;
+  errors: ReturnType<typeof useForm<SellCarFormData>>['formState']['errors'];
+  tr: TrFn;
+  isMotorcycle: boolean;
 }) {
+  const brands = isMotorcycle ? MOTORCYCLE_BRANDS : CAR_BRANDS;
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Title */}
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="title">Title *</Label>
+          <Label htmlFor="title">{tr('العنوان *', 'Title *')}</Label>
           <Input
             id="title"
-            placeholder="e.g., 2023 BMW 330i M Sport"
+            placeholder={
+              isMotorcycle
+                ? tr('مثال: ياماها R1 موديل 2023', 'e.g., 2023 Yamaha R1')
+                : tr('مثال: بي إم دبليو 330i M Sport موديل 2023', 'e.g., 2023 BMW 330i M Sport')
+            }
             {...form.register('title')}
             className={cn(errors.title && 'border-destructive')}
           />
-          {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
+          {errors.title?.message && (
+            <p className="text-xs text-destructive">{errors.title.message}</p>
+          )}
         </div>
 
         {/* Brand */}
         <div className="space-y-2">
-          <Label htmlFor="brand">Brand *</Label>
+          <Label htmlFor="brand">{tr('العلامة التجارية *', 'Brand *')}</Label>
           <Select
             value={form.watch('brand')}
             onValueChange={(v) => form.setValue('brand', v, { shouldValidate: true })}
           >
             <SelectTrigger className={cn(errors.brand && 'border-destructive')}>
-              <SelectValue placeholder="Select brand" />
+              <SelectValue placeholder={tr('اختر العلامة', 'Select brand')} />
             </SelectTrigger>
             <SelectContent>
-              {CAR_BRANDS.map((brand) => (
+              {brands.map((brand) => (
                 <SelectItem key={brand} value={brand}>
                   {brand}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.brand && <p className="text-xs text-destructive">{errors.brand}</p>}
+          {errors.brand?.message && (
+            <p className="text-xs text-destructive">{errors.brand.message}</p>
+          )}
         </div>
 
         {/* Model */}
         <div className="space-y-2">
-          <Label htmlFor="model">Model *</Label>
+          <Label htmlFor="model">{tr('الطراز *', 'Model *')}</Label>
           <Input
             id="model"
-            placeholder="e.g., 330i"
+            placeholder={tr('مثال: 330i', 'e.g., 330i')}
             {...form.register('model')}
             className={cn(errors.model && 'border-destructive')}
           />
-          {errors.model && <p className="text-xs text-destructive">{errors.model}</p>}
+          {errors.model?.message && (
+            <p className="text-xs text-destructive">{errors.model.message}</p>
+          )}
         </div>
 
         {/* Year */}
         <div className="space-y-2">
-          <Label htmlFor="year">Year *</Label>
+          <Label htmlFor="year">{tr('سنة الصنع *', 'Year *')}</Label>
           <Input
             id="year"
             type="number"
@@ -239,31 +364,37 @@ function StepBasicInfo({
             {...form.register('year', { valueAsNumber: true })}
             className={cn(errors.year && 'border-destructive')}
           />
-          {errors.year && <p className="text-xs text-destructive">{errors.year}</p>}
+          {errors.year?.message && (
+            <p className="text-xs text-destructive">{errors.year.message}</p>
+          )}
         </div>
 
         {/* Condition */}
         <div className="space-y-2">
-          <Label>Condition *</Label>
+          <Label>{tr('الحالة *', 'Condition *')}</Label>
           <Select
             value={form.watch('condition')}
-            onValueChange={(v) => form.setValue('condition', v as 'new' | 'used', { shouldValidate: true })}
+            onValueChange={(v) =>
+              form.setValue('condition', v as 'new' | 'used', { shouldValidate: true })
+            }
           >
             <SelectTrigger className={cn(errors.condition && 'border-destructive')}>
-              <SelectValue placeholder="Select condition" />
+              <SelectValue placeholder={tr('اختر الحالة', 'Select condition')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="new">New</SelectItem>
-              <SelectItem value="used">Used</SelectItem>
+              <SelectItem value="new">{tr('جديدة', 'New')}</SelectItem>
+              <SelectItem value="used">{tr('مستعملة', 'Used')}</SelectItem>
             </SelectContent>
           </Select>
-          {errors.condition && <p className="text-xs text-destructive">{errors.condition}</p>}
+          {errors.condition?.message && (
+            <p className="text-xs text-destructive">{errors.condition.message}</p>
+          )}
         </div>
 
         {/* Mileage (conditional) */}
         {form.watch('condition') === 'used' && (
           <div className="space-y-2">
-            <Label htmlFor="mileage">Mileage (km)</Label>
+            <Label htmlFor="mileage">{tr('المسافة المقطوعة (كم)', 'Mileage (km)')}</Label>
             <Input
               id="mileage"
               type="number"
@@ -276,15 +407,22 @@ function StepBasicInfo({
 
         {/* Description */}
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description">{tr('الوصف', 'Description')}</Label>
           <Textarea
             id="description"
-            placeholder="Describe your car's features, history, condition, and any extras..."
+            placeholder={
+              isMotorcycle
+                ? tr('صف مميزات دراجتك وتاريخها وحالتها...', "Describe your motorcycle's features, history, and condition...")
+                : tr(
+                    'صف مميزات سيارتك وتاريخها وحالتها وأي إضافات...',
+                    "Describe your car's features, history, condition, and any extras..."
+                  )
+            }
             rows={5}
             {...form.register('description')}
           />
           <p className="text-xs text-muted-foreground">
-            A detailed description helps sell faster
+            {tr('الوصف التفصيلي يساعد على البيع بشكل أسرع', 'A detailed description helps sell faster')}
           </p>
         </div>
       </div>
@@ -296,26 +434,48 @@ function StepBasicInfo({
 
 function StepSpecifications({
   form,
+  tr,
+  isAr,
+  isMotorcycle,
 }: {
   form: ReturnType<typeof useForm<SellCarFormData>>;
+  tr: TrFn;
+  isAr: boolean;
+  isMotorcycle: boolean;
 }) {
+  const bodyTypes = isMotorcycle ? MOTORCYCLE_BODY_TYPES : CAR_BODY_TYPES;
+  const bodyLabelsAr = isMotorcycle
+    ? {
+        sport: 'رياضية',
+        cruiser: 'كروزر',
+        touring: 'سياحية',
+        naked: 'نيكد',
+        adventure: 'مغامرات',
+        scooter: 'سكوتر',
+        offroad: 'طرق وعرة',
+        dual_sport: 'ثنائية',
+        chopper: 'تشopper',
+        electric: 'كهربائية',
+      }
+    : BODY_LABELS_AR;
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Fuel Type */}
         <div className="space-y-2">
-          <Label>Fuel Type</Label>
+          <Label>{tr('نوع الوقود', 'Fuel Type')}</Label>
           <Select
             value={form.watch('fuelType') || ''}
             onValueChange={(v) => form.setValue('fuelType', v)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select" />
+              <SelectValue placeholder={tr('اختر', 'Select')} />
             </SelectTrigger>
             <SelectContent>
               {FUEL_TYPES.map((ft) => (
                 <SelectItem key={ft.value} value={ft.value}>
-                  {ft.label}
+                  {isAr ? FUEL_LABELS_AR[ft.value] || ft.label : ft.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -324,18 +484,18 @@ function StepSpecifications({
 
         {/* Transmission */}
         <div className="space-y-2">
-          <Label>Transmission</Label>
+          <Label>{tr('ناقل الحركة', 'Transmission')}</Label>
           <Select
             value={form.watch('transmission') || ''}
             onValueChange={(v) => form.setValue('transmission', v)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select" />
+              <SelectValue placeholder={tr('اختر', 'Select')} />
             </SelectTrigger>
             <SelectContent>
               {TRANSMISSION_TYPES.map((t) => (
                 <SelectItem key={t.value} value={t.value}>
-                  {t.label}
+                  {isAr ? TRANSMISSION_LABELS_AR[t.value] || t.label : t.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -344,131 +504,141 @@ function StepSpecifications({
 
         {/* Engine Size */}
         <div className="space-y-2">
-          <Label htmlFor="engineSize">Engine Size</Label>
+          <Label htmlFor="engineSize">
+            {isMotorcycle ? tr('سعة المحرك', 'Engine Capacity') : tr('حجم المحرك', 'Engine Size')}
+          </Label>
           <Input
             id="engineSize"
-            placeholder="e.g., 2.0L"
+            placeholder={isMotorcycle ? tr('مثال: 600cc', 'e.g., 600cc') : tr('مثال: 2.0 لتر', 'e.g., 2.0L')}
             {...form.register('engineSize')}
           />
         </div>
 
         {/* Horsepower */}
         <div className="space-y-2">
-          <Label htmlFor="horsepower">Horsepower</Label>
+          <Label htmlFor="horsepower">{tr('القدرة الحصانية', 'Horsepower')}</Label>
           <Input
             id="horsepower"
             type="number"
-            placeholder="e.g., 258"
+            placeholder={tr('مثال: 258', 'e.g., 258')}
             min={0}
             {...form.register('horsepower', { valueAsNumber: true })}
           />
         </div>
 
-        {/* Drivetrain */}
-        <div className="space-y-2">
-          <Label>Drivetrain</Label>
-          <Select
-            value={form.watch('drivetrain') || ''}
-            onValueChange={(v) => form.setValue('drivetrain', v)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent>
-              {DRIVETRAIN_TYPES.map((dt) => (
-                <SelectItem key={dt.value} value={dt.value}>
-                  {dt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Drivetrain — cars only */}
+        {!isMotorcycle && (
+          <div className="space-y-2">
+            <Label>{tr('نظام الدفع', 'Drivetrain')}</Label>
+            <Select
+              value={form.watch('drivetrain') || ''}
+              onValueChange={(v) => form.setValue('drivetrain', v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={tr('اختر', 'Select')} />
+              </SelectTrigger>
+              <SelectContent>
+                {DRIVETRAIN_TYPES.map((dt) => (
+                  <SelectItem key={dt.value} value={dt.value}>
+                    {isAr ? DRIVETRAIN_LABELS_AR[dt.value] || dt.label : dt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {/* Body Type */}
         <div className="space-y-2">
-          <Label>Body Type</Label>
+          <Label>{isMotorcycle ? tr('نوع الدراجة', 'Motorcycle Type') : tr('نوع الهيكل', 'Body Type')}</Label>
           <Select
             value={form.watch('bodyType') || ''}
             onValueChange={(v) => form.setValue('bodyType', v)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select" />
+              <SelectValue placeholder={tr('اختر', 'Select')} />
             </SelectTrigger>
             <SelectContent>
-              {CAR_BODY_TYPES.map((bt) => (
+              {bodyTypes.map((bt) => (
                 <SelectItem key={bt.value} value={bt.value}>
-                  {bt.label}
+                  {isAr ? bodyLabelsAr[bt.value as keyof typeof bodyLabelsAr] || bt.label : bt.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Doors */}
-        <div className="space-y-2">
-          <Label htmlFor="doors">Doors</Label>
-          <Input
-            id="doors"
-            type="number"
-            placeholder="4"
-            min={1}
-            max={6}
-            {...form.register('doors', { valueAsNumber: true })}
-          />
-        </div>
+        {/* Doors — cars only */}
+        {!isMotorcycle && (
+          <div className="space-y-2">
+            <Label htmlFor="doors">{tr('الأبواب', 'Doors')}</Label>
+            <Input
+              id="doors"
+              type="number"
+              placeholder="4"
+              min={1}
+              max={6}
+              {...form.register('doors', { valueAsNumber: true })}
+            />
+          </div>
+        )}
 
-        {/* Seats */}
-        <div className="space-y-2">
-          <Label htmlFor="seats">Seats</Label>
-          <Input
-            id="seats"
+        {/* Seats — cars only */}
+        {!isMotorcycle && (
+          <div className="space-y-2">
+            <Label htmlFor="seats">{tr('المقاعد', 'Seats')}</Label>
+            <Input
+              id="seats"
             type="number"
             placeholder="5"
             min={1}
             max={9}
             {...form.register('seats', { valueAsNumber: true })}
           />
-        </div>
+          </div>
+        )}
 
         {/* Exterior Color */}
         <div className="space-y-2">
-          <Label>Exterior Color</Label>
+          <Label>{tr('اللون الخارجي', 'Exterior Color')}</Label>
           <Select
             value={form.watch('exteriorColor') || ''}
             onValueChange={(v) => form.setValue('exteriorColor', v)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select" />
+              <SelectValue placeholder={tr('اختر', 'Select')} />
             </SelectTrigger>
             <SelectContent>
               {CAR_COLORS.map((c) => (
                 <SelectItem key={c} value={c}>
-                  {c}
+                  {isAr ? COLOR_LABELS_AR[c] || c : c}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Interior Color */}
+        {/* Interior Color — cars only */}
+        {!isMotorcycle && (
         <div className="space-y-2">
-          <Label>Interior Color</Label>
+          <Label>{tr('اللون الداخلي', 'Interior Color')}</Label>
           <Select
             value={form.watch('interiorColor') || ''}
             onValueChange={(v) => form.setValue('interiorColor', v)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select" />
+              <SelectValue placeholder={tr('اختر', 'Select')} />
             </SelectTrigger>
             <SelectContent>
               {CAR_COLORS.map((c) => (
                 <SelectItem key={c} value={c}>
-                  {c}
+                  {isAr ? COLOR_LABELS_AR[c] || c : c}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
+        )}
       </div>
     </div>
   );
@@ -479,9 +649,13 @@ function StepSpecifications({
 function StepPricingLocation({
   form,
   errors,
+  tr,
+  isAr,
 }: {
   form: ReturnType<typeof useForm<SellCarFormData>>;
-  errors: Record<string, string | undefined>;
+  errors: ReturnType<typeof useForm<SellCarFormData>>['formState']['errors'];
+  tr: TrFn;
+  isAr: boolean;
 }) {
   return (
     <div className="space-y-4">
@@ -489,10 +663,10 @@ function StepPricingLocation({
         {/* Price */}
         <div className="space-y-2">
           <Label htmlFor="price">
-            Price ({CURRENCY.symbol}) *
+            {tr(`السعر (${CURRENCY.symbol}) *`, `Price (${CURRENCY.symbol}) *`)}
           </Label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+            <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
               {CURRENCY.symbol}
             </span>
             <Input
@@ -500,18 +674,22 @@ function StepPricingLocation({
               type="number"
               placeholder="0"
               min={1}
-              className={cn('pl-8', errors.price && 'border-destructive')}
+              className={cn('ps-8', errors.price && 'border-destructive')}
               {...form.register('price', { valueAsNumber: true })}
             />
           </div>
-          {errors.price && <p className="text-xs text-destructive">{errors.price}</p>}
+          {errors.price?.message && (
+            <p className="text-xs text-destructive">{errors.price.message}</p>
+          )}
         </div>
 
         {/* Negotiable */}
         <div className="flex items-center justify-between rounded-lg border p-4">
           <div>
-            <Label>Price Negotiable</Label>
-            <p className="text-xs text-muted-foreground">Allow buyers to make offers</p>
+            <Label>{tr('السعر قابل للتفاوض', 'Price Negotiable')}</Label>
+            <p className="text-xs text-muted-foreground">
+              {tr('السماح للمشترين بتقديم عروض', 'Allow buyers to make offers')}
+            </p>
           </div>
           <Switch
             checked={form.watch('isNegotiable')}
@@ -521,31 +699,33 @@ function StepPricingLocation({
 
         {/* City */}
         <div className="space-y-2">
-          <Label>City *</Label>
+          <Label>{tr('المدينة *', 'City *')}</Label>
           <Select
             value={form.watch('city')}
             onValueChange={(v) => form.setValue('city', v, { shouldValidate: true })}
           >
             <SelectTrigger className={cn(errors.city && 'border-destructive')}>
-              <SelectValue placeholder="Select city" />
+              <SelectValue placeholder={tr('اختر المدينة', 'Select city')} />
             </SelectTrigger>
             <SelectContent>
               {CITIES.map((city) => (
                 <SelectItem key={city} value={city}>
-                  {city}
+                  {isAr ? CITY_LABELS_AR[city] || city : city}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.city && <p className="text-xs text-destructive">{errors.city}</p>}
+          {errors.city?.message && (
+            <p className="text-xs text-destructive">{errors.city.message}</p>
+          )}
         </div>
 
         {/* Address */}
         <div className="space-y-2">
-          <Label htmlFor="address">Address</Label>
+          <Label htmlFor="address">{tr('العنوان', 'Address')}</Label>
           <Input
             id="address"
-            placeholder="Street address or area"
+            placeholder={tr('عنوان الشارع أو المنطقة', 'Street address or area')}
             {...form.register('address')}
           />
         </div>
@@ -559,9 +739,11 @@ function StepPricingLocation({
 function StepImages({
   images,
   setImages,
+  tr,
 }: {
   images: { url: string; alt?: string; isPrimary: boolean }[];
   setImages: (imgs: { url: string; alt?: string; isPrimary: boolean }[]) => void;
+  tr: TrFn;
 }) {
   const handleSetPrimary = useCallback(
     (idx: number) => {
@@ -584,12 +766,17 @@ function StepImages({
 
   const handleAddPlaceholder = useCallback(() => {
     if (images.length >= UPLOAD_LIMITS.maxCarImages) return;
-    const placeholderUrl = `https://placehold.co/800x600/e2e8f0/64748b?text=Car+Image+${images.length + 1}`;
+    const n = images.length + 1;
+    const placeholderUrl = `https://placehold.co/800x600/e2e8f0/64748b?text=Car+Image+${n}`;
     setImages([
       ...images,
-      { url: placeholderUrl, alt: `Car Image ${images.length + 1}`, isPrimary: images.length === 0 },
+      {
+        url: placeholderUrl,
+        alt: tr(`صورة السيارة ${n}`, `Car Image ${n}`),
+        isPrimary: images.length === 0,
+      },
     ]);
-  }, [images, setImages]);
+  }, [images, setImages, tr]);
 
   return (
     <div className="space-y-4">
@@ -599,13 +786,14 @@ function StepImages({
         className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-8 transition-colors hover:border-primary/50 hover:bg-primary/5"
       >
         <Upload className="mb-3 h-10 w-10 text-muted-foreground/50" />
-        <p className="text-sm font-medium">Click to add images</p>
+        <p className="text-sm font-medium">{tr('انقر لإضافة صور', 'Click to add images')}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Up to {UPLOAD_LIMITS.maxCarImages} images &middot; Max {UPLOAD_LIMITS.maxImageSizeMB}MB each
+          {tr(
+            `حتى ${UPLOAD_LIMITS.maxCarImages} صور · بحد أقصى ${UPLOAD_LIMITS.maxImageSizeMB} ميجابايت لكل صورة`,
+            `Up to ${UPLOAD_LIMITS.maxCarImages} images · Max ${UPLOAD_LIMITS.maxImageSizeMB}MB each`
+          )}
         </p>
-        <p className="text-xs text-muted-foreground">
-          JPG, PNG, WebP, AVIF
-        </p>
+        <p className="text-xs text-muted-foreground">JPG, PNG, WebP, AVIF</p>
       </div>
 
       {/* Image Grid */}
@@ -625,14 +813,14 @@ function StepImages({
               >
                 <img
                   src={img.url}
-                  alt={img.alt || `Image ${idx + 1}`}
+                  alt={img.alt || tr(`صورة ${idx + 1}`, `Image ${idx + 1}`)}
                   className="h-full w-full object-cover"
                 />
 
                 {/* Primary badge */}
                 {img.isPrimary && (
-                  <Badge className="absolute left-2 top-2 bg-primary text-primary-foreground text-[10px]">
-                    Primary
+                  <Badge className="absolute start-2 top-2 bg-primary text-primary-foreground text-[10px]">
+                    {tr('رئيسية', 'Primary')}
                   </Badge>
                 )}
 
@@ -648,8 +836,8 @@ function StepImages({
                         handleSetPrimary(idx);
                       }}
                     >
-                      <Star className="mr-1 h-3 w-3" />
-                      Primary
+                      <Star className="me-1 h-3 w-3" />
+                      {tr('رئيسية', 'Primary')}
                     </Button>
                   )}
                   <Button
@@ -661,8 +849,8 @@ function StepImages({
                       handleRemove(idx);
                     }}
                   >
-                    <X className="mr-1 h-3 w-3" />
-                    Remove
+                    <X className="me-1 h-3 w-3" />
+                    {tr('إزالة', 'Remove')}
                   </Button>
                 </div>
               </motion.div>
@@ -673,7 +861,10 @@ function StepImages({
 
       {images.length === 0 && (
         <p className="text-center text-sm text-muted-foreground">
-          Add at least one image. The first image will be set as primary.
+          {tr(
+            'أضف صورة واحدة على الأقل. ستُعيَّن الصورة الأولى كصورة رئيسية.',
+            'Add at least one image. The first image will be set as primary.'
+          )}
         </p>
       )}
     </div>
@@ -684,8 +875,10 @@ function StepImages({
 
 function StepRentalOptions({
   form,
+  tr,
 }: {
   form: ReturnType<typeof useForm<SellCarFormData>>;
+  tr: TrFn;
 }) {
   const isRentEnabled = form.watch('isAvailableForRent');
 
@@ -693,9 +886,14 @@ function StepRentalOptions({
     <div className="space-y-4">
       <div className="flex items-center justify-between rounded-lg border p-4">
         <div>
-          <Label className="text-base font-semibold">Available for Rent</Label>
+          <Label className="text-base font-semibold">
+            {tr('متاحة للإيجار', 'Available for Rent')}
+          </Label>
           <p className="text-xs text-muted-foreground">
-            Allow users to rent this car on a daily/weekly/monthly basis
+            {tr(
+              'السماح للمستخدمين باستئجار هذه السيارة يوميًا أو أسبوعيًا أو شهريًا',
+              'Allow users to rent this car on a daily/weekly/monthly basis'
+            )}
           </p>
         </div>
         <Switch
@@ -716,10 +914,10 @@ function StepRentalOptions({
               {/* Daily */}
               <div className="space-y-2">
                 <Label htmlFor="rentalPriceDaily">
-                  Daily Price ({CURRENCY.symbol})
+                  {tr(`السعر اليومي (${CURRENCY.symbol})`, `Daily Price (${CURRENCY.symbol})`)}
                 </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                     {CURRENCY.symbol}
                   </span>
                   <Input
@@ -727,7 +925,7 @@ function StepRentalOptions({
                     type="number"
                     placeholder="0"
                     min={1}
-                    className="pl-8"
+                    className="ps-8"
                     {...form.register('rentalPriceDaily', { valueAsNumber: true })}
                   />
                 </div>
@@ -736,10 +934,10 @@ function StepRentalOptions({
               {/* Weekly */}
               <div className="space-y-2">
                 <Label htmlFor="rentalPriceWeekly">
-                  Weekly Price ({CURRENCY.symbol})
+                  {tr(`السعر الأسبوعي (${CURRENCY.symbol})`, `Weekly Price (${CURRENCY.symbol})`)}
                 </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                     {CURRENCY.symbol}
                   </span>
                   <Input
@@ -747,20 +945,22 @@ function StepRentalOptions({
                     type="number"
                     placeholder="0"
                     min={1}
-                    className="pl-8"
+                    className="ps-8"
                     {...form.register('rentalPriceWeekly', { valueAsNumber: true })}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Optional discount for weekly</p>
+                <p className="text-xs text-muted-foreground">
+                  {tr('خصم اختياري للإيجار الأسبوعي', 'Optional discount for weekly')}
+                </p>
               </div>
 
               {/* Monthly */}
               <div className="space-y-2">
                 <Label htmlFor="rentalPriceMonthly">
-                  Monthly Price ({CURRENCY.symbol})
+                  {tr(`السعر الشهري (${CURRENCY.symbol})`, `Monthly Price (${CURRENCY.symbol})`)}
                 </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                     {CURRENCY.symbol}
                   </span>
                   <Input
@@ -768,11 +968,13 @@ function StepRentalOptions({
                     type="number"
                     placeholder="0"
                     min={1}
-                    className="pl-8"
+                    className="ps-8"
                     {...form.register('rentalPriceMonthly', { valueAsNumber: true })}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Optional discount for monthly</p>
+                <p className="text-xs text-muted-foreground">
+                  {tr('خصم اختياري للإيجار الشهري', 'Optional discount for monthly')}
+                </p>
               </div>
             </div>
           </motion.div>
@@ -784,12 +986,22 @@ function StepRentalOptions({
 
 // ============ Success State ============
 
-function SuccessState({ carId, onGoToDetail }: { carId: string; onGoToDetail: () => void }) {
+function SuccessState({
+  onGoToDetail,
+  tr,
+  isRTL,
+}: {
+  carId: string;
+  onGoToDetail: () => void;
+  tr: TrFn;
+  isRTL: boolean;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className="flex min-h-[60vh] items-center justify-center"
+      dir={isRTL ? 'rtl' : 'ltr'}
     >
       <Card className="w-full max-w-md text-center">
         <CardContent className="p-8">
@@ -801,21 +1013,20 @@ function SuccessState({ carId, onGoToDetail }: { carId: string; onGoToDetail: ()
           >
             <CheckCircle className="h-8 w-8 text-emerald-600" />
           </motion.div>
-          <h2 className="text-2xl font-bold">Listing Submitted!</h2>
+          <h2 className="text-2xl font-bold">{tr('تم إرسال الإعلان!', 'Listing Submitted!')}</h2>
           <p className="mt-2 text-muted-foreground">
-            Your car listing has been submitted for review. It will be live once approved by our team.
+            {tr(
+              'تم إرسال إعلان سيارتك للمراجعة. سيظهر للجمهور بعد موافقة فريقنا.',
+              'Your car listing has been submitted for review. It will be live once approved by our team.'
+            )}
           </p>
           <div className="mt-6 flex flex-col gap-2">
             <Button onClick={onGoToDetail} className="w-full gap-2">
-              View Listing
-              <ArrowRight className="h-4 w-4" />
+              {tr('عرض الإعلان', 'View Listing')}
+              <ArrowRight className={cn('h-4 w-4', isRTL && 'rotate-180')} />
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => onGoToDetail()}
-              className="w-full"
-            >
-              Go to My Listings
+            <Button variant="outline" onClick={() => onGoToDetail()} className="w-full">
+              {tr('الذهاب إلى إعلاناتي', 'Go to My Listings')}
             </Button>
           </div>
         </CardContent>
@@ -827,21 +1038,33 @@ function SuccessState({ carId, onGoToDetail }: { carId: string; onGoToDetail: ()
 // ============ Main Component ============
 
 export default function SellCarView() {
-  const { setView } = useAppStore();
+  const { setView, viewParams } = useAppStore();
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
+
+  const isMotorcycle = viewParams?.vehicleType === 'motorcycle';
+  const maxStep = isMotorcycle ? 4 : 5;
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createdCarId, setCreatedCarId] = useState<string | null>(null);
   const [images, setImages] = useState<{ url: string; alt?: string; isPrimary: boolean }[]>([]);
 
+  const sellCarSchema = useMemo(() => createSellCarSchema(tr), [tr]);
+  const steps = useMemo(() => getSteps(tr, isMotorcycle), [tr, isMotorcycle]);
+
   const form = useForm<SellCarFormData>({
-    resolver: zodResolver(sellCarSchema),
+    resolver: (values, context, options) =>
+      zodResolver(sellCarSchema)(values, context, options),
     defaultValues: {
       title: '',
       brand: '',
       model: '',
       year: 2024,
       condition: 'used',
+      vehicleType: isMotorcycle ? 'motorcycle' : 'car',
       mileage: undefined,
       description: '',
       fuelType: '',
@@ -896,9 +1119,9 @@ export default function SellCarView() {
   const handleNext = useCallback(async () => {
     const valid = await validateStep();
     if (valid) {
-      setCurrentStep((s) => Math.min(s + 1, 5));
+      setCurrentStep((s) => Math.min(s + 1, maxStep));
     }
-  }, [validateStep]);
+  }, [validateStep, maxStep]);
 
   // ============ Previous Step ============
 
@@ -916,6 +1139,8 @@ export default function SellCarView() {
       const values = form.getValues();
       const body = {
         ...values,
+        vehicleType: isMotorcycle ? 'motorcycle' : 'car',
+        isAvailableForRent: isMotorcycle ? false : values.isAvailableForRent,
         images: images.length > 0 ? images : undefined,
         // Clean undefined values
         mileage: values.mileage || undefined,
@@ -939,14 +1164,14 @@ export default function SellCarView() {
       if (data.success && data.data?.id) {
         setCreatedCarId(data.data.id);
       } else {
-        setSubmitError(data.error || 'Failed to create listing');
+        setSubmitError(data.error || tr('فشل إنشاء الإعلان', 'Failed to create listing'));
       }
     } catch {
-      setSubmitError('Something went wrong. Please try again.');
+      setSubmitError(tr('حدث خطأ ما. يرجى المحاولة مرة أخرى.', 'Something went wrong. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }
-  }, [form, images]);
+  }, [form, images, tr, isMotorcycle]);
 
   // ============ Success State ============
 
@@ -955,6 +1180,8 @@ export default function SellCarView() {
       <SuccessState
         carId={createdCarId}
         onGoToDetail={() => setView('detail', { carId: createdCarId })}
+        tr={tr}
+        isRTL={isRTL}
       />
     );
   }
@@ -962,16 +1189,25 @@ export default function SellCarView() {
   // ============ Render ============
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 md:px-6">
+    <div className="mx-auto max-w-4xl px-4 py-6 md:px-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
-        <h1 className="text-2xl font-bold md:text-3xl">Sell Your Car</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">
+          {tr(isMotorcycle ? 'بع دراجتك' : 'بع سيارتك', isMotorcycle ? 'Sell Your Motorcycle' : 'Sell Your Car')}
+        </h1>
         <p className="mt-1 text-muted-foreground">
-          Fill in the details to list your car on {process.env.NEXT_PUBLIC_PLATFORM_NAME || 'CIAR Cars'}
+          {tr(
+            isMotorcycle
+              ? `املأ التفاصيل لنشر دراجتك على ${process.env.NEXT_PUBLIC_PLATFORM_NAME || 'CIAR Cars'}`
+              : `املأ التفاصيل لنشر سيارتك على ${process.env.NEXT_PUBLIC_PLATFORM_NAME || 'CIAR Cars'}`,
+            isMotorcycle
+              ? `Fill in the details to list your motorcycle on ${process.env.NEXT_PUBLIC_PLATFORM_NAME || 'CIAR Cars'}`
+              : `Fill in the details to list your car on ${process.env.NEXT_PUBLIC_PLATFORM_NAME || 'CIAR Cars'}`
+          )}
         </p>
       </motion.div>
 
@@ -982,32 +1218,36 @@ export default function SellCarView() {
         transition={{ delay: 0.1 }}
         className="mb-8"
       >
-        <StepStepper currentStep={currentStep} steps={STEPS} />
+        <StepStepper currentStep={currentStep} steps={steps} />
       </motion.div>
 
       {/* Form Card */}
       <motion.div
         key={currentStep}
-        initial={{ opacity: 0, x: 20 }}
+        initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.2 }}
       >
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">
-              {STEPS[currentStep - 1]?.title}
-            </CardTitle>
+            <CardTitle className="text-lg">{steps[currentStep - 1]?.title}</CardTitle>
             <CardDescription>
-              Step {currentStep} of {STEPS.length}
+              {tr(`الخطوة ${currentStep} من ${steps.length}`, `Step ${currentStep} of ${steps.length}`)}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Step Content */}
-            {currentStep === 1 && <StepBasicInfo form={form} errors={errors} />}
-            {currentStep === 2 && <StepSpecifications form={form} />}
-            {currentStep === 3 && <StepPricingLocation form={form} errors={errors} />}
-            {currentStep === 4 && <StepImages images={images} setImages={setImages} />}
-            {currentStep === 5 && <StepRentalOptions form={form} />}
+            {currentStep === 1 && (
+              <StepBasicInfo form={form} errors={errors} tr={tr} isMotorcycle={isMotorcycle} />
+            )}
+            {currentStep === 2 && (
+              <StepSpecifications form={form} tr={tr} isAr={isAr} isMotorcycle={isMotorcycle} />
+            )}
+            {currentStep === 3 && (
+              <StepPricingLocation form={form} errors={errors} tr={tr} isAr={isAr} />
+            )}
+            {currentStep === 4 && <StepImages images={images} setImages={setImages} tr={tr} />}
+            {!isMotorcycle && currentStep === 5 && <StepRentalOptions form={form} tr={tr} />}
 
             {/* Error */}
             <AnimatePresence>
@@ -1033,30 +1273,26 @@ export default function SellCarView() {
                 disabled={currentStep === 1}
                 className="gap-2"
               >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
+                <ChevronLeft className={cn('h-4 w-4', isRTL && 'rotate-180')} />
+                {tr('السابق', 'Previous')}
               </Button>
 
-              {currentStep < 5 ? (
+              {currentStep < maxStep ? (
                 <Button onClick={handleNext} className="gap-2">
-                  Next
-                  <ChevronRight className="h-4 w-4" />
+                  {tr('التالي', 'Next')}
+                  <ChevronRight className={cn('h-4 w-4', isRTL && 'rotate-180')} />
                 </Button>
               ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="gap-2"
-                >
+                <Button onClick={handleSubmit} disabled={isSubmitting} className="gap-2">
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Submitting...
+                      {tr('جارٍ الإرسال...', 'Submitting...')}
                     </>
                   ) : (
                     <>
                       <CheckCircle className="h-4 w-4" />
-                      Submit Listing
+                      {tr('إرسال الإعلان', 'Submit Listing')}
                     </>
                   )}
                 </Button>

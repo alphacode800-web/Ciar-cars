@@ -1,48 +1,40 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ArrowRight, Zap, Car as CarIcon, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/app-store';
 import { useTranslation } from '@/hooks/use-translation';
+import { useSiteContent } from '@/hooks/use-site-content';
 
-interface Banner {
+interface DisplayBanner {
   id: string;
-  titleKey: string;
-  subtitleKey: string;
+  title: string;
+  subtitle: string;
   imageUrl: string;
   icon?: React.ReactNode;
-  ctaKey: string;
+  ctaLabel: string;
   onCTA: () => void;
 }
 
-const BANNERS: Banner[] = [
+const FALLBACK_BANNERS: Omit<DisplayBanner, 'title' | 'subtitle' | 'ctaLabel'>[] = [
   {
     id: 'new-arrivals',
-    titleKey: 'banner.newArrivals',
-    subtitleKey: 'banner.newArrivalsText',
     imageUrl: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=1400&h=500&fit=crop',
     icon: <CarIcon className="h-5 w-5" />,
-    ctaKey: 'banner.newArrivalsCTA',
     onCTA: () => useAppStore.getState().setView('listing', { condition: 'new' }),
   },
   {
     id: 'electric-vehicles',
-    titleKey: 'banner.electricVehicles',
-    subtitleKey: 'banner.electricVehiclesText',
     imageUrl: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=1400&h=500&fit=crop',
     icon: <Zap className="h-5 w-5" />,
-    ctaKey: 'banner.electricVehiclesCTA',
     onCTA: () => useAppStore.getState().setView('listing', { fuelType: 'electric' }),
   },
   {
     id: 'premium-rental',
-    titleKey: 'banner.premiumRental',
-    subtitleKey: 'banner.premiumRentalText',
     imageUrl: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=1400&h=500&fit=crop',
     icon: <Crown className="h-5 w-5" />,
-    ctaKey: 'banner.premiumRentalCTA',
     onCTA: () => useAppStore.getState().setView('listing', { isAvailableForRent: true }),
   },
 ];
@@ -67,14 +59,67 @@ const slideVariants = {
 
 const AUTO_PLAY_INTERVAL = 5000;
 
+function resolveBannerLink(linkUrl?: string | null) {
+  return () => {
+    const store = useAppStore.getState();
+    if (!linkUrl) {
+      store.setView('listing');
+      return;
+    }
+    if (linkUrl.startsWith('view:')) {
+      const view = linkUrl.replace('view:', '') as Parameters<typeof store.setView>[0];
+      store.setView(view);
+      return;
+    }
+    if (linkUrl.startsWith('/')) {
+      if (linkUrl.includes('listing')) store.setView('listing');
+      else if (linkUrl.includes('contact')) store.setView('contact');
+      else if (linkUrl.includes('about')) store.setView('about');
+      else if (linkUrl.includes('sell')) store.setView('sell-car');
+      else store.setView('listing');
+      return;
+    }
+    window.open(linkUrl, '_blank', 'noopener,noreferrer');
+  };
+}
+
 export function BannerSection() {
-  const { isRTL } = useTranslation();
-  const { t } = useTranslation();
+  const { isRTL, t } = useTranslation();
+  const { setView } = useAppStore();
+  const { data } = useSiteContent();
   const [[currentIndex, direction], setCurrentIndex] = useState([0, 0]);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [progressKey, setProgressKey] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const banners = BANNERS;
+
+  const banners: DisplayBanner[] = useMemo(() => {
+    const dbBanners = (data?.banners || []).filter(
+      (b) => b.position === 'home' || !b.position || b.position === 'homepage'
+    );
+    if (dbBanners.length > 0) {
+      return dbBanners.map((b) => ({
+        id: b.id,
+        title: b.title,
+        subtitle: b.subtitle || '',
+        imageUrl: b.imageUrl,
+        ctaLabel: t('banner.learnMore') !== 'banner.learnMore' ? t('banner.learnMore') : t('common.viewDetails') || 'View',
+        onCTA: resolveBannerLink(b.linkUrl),
+      }));
+    }
+    return FALLBACK_BANNERS.map((b, i) => {
+      const keys = [
+        { title: 'banner.newArrivals', sub: 'banner.newArrivalsText', cta: 'banner.newArrivalsCTA' },
+        { title: 'banner.electricVehicles', sub: 'banner.electricVehiclesText', cta: 'banner.electricVehiclesCTA' },
+        { title: 'banner.premiumRental', sub: 'banner.premiumRentalText', cta: 'banner.premiumRentalCTA' },
+      ][i];
+      return {
+        ...b,
+        title: t(keys.title),
+        subtitle: t(keys.sub),
+        ctaLabel: t(keys.cta),
+      };
+    });
+  }, [data?.banners, t]);
 
   const paginate = useCallback(
     (newDirection: number) => {
@@ -117,6 +162,7 @@ export function BannerSection() {
   }, []);
 
   const currentBanner = banners[currentIndex];
+  if (!currentBanner) return null;
 
   return (
     <section className="py-16 sm:py-20 bg-muted/30">
@@ -143,7 +189,7 @@ export function BannerSection() {
             >
               <img
                 src={currentBanner.imageUrl}
-                alt={t(currentBanner.titleKey)}
+                alt={currentBanner.title}
                 className="h-full w-full object-cover"
               />
               <div
@@ -171,7 +217,7 @@ export function BannerSection() {
                     transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                     className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight"
                   >
-                    {t(currentBanner.titleKey)}
+                    {currentBanner.title}
                   </motion.h3>
 
                   <motion.p
@@ -180,7 +226,7 @@ export function BannerSection() {
                     transition={{ delay: 0.3, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                     className="text-white/75 text-sm sm:text-base mb-6 line-clamp-2 leading-relaxed"
                   >
-                    {t(currentBanner.subtitleKey)}
+                    {currentBanner.subtitle}
                   </motion.p>
 
                   <motion.div
@@ -191,9 +237,12 @@ export function BannerSection() {
                     <Button
                       size="lg"
                       className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white h-11 px-7 rounded-xl shadow-lg shadow-emerald-900/30 transition-shadow hover:shadow-emerald-900/50"
-                      onClick={currentBanner.onCTA}
+                      onClick={() => {
+                        currentBanner.onCTA();
+                        void setView;
+                      }}
                     >
-                      {t(currentBanner.ctaKey)}
+                      {currentBanner.ctaLabel}
                       <ArrowRight
                         className={`h-4 w-4 ml-2 transition-transform duration-200 ${
                           isRTL ? 'rotate-180' : 'group-hover:translate-x-0.5'

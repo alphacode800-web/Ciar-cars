@@ -48,6 +48,7 @@ import { getStats } from '@/lib/admin-api';
 import { CURRENCY } from '@/lib/constants';
 import { useAdminTranslation } from '@/hooks/use-admin-translation';
 import { useAuthStore } from '@/store/auth-store';
+import { AiInsightsPanel } from '@/components/ai/AiInsightsPanel';
 import {
   AdminStatCard,
   AdminWelcomeBanner,
@@ -398,6 +399,8 @@ export default function OverviewSection({ onNavigate }: OverviewSectionProps) {
           { label: t('overview.activeRentals'), value: String(stats.bookings.active) },
         ]}
       />
+
+      <AiInsightsPanel />
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-5">

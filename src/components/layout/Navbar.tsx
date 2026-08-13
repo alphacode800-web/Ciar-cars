@@ -17,6 +17,8 @@ import {
   CarFront,
   CalendarCheck,
   Menu,
+  Megaphone,
+  ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,13 +51,30 @@ import { cn } from '@/lib/utils';
 import { ADMIN_LOGIN_PATH, isAdminRole } from '@/lib/auth-helpers';
 import { BrandWordmark } from '@/components/brand/BrandWordmark';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { useSiteContent } from '@/hooks/use-site-content';
+import { resolveAppViewFromUrl, resolveNavDisplayLabel } from '@/lib/cms-content';
 
-const NAV_VIEWS: { view: AppView; labelKey: string }[] = [
+const NAV_VIEWS: { view: AppView; labelKey: string; params?: Record<string, unknown>; navKey?: string }[] = [
   { view: 'home', labelKey: 'nav.home' },
-  { view: 'listing', labelKey: 'nav.listing' },
+  { view: 'listing', labelKey: 'nav.listing', params: { vehicleType: 'car' }, navKey: 'listing-cars' },
+  { view: 'listing', labelKey: 'nav.motorcycles', params: { vehicleType: 'motorcycle' }, navKey: 'listing-motorcycles' },
+  { view: 'advertisements', labelKey: 'nav.advertisements' },
   { view: 'rental', labelKey: 'nav.rental' },
-  { view: 'sell-car', labelKey: 'nav.sell' },
+  { view: 'sell-car', labelKey: 'nav.sell', params: { vehicleType: 'car' }, navKey: 'sell-car' },
+  { view: 'sell-car', labelKey: 'nav.sellMotorcycle', params: { vehicleType: 'motorcycle' }, navKey: 'sell-motorcycle' },
 ];
+
+/** Browse links shown inline in the desktop center nav */
+const DESKTOP_BROWSE_VIEWS = new Set<AppView>([
+  'home',
+  'listing',
+  'advertisements',
+  'rental',
+]);
+
+function resolveNavView(url?: string | null): AppView | null {
+  return resolveAppViewFromUrl(url) as AppView | null;
+}
 
 // Floating animation variants
 const floatingDots = {
@@ -72,15 +91,78 @@ const floatingDots = {
 };
 
 export function Navbar() {
-  const { currentView, setView, searchQuery, setSearchQuery } = useAppStore();
+  const { currentView, viewParams, setView, searchQuery, setSearchQuery, setFilters } = useAppStore();
   const { user, isAuthenticated, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
-  const { t, isRTL } = useTranslation();
-  const [mounted, setMounted] = useState(false);
+  const { t, isRTL, locale } = useTranslation();
+  const { data: siteContent } = useSiteContent();
+  const mounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  React.useEffect(() => setMounted(true), []);
+  const navItems = React.useMemo(() => {
+    const cmsNav = siteContent?.navigation?.navbar || [];
+    const raw =
+      cmsNav.length === 0
+        ? NAV_VIEWS.map((link) => ({
+            view: link.view,
+            label: t(link.labelKey),
+            key: link.navKey ?? link.view,
+            params: link.params,
+          }))
+        : (cmsNav
+            .map((item) => {
+              const view = resolveNavView(item.url);
+              if (!view) return null;
+              // Prefer clear i18n labels for ad views to avoid synonym confusion with CMS text
+              const label =
+                view === 'advertisements'
+                  ? t('nav.advertisements')
+                  : resolveNavDisplayLabel(item.label, locale, view, t);
+              return { view, label, key: item.id, params: undefined as Record<string, unknown> | undefined };
+            })
+            .filter(Boolean) as { view: AppView; label: string; key: string; params?: Record<string, unknown> }[]);
+
+    // Deduplicate by key (keep first occurrence)
+    const seen = new Set<string>();
+    return raw.filter((item) => {
+      if (seen.has(item.key)) return false;
+      seen.add(item.key);
+      return true;
+    });
+  }, [siteContent?.navigation?.navbar, t, locale]);
+
+  const desktopBrowseNavItems = React.useMemo(
+    () => navItems.filter((item) => DESKTOP_BROWSE_VIEWS.has(item.view)),
+    [navItems]
+  );
+
+  const sellNavItems = React.useMemo(
+    () => navItems.filter((item) => item.view === 'sell-car'),
+    [navItems]
+  );
+
+  const isNavItemActive = React.useCallback(
+    (item: { view: AppView; params?: Record<string, unknown> }) => {
+      if (currentView !== item.view) return false;
+      if (item.view === 'listing' || item.view === 'sell-car') {
+        const itemType = item.params?.vehicleType === 'motorcycle' ? 'motorcycle' : 'car';
+        const currentType = viewParams?.vehicleType === 'motorcycle' ? 'motorcycle' : 'car';
+        return itemType === currentType;
+      }
+      return true;
+    },
+    [currentView, viewParams?.vehicleType]
+  );
+
+  const isSellNavActive = React.useMemo(
+    () => currentView === 'sell-car',
+    [currentView]
+  );
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,14 +173,20 @@ export function Navbar() {
     }
   };
 
-  const quickSearchViews: { view: AppView; label: string }[] = [
-    { view: 'listing', label: t('nav.listing') },
+  const quickSearchViews: { view: AppView; label: string; params?: Record<string, unknown> }[] = [
+    { view: 'listing', label: t('nav.listing'), params: { vehicleType: 'car' } },
+    { view: 'listing', label: t('nav.motorcycles'), params: { vehicleType: 'motorcycle' } },
     { view: 'rental', label: t('nav.rental') },
-    { view: 'sell-car', label: t('nav.sell') },
+    { view: 'sell-car', label: t('nav.sell'), params: { vehicleType: 'car' } },
+    { view: 'sell-car', label: t('nav.sellMotorcycle'), params: { vehicleType: 'motorcycle' } },
   ];
 
-  const handleNavClick = (view: AppView) => {
-    setView(view);
+  const handleNavClick = (view: AppView, params?: Record<string, unknown>) => {
+    if (view === 'listing' || view === 'sell-car') {
+      const vehicleType = params?.vehicleType === 'motorcycle' ? 'motorcycle' : 'car';
+      setFilters({ vehicleType, page: 1 });
+    }
+    setView(view, params);
     setMobileOpen(false);
   };
 
@@ -109,6 +197,12 @@ export function Navbar() {
       return;
     }
     window.location.href = ADMIN_LOGIN_PATH;
+  };
+
+  const handleAdvertise = () => {
+    setView('create-advertisement');
+    setMobileOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const getInitials = (name?: string | null) => {
@@ -140,30 +234,30 @@ export function Navbar() {
         className="fixed top-[2px] left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b shadow-sm"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 lg:gap-3 h-16">
             {/* Logo */}
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="shrink-0">
               <BrandWordmark size="md" showSecondary onClick={() => handleNavClick('home')} />
             </motion.div>
 
-            {/* Center Nav Links - Desktop */}
-            <nav className="hidden md:flex items-center gap-1">
-              {NAV_VIEWS.map((link, i) => (
+            {/* Center Nav — browse links + sell dropdown */}
+            <nav className="hidden md:flex items-center justify-center gap-0.5 min-w-0 overflow-x-auto scrollbar-none px-1">
+              {desktopBrowseNavItems.map((link, i) => (
                 <motion.button
-                  key={link.view}
-                  onClick={() => handleNavClick(link.view)}
+                  key={link.key}
+                  onClick={() => handleNavClick(link.view, link.params)}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
+                  transition={{ delay: i * 0.05 }}
                   className={cn(
-                    'relative px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                    currentView === link.view
+                    'relative shrink-0 whitespace-nowrap px-2 lg:px-2.5 py-1.5 text-xs lg:text-[13px] xl:text-sm font-medium rounded-lg transition-colors leading-none',
+                    isNavItemActive(link)
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   )}
                 >
-                  {t(link.labelKey)}
-                  {currentView === link.view && (
+                  {link.label}
+                  {isNavItemActive(link) && (
                     <motion.div
                       layoutId="navbar-active"
                       className="absolute inset-0 bg-primary/5 rounded-lg border border-primary/10 -z-10"
@@ -172,16 +266,65 @@ export function Navbar() {
                   )}
                 </motion.button>
               ))}
+
+              {sellNavItems.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        'relative inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap px-2 lg:px-2.5 py-1.5 text-xs lg:text-[13px] xl:text-sm font-medium rounded-lg transition-colors leading-none',
+                        isSellNavActive
+                          ? 'text-primary'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                      )}
+                    >
+                      {t('nav.sellMenu')}
+                      <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                      {isSellNavActive && (
+                        <span className="absolute inset-0 bg-primary/5 rounded-lg border border-primary/10 -z-10" />
+                      )}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="min-w-[11rem]">
+                    {sellNavItems.map((item) => (
+                      <DropdownMenuItem
+                        key={item.key}
+                        onClick={() => handleNavClick(item.view, item.params)}
+                        className={cn(isNavItemActive(item) && 'text-primary font-medium')}
+                      >
+                        {item.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </nav>
 
-            {/* Right Section */}
-            <div className="flex items-center gap-1.5">
-              {/* Search - Desktop (logo/icon trigger + popup) */}
+            {/* Right actions — separated groups to avoid overlap */}
+            <div className="flex shrink-0 items-center gap-1 lg:gap-1.5 justify-end">
+              {/* CTA: create ad (icon-only on md–lg to save space) */}
+              <motion.button
+                type="button"
+                onClick={handleAdvertise}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                title={t('nav.advertise')}
+                aria-label={t('nav.advertise')}
+                className="hidden md:inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 xl:px-3 py-1.5 text-[13px] font-semibold text-white shadow-sm shadow-orange-500/20 transition-shadow hover:shadow-md leading-none"
+              >
+                <Megaphone className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden xl:inline">{t('nav.advertise')}</span>
+              </motion.button>
+
+              <span className="hidden md:block h-5 w-px bg-border/80" aria-hidden />
+
+              {/* Search - Desktop */}
               <motion.button
                 type="button"
                 onClick={() => setSearchOpen(true)}
                 className={cn(
-                  'hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full border',
+                  'hidden md:inline-flex h-9 w-9 items-center justify-center rounded-full border',
                   'border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400',
                   'hover:bg-emerald-500/15 transition-colors'
                 )}
@@ -190,7 +333,7 @@ export function Navbar() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <Search className="h-4.5 w-4.5 shrink-0" />
+                <Search className="h-4 w-4 shrink-0" />
               </motion.button>
 
               {/* Search — mobile */}
@@ -207,23 +350,23 @@ export function Navbar() {
               </motion.div>
 
               {/* Currency — desktop only */}
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <CurrencySwitcher />
               </div>
 
               {/* Language — desktop only */}
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <LanguageSwitcher />
               </div>
 
               {/* Theme — desktop only */}
               {mounted && (
-                <motion.div whileTap={{ scale: 0.9, rotate: 180 }} className="hidden md:block">
+                <motion.div whileTap={{ scale: 0.9, rotate: 180 }} className="hidden xl:block">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                    className="text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground h-9 w-9"
                   >
                     <AnimatePresence mode="wait">
                       {theme === 'dark' ? (
@@ -254,11 +397,11 @@ export function Navbar() {
               )}
 
               {/* Notifications — desktop only */}
-              <motion.div whileTap={{ scale: 0.9 }} className="hidden md:block">
+              <motion.div whileTap={{ scale: 0.9 }} className="hidden xl:block">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="relative text-muted-foreground hover:text-foreground"
+                  className="relative text-muted-foreground hover:text-foreground h-9 w-9"
                   onClick={() => isAuthenticated && handleNavClick('notifications')}
                 >
                   <Bell className="h-5 w-5" />
@@ -274,12 +417,13 @@ export function Navbar() {
 
               {/* Auth - Not Authenticated */}
               {!isAuthenticated && (
-                <div className="hidden md:flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-1.5 ms-0.5">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleNavClick('auth')}
+                      className="whitespace-nowrap px-2.5"
                     >
                       {t('nav.login')}
                     </Button>
@@ -288,7 +432,7 @@ export function Navbar() {
                     <Button
                       size="sm"
                       onClick={() => handleNavClick('auth')}
-                      className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-shadow"
+                      className="whitespace-nowrap bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-shadow"
                     >
                       {t('nav.register')}
                     </Button>
@@ -392,7 +536,7 @@ export function Navbar() {
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side={isRTL ? 'right' : 'left'} className="w-[min(100vw-2rem,20rem)] p-0 flex flex-col max-h-[100dvh]">
           <SheetHeader className="p-4 pb-2 shrink-0">
-            <SheetTitle className="sr-only">RCiAR Cars</SheetTitle>
+            <SheetTitle className="sr-only">CIAR Cars</SheetTitle>
             <BrandWordmark size="sm" showSecondary={false} onClick={() => handleNavClick('home')} />
           </SheetHeader>
 
@@ -412,11 +556,11 @@ export function Navbar() {
           <Separator />
 
           <div className="flex-1 overflow-y-auto py-2 px-3 space-y-1">
-            {NAV_VIEWS.map((link) => (
+            {navItems.map((link) => (
               <button
-                key={link.view}
+                key={link.key}
                 type="button"
-                onClick={() => handleNavClick(link.view)}
+                onClick={() => handleNavClick(link.view, link.params)}
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors min-h-[44px]',
                   currentView === link.view
@@ -424,7 +568,7 @@ export function Navbar() {
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}
               >
-                {t(link.labelKey)}
+                {link.label}
               </button>
             ))}
 
@@ -443,6 +587,15 @@ export function Navbar() {
                 {item.label}
               </button>
             ))}
+
+            <button
+              type="button"
+              onClick={handleAdvertise}
+              className="flex min-h-[46px] w-full items-center gap-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-3 text-sm font-semibold text-white shadow-sm"
+            >
+              <Megaphone className="h-4 w-4 shrink-0" />
+              {t('nav.advertise')}
+            </button>
 
             {isAuthenticated && user && (
               <>
@@ -560,12 +713,12 @@ export function Navbar() {
             <div className="grid gap-2 sm:grid-cols-3">
               {quickSearchViews.map((item) => (
                 <Button
-                  key={item.view}
+                  key={`${item.view}-${item.params?.vehicleType ?? 'default'}`}
                   type="button"
                   variant="outline"
                   className="justify-start rounded-xl"
                   onClick={() => {
-                    setView(item.view);
+                    handleNavClick(item.view, item.params);
                     setSearchOpen(false);
                   }}
                 >

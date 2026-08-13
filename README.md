@@ -228,6 +228,41 @@ export const POST = createHandler(
 
 ---
 
+## Experimental AI (local Ollama)
+
+CIAR Cars includes an **experimental AI suite** that talks to a local [Ollama](https://ollama.com) server. All outputs are **advisory drafts** — nothing is auto-published, auto-refunded, or sent to ad platforms.
+
+### Setup
+
+```bash
+# Install Ollama, then pull the recommended multilingual model:
+ollama pull qwen2.5:7b
+
+# Ensure .env includes (already in .env.example):
+OLLAMA_ENABLED=true
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen2.5:7b
+OLLAMA_TIMEOUT_MS=60000
+AI_RATE_LIMIT_PER_MIN=20
+```
+
+### Features
+
+| Feature | Where |
+|---------|--------|
+| Arabic customer chatbot | Floating widget on the storefront (signed-in users) |
+| Car recommendations | Homepage strip + car detail “similar” cars |
+| Review sentiment | Admin → Reviews |
+| SEO drafts | Admin → Pages / Homepage builder |
+| Inventory insights | Admin → Overview + AI Suite |
+| Payment risk flags | Admin → Payments (advisory only) |
+| Marketing drafts | Admin → AI Suite tools tab |
+| Health / toggles / prompts | Admin → **الذكاء الاصطناعي** (`/?view=admin&section=ai`) |
+
+If Ollama is offline, features fall back to deterministic heuristics so the site stays usable.
+
+---
+
 ## Scripts Reference
 
 | Command | Description |
@@ -262,3 +297,4 @@ Private — All rights reserved.
 <p align="center">
   <sub>CIAR Cars · Built with Next.js, Prisma, and attention to every millisecond.</sub>
 </p>
+# CIAR-CARS

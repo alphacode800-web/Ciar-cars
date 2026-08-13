@@ -68,7 +68,7 @@ export function NewsTickerBar({
     <div
       className={cn(
         'relative overflow-hidden shadow-[inset_0_-1px_0_rgba(255,255,255,0.06)]',
-        !preview && 'fixed top-16 inset-x-0 z-40',
+        !preview && 'fixed top-[calc(4rem+2px)] inset-x-0 z-40',
         className
       )}
       style={{

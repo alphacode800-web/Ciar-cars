@@ -42,9 +42,16 @@ export function LanguageSwitcher({ menuMode, className }: LanguageSwitcherProps 
             className
           )}
         >
-          <span className="flex items-center gap-2 min-w-0">
+          <span className="flex items-center gap-1.5 min-w-0">
             <Globe className="h-4 w-4 shrink-0" />
-            <span className="text-sm font-medium truncate">{currentLanguage.nativeName}</span>
+            <span
+              className={cn(
+                'text-sm font-medium truncate whitespace-nowrap',
+                !menuMode && 'hidden lg:inline'
+              )}
+            >
+              {currentLanguage.nativeName}
+            </span>
           </span>
           {menuMode && <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />}
           {!menuMode && <ChevronDown className="h-3 w-3 opacity-50" />}

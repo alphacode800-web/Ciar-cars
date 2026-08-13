@@ -182,7 +182,14 @@ export async function saveSettings(settings: Record<string, any>) {
 
 // ============ HOMEPAGE ============
 export async function getHomepageSections() {
-  return adminFetch('/api/homepage');
+  return adminFetch('/api/homepage?all=true');
+}
+
+export async function reorderHomepageSections(items: { id: string; order: number; isActive?: boolean }[]) {
+  return adminFetch('/api/homepage', {
+    method: 'PUT',
+    body: JSON.stringify({ items }),
+  });
 }
 
 export async function createHomepageSection(data: { type: string; title?: string; subtitle?: string; content?: any; order?: number; isActive?: boolean }) {
@@ -270,3 +277,261 @@ export async function getAuditLogs(params?: AdminAuditFilters) {
   if (params?.entity) query.set('entity', params.entity);
   return adminFetch(`${API_BASE}/audit?${query.toString()}`);
 }
+
+// ============ CMS: PAGES ============
+export async function getCmsPages() {
+  return adminFetch(`${API_BASE}/pages`);
+}
+
+export async function updateCmsPage(data: {
+  slug: string;
+  title?: string;
+  status?: string;
+  content?: unknown;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+}) {
+  return adminFetch(`${API_BASE}/pages`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+// ============ CMS: MEDIA ============
+export async function getMediaAssets(params?: PaginationParams & { folder?: string; search?: string }) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set('page', String(params.page));
+  if (params?.limit) query.set('limit', String(params.limit));
+  if (params?.folder) query.set('folder', params.folder);
+  if (params?.search) query.set('search', params.search);
+  return adminFetch(`${API_BASE}/media?${query.toString()}`);
+}
+
+export async function deleteMediaAsset(id: string) {
+  return adminFetch(`${API_BASE}/media?id=${id}`, { method: 'DELETE' });
+}
+
+export async function uploadMediaFile(file: File, folder = 'general', alt?: string) {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('folder', folder);
+  if (alt) form.append('alt', alt);
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: form, credentials: 'include' });
+    return await res.json();
+  } catch {
+    return { success: false, error: 'Network error' };
+  }
+}
+
+// ============ CMS: PAYMENT METHODS ============
+export async function getPaymentMethodItems() {
+  return adminFetch(`${API_BASE}/payment-methods`);
+}
+
+export async function createPaymentMethodItem(data: { name: string; imageUrl: string; order?: number; isActive?: boolean }) {
+  return adminFetch(`${API_BASE}/payment-methods`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updatePaymentMethodItem(data: Record<string, unknown>) {
+  return adminFetch(`${API_BASE}/payment-methods`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deletePaymentMethodItem(id: string) {
+  return adminFetch(`${API_BASE}/payment-methods?id=${id}`, { method: 'DELETE' });
+}
+
+// ============ CONTACT MESSAGES ============
+export async function getContactMessages(params?: PaginationParams & { status?: string; search?: string }) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set('page', String(params.page));
+  if (params?.limit) query.set('limit', String(params.limit));
+  if (params?.status) query.set('status', params.status);
+  if (params?.search) query.set('search', params.search);
+  return adminFetch(`${API_BASE}/contact-messages?${query.toString()}`);
+}
+
+export async function updateContactMessage(id: string, status: string) {
+  return adminFetch(`${API_BASE}/contact-messages`, {
+    method: 'PUT',
+    body: JSON.stringify({ id, status }),
+  });
+}
+
+export async function deleteContactMessage(id: string) {
+  return adminFetch(`${API_BASE}/contact-messages?id=${id}`, { method: 'DELETE' });
+}
+
+// ============ REVIEWS ============
+export async function getReviews(params?: PaginationParams & { search?: string }) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set('page', String(params.page));
+  if (params?.limit) query.set('limit', String(params.limit));
+  if (params?.search) query.set('search', params.search);
+  return adminFetch(`${API_BASE}/reviews?${query.toString()}`);
+}
+
+export async function deleteReview(id: string) {
+  return adminFetch(`${API_BASE}/reviews?id=${id}`, { method: 'DELETE' });
+}
+
+// ============ WALLETS ============
+export async function getWalletTransactions(params?: PaginationParams & { userId?: string; type?: string }) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set('page', String(params.page));
+  if (params?.limit) query.set('limit', String(params.limit));
+  if (params?.userId) query.set('userId', params.userId);
+  if (params?.type) query.set('type', params.type);
+  return adminFetch(`${API_BASE}/wallets?${query.toString()}`);
+}
+
+export async function adjustWallet(data: { userId: string; amount: number; type?: 'credit' | 'debit'; description?: string }) {
+  return adminFetch(`${API_BASE}/wallets`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// ============ CHAT ============
+export async function getChatRooms(params?: PaginationParams) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set('page', String(params.page));
+  if (params?.limit) query.set('limit', String(params.limit));
+  return adminFetch(`${API_BASE}/chat?${query.toString()}`);
+}
+
+// ============ PAYMENT ACTIONS ============
+export async function updatePaymentStatus(id: string, status: string) {
+  return adminFetch(`${API_BASE}/payments/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  });
+}
+
+// ============ AI SUITE (experimental / local Ollama) ============
+export async function getAiAdminSettings() {
+  return adminFetch(`${API_BASE}/ai/settings`);
+}
+
+export async function saveAiAdminSettings(data: Record<string, unknown>) {
+  return adminFetch(`${API_BASE}/ai/settings`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function analyzeReviewsAi(data?: { reviewId?: string; limit?: number }) {
+  return adminFetch(`${API_BASE}/ai/reviews/analyze`, {
+    method: 'POST',
+    body: JSON.stringify(data || {}),
+  });
+}
+
+export async function getSentimentSummaryAi() {
+  return adminFetch(`${API_BASE}/ai/reviews/analyze`);
+}
+
+export async function generateSeoAi(data: Record<string, unknown>) {
+  return adminFetch(`${API_BASE}/ai/seo`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getAiInsights(params?: { kind?: string; country?: string }) {
+  const query = new URLSearchParams();
+  if (params?.kind) query.set('kind', params.kind);
+  if (params?.country) query.set('country', params.country);
+  return adminFetch(`${API_BASE}/ai/insights?${query.toString()}`);
+}
+
+export async function scorePaymentsAi(data?: { paymentId?: string; limit?: number }) {
+  return adminFetch(`${API_BASE}/ai/payments/score`, {
+    method: 'POST',
+    body: JSON.stringify(data || {}),
+  });
+}
+
+export async function generateMarketingAi(data?: { goal?: string; locale?: string }) {
+  return adminFetch(`${API_BASE}/ai/marketing`, {
+    method: 'POST',
+    body: JSON.stringify(data || { locale: 'ar' }),
+  });
+}
+
+export async function getAiHealth() {
+  const res = await fetch('/api/ai/health', { credentials: 'include' });
+  return res.json();
+}
+
+// ============ ADVERTISEMENTS (admin) ============
+export async function getAdminAdvertisements(params?: Record<string, string | number | undefined>) {
+  const query = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') query.set(k, String(v));
+    });
+  }
+  return adminFetch(`${API_BASE}/advertisements?${query.toString()}`);
+}
+
+export async function getAdminAdvertisement(id: string) {
+  return adminFetch(`${API_BASE}/advertisements/${id}`);
+}
+
+export async function advertisementAction(
+  id: string,
+  data: { action: string; rejectedReason?: string }
+) {
+  return adminFetch(`${API_BASE}/advertisements/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateAdminAdvertisement(id: string, data: Record<string, unknown>) {
+  return adminFetch(`${API_BASE}/advertisements/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteAdminAdvertisement(id: string) {
+  return adminFetch(`${API_BASE}/advertisements/${id}`, { method: 'DELETE' });
+}
+
+export async function confirmAdPayment(paymentId: string) {
+  return adminFetch(`${API_BASE}/advertisements/confirm-payment`, {
+    method: 'POST',
+    body: JSON.stringify({ paymentId }),
+  });
+}
+
+export async function getAdPlansAdmin() {
+  return adminFetch(`${API_BASE}/ad-plans`);
+}
+
+export async function createAdPlan(data: Record<string, unknown>) {
+  return adminFetch(`${API_BASE}/ad-plans`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateAdPlan(id: string, data: Record<string, unknown>) {
+  return adminFetch(`${API_BASE}/ad-plans/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteAdPlan(id: string) {
+  return adminFetch(`${API_BASE}/ad-plans/${id}`, { method: 'DELETE' });
+}
+

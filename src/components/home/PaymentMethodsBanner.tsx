@@ -1,29 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Lock, ShieldCheck } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
+import { useSiteContent } from '@/hooks/use-site-content';
+import { DEFAULT_PAYMENT_METHODS, pickLocalized, type PaymentsSectionContent } from '@/lib/cms-content';
 
-const PAYMENT_METHODS = [
-  { id: 'visa', name: 'Visa', src: '/payments/visa.svg' },
-  { id: 'mastercard', name: 'Mastercard', src: '/payments/mastercard.svg' },
-  { id: 'wish', name: 'Wish', src: '/payments/wish.png' },
-  { id: 'ciar-prepaid', name: 'CIAR Prepaid Card', src: '/payments/ciar-prepaid.png' },
-  { id: 'mada', name: 'Mada', src: '/payments/mada.svg' },
-  { id: 'applepay', name: 'Apple Pay', src: '/payments/apple-pay.svg' },
-  { id: 'googlepay', name: 'Google Pay', src: '/payments/google-pay.svg' },
-  { id: 'paypal', name: 'PayPal', src: '/payments/paypal.svg' },
-  { id: 'amex', name: 'American Express', src: '/payments/amex.svg' },
-  { id: 'fawry', name: 'Fawry', src: '/payments/fawry.svg' },
-  { id: 'stcpay', name: 'stc pay', src: '/payments/stc-pay.svg' },
-  { id: 'wallet', name: 'CIAR Wallet', src: '/payments/ciar-wallet.svg' },
-  { id: 'bank', name: 'Bank Transfer', src: '/payments/bank-transfer.svg' },
-  { id: 'cod', name: 'Cash on Delivery', src: '/payments/cod.svg' },
-] as const;
+const FALLBACK_METHODS = DEFAULT_PAYMENT_METHODS.map((m) => ({
+  id: m.id,
+  name: m.name,
+  src: m.imageUrl,
+}));
 
-function PaymentBanner({ name, src }: (typeof PAYMENT_METHODS)[number]) {
+function PaymentBanner({ name, src }: { name: string; src: string }) {
   return (
     <div
       className="relative shrink-0 w-[190px] aspect-[19/12] sm:w-[228px] rounded-md overflow-hidden shadow-lg transition-transform duration-300 hover:scale-[1.04] hover:shadow-xl"
@@ -43,9 +34,26 @@ function PaymentBanner({ name, src }: (typeof PAYMENT_METHODS)[number]) {
   );
 }
 
-export function PaymentMethodsBanner() {
-  const { t, isRTL } = useTranslation();
-  const doubled = [...PAYMENT_METHODS, ...PAYMENT_METHODS];
+export function PaymentMethodsBanner({ cmsContent }: { cmsContent?: unknown } = {}) {
+  const { t, isRTL, locale } = useTranslation();
+  const { data } = useSiteContent();
+  const content = (cmsContent || {}) as PaymentsSectionContent;
+
+  const methods = useMemo(() => {
+    if (data?.paymentMethods?.length) {
+      return data.paymentMethods.map((m) => ({
+        id: m.id,
+        name: m.name,
+        src: m.imageUrl,
+      }));
+    }
+    return FALLBACK_METHODS;
+  }, [data?.paymentMethods]);
+
+  const doubled = [...methods, ...methods];
+  const badge = pickLocalized(content.badge, locale, t('paymentMethods.badge'));
+  const title = pickLocalized(content.title, locale, t('paymentMethods.title'));
+  const subtitle = pickLocalized(content.subtitle, locale, t('paymentMethods.subtitle'));
 
   return (
     <section className="relative py-14 lg:py-16 overflow-hidden bg-muted/30 dark:bg-zinc-950/50">
@@ -61,10 +69,10 @@ export function PaymentMethodsBanner() {
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-4">
             <ShieldCheck className="h-3.5 w-3.5" />
-            {t('paymentMethods.badge')}
+            {badge}
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">{t('paymentMethods.title')}</h2>
-          <p className="text-muted-foreground text-sm sm:text-base mt-2">{t('paymentMethods.subtitle')}</p>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">{title}</h2>
+          <p className="text-muted-foreground text-sm sm:text-base mt-2">{subtitle}</p>
         </motion.div>
       </div>
 

@@ -14,6 +14,7 @@ const VALID_TYPES = [
   "rental",
   "wallet_topup",
   "featured_fee",
+  "ad_fee",
 ];
 
 const VALID_STATUSES = ["pending", "completed", "failed", "refunded"];

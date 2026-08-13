@@ -58,7 +58,11 @@ export async function getAuthUser(
       }
     }
 
-    if (process.env.NODE_ENV !== "production") {
+    // Dev-only header bypass — disabled unless explicitly enabled
+    if (
+      process.env.NODE_ENV !== "production" &&
+      process.env.ALLOW_DEV_USER_HEADER === "true"
+    ) {
       const userId = request.headers.get("X-User-Id");
       if (userId) {
         const user = await db.user.findUnique({
@@ -91,6 +95,16 @@ export async function requireAdmin(
   const user = await requireAuth(request);
   if (user.role !== "admin" && user.role !== "super_admin") {
     throw new AuthError("Admin access required", 403);
+  }
+  return user;
+}
+
+export async function requireSuperAdmin(
+  request: NextRequest
+): Promise<AuthUser | never> {
+  const user = await requireAdmin(request);
+  if (user.role !== "super_admin") {
+    throw new AuthError("Super admin access required", 403);
   }
   return user;
 }

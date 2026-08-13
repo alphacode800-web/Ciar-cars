@@ -42,6 +42,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { LocalizedFields } from '@/components/admin/LocalizedFields';
+import { useAdminTranslation } from '@/hooks/use-admin-translation';
+import {
+  isLocalizedNavLabel,
+  normalizeNavLabel,
+  pickLocalized,
+  stringifyNavLabel,
+  type LocalizedString,
+} from '@/lib/cms-content';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
@@ -90,7 +99,7 @@ interface NavItem {
 }
 
 interface NavItemFormData {
-  label: string;
+  label: LocalizedString;
   url: string;
   icon: string;
   parentId: string;
@@ -101,7 +110,7 @@ interface NavItemFormData {
 }
 
 const EMPTY_FORM: NavItemFormData = {
-  label: '',
+  label: { en: '', ar: '', fr: '', de: '', es: '' },
   url: '',
   icon: '',
   parentId: '',
@@ -110,6 +119,10 @@ const EMPTY_FORM: NavItemFormData = {
   isActive: true,
   isOpen: false,
 };
+
+function displayNavLabel(label: string): string {
+  return pickLocalized(normalizeNavLabel(label), 'en', label);
+}
 
 type TabPosition = 'navbar' | 'footer';
 
@@ -190,7 +203,7 @@ function SortableNavItemRow({
 
       {/* Label */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{item.label}</p>
+        <p className="text-sm font-medium truncate">{displayNavLabel(item.label)}</p>
         {item.url && (
           <p className="text-xs text-muted-foreground truncate">{item.url}</p>
         )}
@@ -282,6 +295,8 @@ function NavigationSkeleton() {
 // ============ MAIN COMPONENT ============
 
 export default function NavigationSection() {
+  const { t } = useAdminTranslation();
+
   // Data state
   const [navbarItems, setNavbarItems] = useState<NavItem[]>([]);
   const [footerItems, setFooterItems] = useState<NavItem[]>([]);
@@ -418,12 +433,12 @@ export default function NavigationSection() {
 
   // ============ CREATE ============
   const handleCreate = async () => {
-    if (!formData.label.trim()) return;
+    if (!formData.label.en?.trim() && !formData.label.ar?.trim()) return;
     setDialogLoading(true);
 
     try {
       const payload: Parameters<typeof createNavItem>[0] = {
-        label: formData.label.trim(),
+        label: stringifyNavLabel(formData.label),
         position: activeTab,
         order: topLevelItems.length,
         isActive: formData.isActive,
@@ -436,7 +451,7 @@ export default function NavigationSection() {
 
       const res = await createNavItem(payload);
       if (res.success) {
-        toast.success(`"${formData.label}" added to ${activeTab}`);
+        toast.success(`"${displayNavLabel(stringifyNavLabel(formData.label))}" added to ${activeTab}`);
         setAddOpen(false);
         setFormData({ ...EMPTY_FORM, position: activeTab });
         fetchNavItems();
@@ -458,7 +473,7 @@ export default function NavigationSection() {
     try {
       const payload: Parameters<typeof updateNavItem>[0] = {
         id: editingItem.id,
-        label: formData.label.trim(),
+        label: stringifyNavLabel(formData.label),
         isActive: formData.isActive,
         isOpen: formData.isOpen,
       };
@@ -471,7 +486,7 @@ export default function NavigationSection() {
 
       const res = await updateNavItem(payload);
       if (res.success) {
-        toast.success(`"${formData.label}" updated`);
+        toast.success(`"${displayNavLabel(stringifyNavLabel(formData.label))}" updated`);
         setEditOpen(false);
         setEditingItem(null);
         setFormData(EMPTY_FORM);
@@ -512,7 +527,9 @@ export default function NavigationSection() {
   const openEditDialog = (item: NavItem) => {
     setEditingItem(item);
     setFormData({
-      label: item.label || '',
+      label: isLocalizedNavLabel(item.label || '')
+        ? normalizeNavLabel(item.label || '')
+        : normalizeNavLabel(item.label || ''),
       url: item.url || '',
       icon: item.icon || '',
       parentId: item.parentId || '',
@@ -563,9 +580,9 @@ export default function NavigationSection() {
             <Navigation className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Navigation</h2>
+            <h2 className="text-lg font-semibold tracking-tight">{t('navigationMgmt.title')}</h2>
             <p className="text-muted-foreground text-xs">
-              Manage navbar and footer menu items
+              {t('navigationMgmt.subtitle')}
             </p>
           </div>
         </div>
@@ -577,7 +594,7 @@ export default function NavigationSection() {
             className="gap-1.5"
           >
             <RefreshCcw className="h-3.5 w-3.5" />
-            Refresh
+            {t('common.refresh')}
           </Button>
           <Button
             size="sm"
@@ -587,8 +604,8 @@ export default function NavigationSection() {
             }}
             className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
           >
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Add Item
+            <Plus className="h-3.5 w-3.5 me-1.5" />
+            {t('navigationMgmt.addItem')}
           </Button>
         </div>
       </div>
@@ -707,18 +724,12 @@ export default function NavigationSection() {
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            {/* Label */}
-            <div className="space-y-2">
-              <Label htmlFor="add-label">Label *</Label>
-              <Input
-                id="add-label"
-                placeholder="Menu item label..."
-                value={formData.label}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, label: e.target.value }))
-                }
-              />
-            </div>
+            <LocalizedFields
+              label="Label *"
+              value={formData.label}
+              onChange={(label) => setFormData((prev) => ({ ...prev, label }))}
+              placeholder="Menu item label..."
+            />
 
             {/* URL */}
             <div className="space-y-2">
@@ -765,7 +776,7 @@ export default function NavigationSection() {
                   <SelectItem value="__none__">None (top level)</SelectItem>
                   {topLevelItems.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
-                      {item.label}
+                      {displayNavLabel(item.label)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -843,7 +854,7 @@ export default function NavigationSection() {
             </Button>
             <Button
               onClick={handleCreate}
-              disabled={dialogLoading || !formData.label.trim()}
+              disabled={dialogLoading || !(formData.label.en?.trim() || formData.label.ar?.trim())}
               className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
             >
               {dialogLoading ? 'Creating...' : 'Add Item'}
@@ -871,18 +882,12 @@ export default function NavigationSection() {
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            {/* Label */}
-            <div className="space-y-2">
-              <Label htmlFor="edit-label">Label *</Label>
-              <Input
-                id="edit-label"
-                placeholder="Menu item label..."
-                value={formData.label}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, label: e.target.value }))
-                }
-              />
-            </div>
+            <LocalizedFields
+              label="Label *"
+              value={formData.label}
+              onChange={(label) => setFormData((prev) => ({ ...prev, label }))}
+              placeholder="Menu item label..."
+            />
 
             {/* URL */}
             <div className="space-y-2">
@@ -931,7 +936,7 @@ export default function NavigationSection() {
                     .filter((item) => item.id !== editingItem?.id)
                     .map((item) => (
                       <SelectItem key={item.id} value={item.id}>
-                        {item.label}
+                        {displayNavLabel(item.label)}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -993,7 +998,7 @@ export default function NavigationSection() {
             </Button>
             <Button
               onClick={handleUpdate}
-              disabled={dialogLoading || !formData.label.trim()}
+              disabled={dialogLoading || !(formData.label.en?.trim() || formData.label.ar?.trim())}
               className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
             >
               {dialogLoading ? 'Saving...' : 'Save Changes'}

@@ -22,6 +22,9 @@ import { useAppStore } from '@/store/app-store';
 import { cn } from '@/lib/utils';
 import { PageHero } from '@/components/ui/page-hero';
 import { PAGE_HERO_IMAGES, TEAM_PORTRAITS } from '@/lib/car-images';
+import { useSiteContent, getPageContent } from '@/hooks/use-site-content';
+import { useTranslation } from '@/hooks/use-translation';
+import { pickLocalized, type AboutPageContent } from '@/lib/cms-content';
 
 // ============ Team Members ============
 
@@ -161,6 +164,20 @@ function SectionHeader({
 
 export default function AboutView() {
   const { setView } = useAppStore();
+  const { locale } = useTranslation();
+  const { data } = useSiteContent();
+  const cms = getPageContent<AboutPageContent>(data, 'about');
+  const heroTitle = pickLocalized(
+    cms?.heroTitle,
+    locale,
+    "The World's Premier Car Marketplace"
+  );
+  const heroSubtitle = pickLocalized(
+    cms?.heroSubtitle,
+    locale,
+    "We're on a mission to make buying, selling, and renting cars worldwide as easy, transparent, and enjoyable as possible."
+  );
+  const heroImage = cms?.heroImage || PAGE_HERO_IMAGES.about;
 
   return (
     <div className="min-h-screen">
@@ -168,12 +185,11 @@ export default function AboutView() {
         badge="About CIAR Cars"
         title={
           <>
-            The World&apos;s Premier{' '}
-            <span className="text-emerald-600 dark:text-emerald-400">Car Marketplace</span>
+            {heroTitle}
           </>
         }
-        subtitle="We're on a mission to make buying, selling, and renting cars worldwide as easy, transparent, and enjoyable as possible."
-        image={PAGE_HERO_IMAGES.about}
+        subtitle={heroSubtitle}
+        image={heroImage}
       />
 
       {/* ========== Story Section ========== */}

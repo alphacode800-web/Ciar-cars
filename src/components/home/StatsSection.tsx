@@ -228,8 +228,19 @@ function ScrollingGallery() {
 // ---------------------------------------------------------------------------
 // Stats Section Component
 // ---------------------------------------------------------------------------
-export function StatsSection() {
-  const { t, formatNumber } = useTranslation();
+export function StatsSection({ cmsContent }: { cmsContent?: unknown } = {}) {
+  const { t, formatNumber, locale } = useTranslation();
+  const content = (cmsContent || {}) as {
+    title?: Record<string, string>;
+    subtitle?: Record<string, string>;
+  };
+  const title =
+    content.title?.[locale] || content.title?.en || content.title?.ar || t('stats.title');
+  const subtitle =
+    content.subtitle?.[locale] ||
+    content.subtitle?.en ||
+    content.subtitle?.ar ||
+    t('stats.subtitle');
 
   return (
     <section className="py-16 sm:py-24 bg-gradient-to-b from-muted/40 via-background to-muted/30 overflow-hidden">
@@ -243,7 +254,7 @@ export function StatsSection() {
             transition={{ duration: 0.5 }}
             className="text-3xl sm:text-4xl font-bold tracking-tight mb-3"
           >
-            {t('stats.title')}
+            {title}
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -252,7 +263,7 @@ export function StatsSection() {
             transition={{ delay: 0.1, duration: 0.5 }}
             className="text-muted-foreground text-lg max-w-xl mx-auto"
           >
-            {t('stats.subtitle')}
+            {subtitle}
           </motion.p>
         </div>
 

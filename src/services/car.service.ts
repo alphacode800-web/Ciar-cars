@@ -42,6 +42,8 @@ export const carService = {
     if (filters.model) where.model = { contains: filters.model };
     if (filters.year) where.year = filters.year;
     if (filters.condition) where.condition = filters.condition;
+    if (filters.vehicleType) where.vehicleType = filters.vehicleType;
+    else if (!filters.ownerId) where.vehicleType = 'car';
     if (filters.fuelType) where.fuelType = filters.fuelType;
     if (filters.transmission) where.transmission = filters.transmission;
     if (filters.bodyType) where.bodyType = filters.bodyType;
@@ -99,6 +101,7 @@ export const carService = {
       brand: car.brand,
       model: car.model,
       year: car.year,
+      vehicleType: car.vehicleType,
       condition: car.condition,
       price: car.price,
       currency: car.currency,
@@ -140,6 +143,7 @@ export const carService = {
         brand: input.brand,
         model: input.model,
         year: input.year,
+        vehicleType: input.vehicleType ?? 'car',
         condition: input.condition,
         mileage: input.mileage,
         fuelType: input.fuelType,

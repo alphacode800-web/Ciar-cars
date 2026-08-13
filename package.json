@@ -14,6 +14,8 @@
     "db:reset": "prisma migrate reset",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:seed-cars": "npx tsx prisma/seed-cars-by-country.ts",
+    "db:seed-motorcycles": "npx tsx prisma/seed-motorcycles-by-country.ts",
+    "db:fix-motorcycle-images": "npx tsx prisma/fix-motorcycle-images.ts",
     "analytics:dev": "cd services/analytics-api && python3 -m uvicorn main:app --reload --port 8001",
     "analytics:install": "pip3 install -r services/analytics-api/requirements.txt",
     "postinstall": "prisma generate"

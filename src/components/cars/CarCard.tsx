@@ -19,24 +19,33 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAppStore } from '@/store/app-store';
 import { CURRENCY } from '@/lib/constants';
 import { useTranslation } from '@/hooks/use-translation';
-import { getCarImageById } from '@/lib/car-images';
+import { getVehicleImageById, getMotorcycleImageByIndex, hashIdToIndex, MOTORCYCLE_IMAGES } from '@/lib/car-images';
 import type { CarListItem } from '@/types';
 
 function getCarPrimaryImage(car: CarListItem): string {
-  return getCarImageById(car.id, car.primaryImage);
+  return getVehicleImageById(car.id, car.vehicleType, car.primaryImage);
 }
 
 function CarImage({
   src,
   alt,
   className,
+  fallbackSrc,
 }: {
   src: string;
   alt: string;
   className?: string;
+  fallbackSrc?: string;
 }) {
+  const [currentSrc, setCurrentSrc] = useState(src);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+
+  React.useEffect(() => {
+    setCurrentSrc(src);
+    setLoaded(false);
+    setError(false);
+  }, [src]);
 
   return (
     <div className={`relative bg-muted overflow-hidden ${className}`}>
@@ -49,14 +58,21 @@ function CarImage({
         </div>
       ) : (
         <img
-          src={src}
+          src={currentSrc}
           alt={alt}
           className={`w-full h-full object-cover transition-all duration-700 ease-out ${
             loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
           } group-hover:scale-105`}
           loading="lazy"
           onLoad={() => setLoaded(true)}
-          onError={() => setError(true)}
+          onError={() => {
+            if (fallbackSrc && currentSrc !== fallbackSrc) {
+              setCurrentSrc(fallbackSrc);
+              setLoaded(false);
+              return;
+            }
+            setError(true);
+          }}
         />
       )}
     </div>
@@ -73,6 +89,10 @@ export function CarCard({ car }: CarCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
 
   const primaryImage = useMemo(() => getCarPrimaryImage(car), [car]);
+  const imageFallback = useMemo(() => {
+    if (car.vehicleType !== 'motorcycle') return undefined;
+    return getMotorcycleImageByIndex(hashIdToIndex(car.id, MOTORCYCLE_IMAGES.length));
+  }, [car.id, car.vehicleType]);
 
   const handleClick = () => {
     setView('detail', { carId: car.id, slug: car.slug });
@@ -131,6 +151,7 @@ export function CarCard({ car }: CarCardProps) {
         <div className="relative w-full aspect-[16/10] overflow-hidden">
           <CarImage
             src={primaryImage}
+            fallbackSrc={imageFallback}
             alt={`${car.brand} ${car.model} ${car.year}`}
             className="absolute inset-0"
           />

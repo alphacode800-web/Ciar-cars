@@ -39,8 +39,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { getPayments, type AdminPaymentFilters } from '@/lib/admin-api';
+import { getPayments, scorePaymentsAi, type AdminPaymentFilters } from '@/lib/admin-api';
 import { CURRENCY } from '@/lib/constants';
+import { useAdminTranslation } from '@/hooks/use-admin-translation';
+import { toast } from 'sonner';
 
 // ============ TYPES ============
 interface Payment {
@@ -52,6 +54,10 @@ interface Payment {
   stripePaymentId: string | null;
   description: string | null;
   createdAt: string;
+  riskScore?: number | null;
+  riskLevel?: string | null;
+  riskFlags?: string | null;
+  riskNotes?: string | null;
   user: {
     id: string;
     name: string;
@@ -90,6 +96,10 @@ const PAYMENT_TYPE_CONFIG: Record<string, { label: string; className: string }> 
     label: 'Featured Fee',
     className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
   },
+  ad_fee: {
+    label: 'Ad Fee',
+    className: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+  },
 };
 
 const PAYMENT_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
@@ -121,6 +131,8 @@ const PAGE_SIZE = 10;
 
 // ============ COMPONENT ============
 export default function PaymentsSection() {
+  const { t } = useAdminTranslation();
+
   const [payments, setPayments] = useState<Payment[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
@@ -261,18 +273,34 @@ export default function PaymentsSection() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Payments</h2>
-          <p className="text-muted-foreground">Track all platform payments and transactions.</p>
+          <h2 className="text-2xl font-bold tracking-tight">{t('paymentsMgmt.title')}</h2>
+          <p className="text-muted-foreground">{t('paymentsMgmt.subtitle')}</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={handleRefresh}
-          disabled={loading}
-          className="gap-2"
-        >
-          <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={loading}
+            className="gap-2"
+          >
+            <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            {t('common.refresh')}
+          </Button>
+          <Button
+            variant="secondary"
+            className="gap-2"
+            onClick={async () => {
+              const res = await scorePaymentsAi({ limit: 15 });
+              if (res.success) {
+                toast.success(`${t('aiSuite.riskScore')}: ${res.data?.scored ?? 0}`);
+                handleRefresh();
+              } else toast.error(res.error || t('aiSuite.error'));
+            }}
+          >
+            <AlertTriangle className="w-4 h-4" />
+            {t('aiSuite.riskScore')}
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -295,7 +323,7 @@ export default function PaymentsSection() {
                 <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
                   {formatAmount(totalRevenue)}
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">Total Revenue</p>
+                <p className="text-sm text-muted-foreground mt-1">{t('paymentsMgmt.totalRevenue')}</p>
               </>
             )}
           </CardContent>
@@ -448,8 +476,10 @@ export default function PaymentsSection() {
                     <TableHead className="hidden md:table-cell">Type</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead className="hidden sm:table-cell">Status</TableHead>
+                    <TableHead className="hidden md:table-cell">{t('aiSuite.riskScore')}</TableHead>
                     <TableHead className="hidden lg:table-cell">Date</TableHead>
                     <TableHead className="hidden xl:table-cell">Method</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -549,6 +579,29 @@ export default function PaymentsSection() {
                               {statusConfig.label}
                             </Badge>
                           </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {payment.riskLevel ? (
+                              <Badge
+                                variant="secondary"
+                                title={payment.riskNotes || t('aiSuite.riskAdvisory')}
+                                className={
+                                  payment.riskLevel === 'high'
+                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                                    : payment.riskLevel === 'medium'
+                                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                                      : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                }
+                              >
+                                {payment.riskLevel === 'high'
+                                  ? t('aiSuite.riskHigh')
+                                  : payment.riskLevel === 'medium'
+                                    ? t('aiSuite.riskMedium')
+                                    : t('aiSuite.riskLow')}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
                           <TableCell className="hidden lg:table-cell text-muted-foreground text-sm">
                             {formatDate(payment.createdAt)}
                           </TableCell>
@@ -565,6 +618,47 @@ export default function PaymentsSection() {
                               )}
                               {PAYMENT_METHOD_CONFIG[payment.method] || payment.method}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            {payment.status === 'completed' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs"
+                                onClick={async () => {
+                                  if (!confirm('Refund this payment to the user wallet?')) return;
+                                  const { updatePaymentStatus } = await import('@/lib/admin-api');
+                                  const res = await updatePaymentStatus(payment.id, 'refunded');
+                                  if (res.success) {
+                                    toast.success('Payment refunded');
+                                    fetchPayments(currentPage, typeFilter, statusFilter, true);
+                                  } else {
+                                    toast.error(res.error || 'Refund failed');
+                                  }
+                                }}
+                              >
+                                Refund
+                              </Button>
+                            )}
+                            {payment.status === 'pending' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs"
+                                onClick={async () => {
+                                  const { updatePaymentStatus } = await import('@/lib/admin-api');
+                                  const res = await updatePaymentStatus(payment.id, 'completed');
+                                  if (res.success) {
+                                    toast.success('Marked completed');
+                                    fetchPayments(currentPage, typeFilter, statusFilter, true);
+                                  } else {
+                                    toast.error(res.error || 'Update failed');
+                                  }
+                                }}
+                              >
+                                Complete
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       );

@@ -5,15 +5,10 @@ import { useAppStore } from '@/store/app-store';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { NewsTicker } from '@/components/layout/NewsTicker';
+import { AiChatbotWidget } from '@/components/ai/AiChatbotWidget';
+import { WhatsAppFloatButton } from '@/components/layout/WhatsAppFloatButton';
 
-import { HeroSection } from '@/components/home/HeroSection';
-import { BannerSection } from '@/components/home/BannerSection';
-import { LuxuryGalleryStrip } from '@/components/home/LuxuryGalleryStrip';
-import { FeaturedCarsSection } from '@/components/home/FeaturedCarsSection';
-import { StatsSection } from '@/components/home/StatsSection';
-import { TestimonialsSection } from '@/components/home/TestimonialsSection';
-import { CTASection } from '@/components/home/CTASection';
-import { PaymentMethodsBanner } from '@/components/home/PaymentMethodsBanner';
+import { DynamicHomePage } from '@/components/home/DynamicHomePage';
 
 import CarListingView from '@/views/CarListingView';
 import CarDetailView from '@/views/CarDetailView';
@@ -25,9 +20,11 @@ import UserDashboardView from '@/views/UserDashboardView';
 import ChatView from '@/views/ChatView';
 import RentalBookingView from '@/views/RentalBookingView';
 import SellCarView from '@/views/SellCarView';
-import WalletView from '@/views/WalletView';
-import AboutView from '@/views/AboutView';
 import ContactView from '@/views/ContactView';
+import LegalPageView from '@/views/LegalPageView';
+import AdvertisementsView from '@/views/AdvertisementsView';
+import AdvertisementDetailView from '@/views/AdvertisementDetailView';
+import CreateAdvertisementView from '@/views/CreateAdvertisementView';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,18 +50,7 @@ function ViewLoader() {
 }
 
 function HomePage() {
-  return (
-    <>
-      <HeroSection />
-      <BannerSection />
-      <LuxuryGalleryStrip />
-      <FeaturedCarsSection />
-      <StatsSection />
-      <TestimonialsSection />
-      <PaymentMethodsBanner />
-      <CTASection />
-    </>
-  );
+  return <DynamicHomePage />;
 }
 
 const pageVariants = {
@@ -132,6 +118,18 @@ function ViewRouter() {
         return <AboutView />;
       case 'contact':
         return <ContactView />;
+      case 'privacy':
+        return <LegalPageView slug="privacy" />;
+      case 'terms':
+        return <LegalPageView slug="terms" />;
+      case 'cookies':
+        return <LegalPageView slug="cookies" />;
+      case 'advertisements':
+        return <AdvertisementsView />;
+      case 'advertisement-detail':
+        return <AdvertisementDetailView />;
+      case 'create-advertisement':
+        return <CreateAdvertisementView />;
       case 'comparison':
         return <PlaceholderView titleKey="pages.comparison" textKey="pages.comparisonText" />;
       case 'checkout':
@@ -175,7 +173,11 @@ function ViewFromQuerySync() {
     const view = params.get('view');
     if (view === 'admin') {
       setView('admin');
-      window.history.replaceState({}, '', '/');
+      const section = params.get('section');
+      const next = new URLSearchParams();
+      next.set('view', 'admin');
+      if (section) next.set('section', section);
+      window.history.replaceState({}, '', `/?${next.toString()}`);
     }
   }, [setView]);
 
@@ -198,7 +200,7 @@ export default function App() {
       <main
         className={
           !hideSiteChrome
-            ? 'pt-[calc(4rem+var(--news-ticker-h,0px))] pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0'
+            ? 'pt-[calc(4rem+2px+var(--news-ticker-h,0px))] pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0'
             : ''
         }
       >
@@ -207,6 +209,8 @@ export default function App() {
         </React.Suspense>
       </main>
       {!hideSiteChrome && <Footer />}
+      {!hideSiteChrome && <WhatsAppFloatButton />}
+      {!hideSiteChrome && <AiChatbotWidget />}
     </>
   );
 }

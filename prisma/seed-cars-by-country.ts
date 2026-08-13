@@ -108,6 +108,7 @@ async function main() {
               brand: brandEntry.brand,
               model,
               year,
+              vehicleType: 'car',
               condition,
               mileage: condition === 'new' ? 5 + (n % 20) : 10000 + (n % 90000),
               fuelType: pick(FUEL_TYPES, n),

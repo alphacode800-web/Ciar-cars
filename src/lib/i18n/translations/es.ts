@@ -46,10 +46,15 @@ const es: TranslationDictionary = {
   nav: {
     home: "Inicio",
     listing: "Autos",
+    motorcycles: "Motos",
     rental: "Alquilar",
     sell: "Vender auto",
+    sellMotorcycle: "Vender moto",
+    sellMenu: "Vender",
     about: "Nosotros",
     contact: "Contacto",
+    advertisements: "Mercado de anuncios",
+    advertise: "Publicar anuncio",
     dashboard: "Panel",
     favorites: "Favoritos",
     messages: "Mensajes",
@@ -62,6 +67,8 @@ const es: TranslationDictionary = {
     language: "Idioma",
     darkMode: "Modo oscuro",
     admin: "Panel de administración",
+    menu: "Menú",
+    currency: "Moneda",
   },
 
   adminAuth: {
@@ -115,9 +122,9 @@ const es: TranslationDictionary = {
   // Featured Cars
   // ---------------------------------------------------------------------------
   featured: {
-    title: "Autos destacados",
-    subtitle: "Vehículos premium seleccionados especialmente para ti",
-    viewAll: "Ver todos los destacados",
+    title: "Todos los autos",
+    subtitle: "Explora los últimos autos en venta y alquiler",
+    viewAll: "Ver todos los autos",
   },
 
   // ---------------------------------------------------------------------------
@@ -494,8 +501,8 @@ const es: TranslationDictionary = {
     workingHours: "Mon-Fri: 9AM-6PM (GMT+4)",
     faqTitle: "Preguntas frecuentes",
     address: "Business Bay, Dubái, EAU",
-    phone: "+971 4 123 4567",
-    email: "hello@ciarcars.com",
+    phone: "+963993153333",
+    email: "azasnaa628@gmail.com",
   },
 };
 

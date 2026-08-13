@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,12 +44,15 @@ import { cn } from '@/lib/utils';
 import {
   CAR_BRANDS,
   CAR_BODY_TYPES,
+  MOTORCYCLE_BRANDS,
+  MOTORCYCLE_BODY_TYPES,
   FUEL_TYPES,
   TRANSMISSION_TYPES,
 } from '@/lib/constants';
 import type { CarSearchFilters } from '@/types';
 import { BodyType } from '@/types';
-import { COUNTRY_NAMES } from '@/lib/countries';
+import { COUNTRIES, COUNTRY_NAMES } from '@/lib/countries';
+import { useTranslation } from '@/hooks/use-translation';
 
 // ============ Types ============
 
@@ -91,6 +94,53 @@ const CITIES = [
   'Istanbul',
   'Barcelona',
 ] as const;
+
+const CITY_LABELS_AR: Record<string, string> = {
+  Dubai: 'دبي',
+  London: 'لندن',
+  Tokyo: 'طوكيو',
+  'New York': 'نيويورك',
+  Paris: 'باريس',
+  Berlin: 'برلين',
+  Sydney: 'سيدني',
+  Toronto: 'تورونتو',
+  Singapore: 'سنغافورة',
+  Mumbai: 'مومباي',
+  'São Paulo': 'ساو باولو',
+  Seoul: 'سيول',
+  'Los Angeles': 'لوس أنجلوس',
+  Zurich: 'زيورخ',
+  Madrid: 'مدريد',
+  Milan: 'ميلانو',
+  Amsterdam: 'أمستردام',
+  Bangkok: 'بانكوك',
+  Istanbul: 'إسطنبول',
+  Barcelona: 'برشلونة',
+};
+
+const BODY_TYPE_LABELS_AR: Record<string, string> = {
+  sedan: 'سيدان',
+  suv: 'دفع رباعي',
+  coupe: 'كوبيه',
+  truck: 'شاحنة',
+  van: 'فان / ميني فان',
+  convertible: 'مكشوفة',
+  hatchback: 'هاتشباك',
+  wagon: 'ستيشن',
+};
+
+const FUEL_LABELS_AR: Record<string, string> = {
+  petrol: 'بنزين',
+  diesel: 'ديزل',
+  electric: 'كهربائي',
+  hybrid: 'هجين',
+};
+
+const TRANSMISSION_LABELS_AR: Record<string, string> = {
+  automatic: 'أوتوماتيك',
+  manual: 'يدوي',
+  cvt: 'CVT',
+};
 
 // ============ Filter Section ============
 
@@ -135,8 +185,6 @@ function useOpenState(defaultOpen: boolean) {
   return [isOpen, setIsOpen] as const;
 }
 
-import React from 'react';
-
 // ============ Active Filters Count ============
 
 function getActiveFilterCount(filters: CarSearchFilters): number {
@@ -164,7 +212,27 @@ export default function CarFilters({
   onReset,
   className,
 }: CarFiltersProps) {
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, other: string) => (isAr ? ar : other), [isAr]);
+
   const activeCount = getActiveFilterCount(filters);
+  const isMotorcycle = filters.vehicleType === 'motorcycle';
+  const brands = isMotorcycle ? MOTORCYCLE_BRANDS : CAR_BRANDS;
+  const bodyTypes = isMotorcycle ? MOTORCYCLE_BODY_TYPES : CAR_BODY_TYPES;
+
+  const motorcycleBodyLabelsAr: Record<string, string> = {
+    sport: 'رياضية',
+    cruiser: 'كروزر',
+    touring: 'سياحية',
+    naked: 'نيكد',
+    adventure: 'مغامرات',
+    scooter: 'سكوتر',
+    offroad: 'طرق وعرة',
+    dual_sport: 'ثنائية',
+    chopper: 'تشopper',
+    electric: 'كهربائية',
+  };
 
   const updateFilter = useCallback(
     (patch: Partial<CarSearchFilters>) => {
@@ -178,24 +246,31 @@ export default function CarFilters({
   };
 
   const bodyTypeFilters = filters.bodyType
-    ? [filters.bodyType]
+    ? [filters.bodyType as string]
     : [];
 
   const handleBodyTypeToggle = (value: string, checked: boolean) => {
     if (checked) {
-      updateFilter({ bodyType: value as BodyType });
+      updateFilter({ bodyType: isMotorcycle ? value : (value as BodyType) });
     } else {
       updateFilter({ bodyType: undefined });
     }
   };
 
+  const countryLabel = (nameEn: string) => {
+    const found = COUNTRIES.find((c) => c.nameEn === nameEn);
+    return isAr && found ? found.nameAr : nameEn;
+  };
+
+  const cityLabel = (city: string) => (isAr ? (CITY_LABELS_AR[city] ?? city) : city);
+
   return (
-    <div className={cn('space-y-1', className)}>
+    <div className={cn('space-y-1', className)} dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
       <div className="flex items-center justify-between pb-3">
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold text-foreground">Filters</h3>
+          <h3 className="text-sm font-semibold text-foreground">{tr('الفلاتر', 'Filters')}</h3>
           {activeCount > 0 && (
             <Badge variant="secondary" className="h-5 min-w-[20px] px-1.5 text-[11px]">
               {activeCount}
@@ -209,18 +284,18 @@ export default function CarFilters({
             className="h-7 text-xs text-muted-foreground hover:text-foreground"
             onClick={clearAll}
           >
-            <RotateCcw className="w-3 h-3 mr-1" />
-            Clear All
+            <RotateCcw className="w-3 h-3 me-1" />
+            {tr('مسح الكل', 'Clear All')}
           </Button>
         )}
       </div>
 
       <Separator className="mb-2" />
 
-      <ScrollArea className="h-[calc(100vh-16rem)] max-h-[700px] pr-1">
+      <ScrollArea className="h-[calc(100vh-16rem)] max-h-[700px] pe-1">
         <div className="space-y-0.5">
           {/* Brand */}
-          <FilterSection title="Brand" icon={<Tag className="w-4 h-4" />}>
+          <FilterSection title={tr('الماركة', 'Brand')} icon={<Tag className="w-4 h-4" />}>
             <Select
               value={filters.brand || '__all__'}
               onValueChange={(v) =>
@@ -228,11 +303,11 @@ export default function CarFilters({
               }
             >
               <SelectTrigger className="w-full h-9">
-                <SelectValue placeholder="All Brands" />
+                <SelectValue placeholder={tr('كل الماركات', 'All Brands')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All Brands</SelectItem>
-                {CAR_BRANDS.map((brand) => (
+                <SelectItem value="__all__">{tr('كل الماركات', 'All Brands')}</SelectItem>
+                {brands.map((brand) => (
                   <SelectItem key={brand} value={brand}>
                     {brand}
                   </SelectItem>
@@ -242,22 +317,27 @@ export default function CarFilters({
           </FilterSection>
 
           {/* Model */}
-          <FilterSection title="Model" icon={<Car className="w-4 h-4" />}>
+          <FilterSection title={tr('الموديل', 'Model')} icon={<Car className="w-4 h-4" />}>
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input
-                placeholder={filters.brand ? `${filters.brand} models...` : 'Select brand first'}
+                placeholder={
+                  filters.brand
+                    ? tr(`موديلات ${filters.brand}...`, `${filters.brand} models...`)
+                    : tr('اختر الماركة أولاً', 'Select brand first')
+                }
                 value={filters.model || ''}
                 onChange={(e) => updateFilter({ model: e.target.value || undefined })}
-                className="h-9 pl-8 text-sm"
+                className="h-9 ps-8 text-sm"
                 disabled={!filters.brand}
               />
               {filters.model && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                  className="absolute end-1 top-1/2 -translate-y-1/2 h-6 w-6"
                   onClick={() => updateFilter({ model: undefined })}
+                  aria-label={tr('مسح الموديل', 'Clear model')}
                 >
                   <X className="w-3 h-3" />
                 </Button>
@@ -266,11 +346,11 @@ export default function CarFilters({
           </FilterSection>
 
           {/* Year Range */}
-          <FilterSection title="Year" icon={<Calendar className="w-4 h-4" />} defaultOpen={false}>
+          <FilterSection title={tr('السنة', 'Year')} icon={<Calendar className="w-4 h-4" />} defaultOpen={false}>
             <div className="flex items-center gap-2">
               <Input
                 type="number"
-                placeholder="Min"
+                placeholder={tr('من', 'Min')}
                 min={1990}
                 max={2026}
                 value={filters.year?.min || ''}
@@ -284,10 +364,10 @@ export default function CarFilters({
                 }
                 className="h-9 text-sm"
               />
-              <span className="text-xs text-muted-foreground flex-shrink-0">to</span>
+              <span className="text-xs text-muted-foreground flex-shrink-0">{tr('إلى', 'to')}</span>
               <Input
                 type="number"
-                placeholder="Max"
+                placeholder={tr('إلى', 'Max')}
                 min={1990}
                 max={2026}
                 value={filters.year?.max || ''}
@@ -305,7 +385,7 @@ export default function CarFilters({
           </FilterSection>
 
           {/* Condition */}
-          <FilterSection title="Condition" icon={<Car className="w-4 h-4" />}>
+          <FilterSection title={tr('الحالة', 'Condition')} icon={<Car className="w-4 h-4" />}>
             <RadioGroup
               value={filters.condition || ''}
               onValueChange={(v) =>
@@ -313,7 +393,7 @@ export default function CarFilters({
               }
               className="space-y-2"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <RadioGroupItem value="new" id="cond-new" className="sr-only" />
                 <Label
                   htmlFor="cond-new"
@@ -324,10 +404,10 @@ export default function CarFilters({
                       : 'border-border hover:border-primary/50'
                   )}
                 >
-                  New
+                  {tr('جديد', 'New')}
                 </Label>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <RadioGroupItem value="used" id="cond-used" className="sr-only" />
                 <Label
                   htmlFor="cond-used"
@@ -338,18 +418,21 @@ export default function CarFilters({
                       : 'border-border hover:border-primary/50'
                   )}
                 >
-                  Used
+                  {tr('مستعمل', 'Used')}
                 </Label>
               </div>
             </RadioGroup>
           </FilterSection>
 
           {/* Price Range */}
-          <FilterSection title="Price Range (USD)" icon={<DollarSign className="w-4 h-4" />}>
+          <FilterSection
+            title={tr('نطاق السعر (دولار)', 'Price Range (USD)')}
+            icon={<DollarSign className="w-4 h-4" />}
+          >
             <div className="flex items-center gap-2">
               <Input
                 type="number"
-                placeholder="Min"
+                placeholder={tr('من', 'Min')}
                 min={0}
                 value={filters.price?.min || ''}
                 onChange={(e) =>
@@ -362,10 +445,10 @@ export default function CarFilters({
                 }
                 className="h-9 text-sm"
               />
-              <span className="text-xs text-muted-foreground flex-shrink-0">to</span>
+              <span className="text-xs text-muted-foreground flex-shrink-0">{tr('إلى', 'to')}</span>
               <Input
                 type="number"
-                placeholder="Max"
+                placeholder={tr('إلى', 'Max')}
                 min={0}
                 value={filters.price?.max || ''}
                 onChange={(e) =>
@@ -382,7 +465,7 @@ export default function CarFilters({
           </FilterSection>
 
           {/* Fuel Type */}
-          <FilterSection title="Fuel Type" icon={<Fuel className="w-4 h-4" />} defaultOpen={false}>
+          <FilterSection title={tr('نوع الوقود', 'Fuel Type')} icon={<Fuel className="w-4 h-4" />} defaultOpen={false}>
             <Select
               value={filters.fuelType || '__all__'}
               onValueChange={(v) =>
@@ -392,13 +475,13 @@ export default function CarFilters({
               }
             >
               <SelectTrigger className="w-full h-9">
-                <SelectValue placeholder="All Fuel Types" />
+                <SelectValue placeholder={tr('كل أنواع الوقود', 'All Fuel Types')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All Fuel Types</SelectItem>
+                <SelectItem value="__all__">{tr('كل أنواع الوقود', 'All Fuel Types')}</SelectItem>
                 {FUEL_TYPES.map((ft) => (
                   <SelectItem key={ft.value} value={ft.value}>
-                    {ft.label}
+                    {isAr ? (FUEL_LABELS_AR[ft.value] ?? ft.label) : ft.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -407,7 +490,7 @@ export default function CarFilters({
 
           {/* Transmission */}
           <FilterSection
-            title="Transmission"
+            title={tr('ناقل الحركة', 'Transmission')}
             icon={<Settings2 className="w-4 h-4" />}
             defaultOpen={false}
           >
@@ -421,13 +504,13 @@ export default function CarFilters({
               }
             >
               <SelectTrigger className="w-full h-9">
-                <SelectValue placeholder="All Transmissions" />
+                <SelectValue placeholder={tr('كل ناقلات الحركة', 'All Transmissions')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All Transmissions</SelectItem>
+                <SelectItem value="__all__">{tr('كل ناقلات الحركة', 'All Transmissions')}</SelectItem>
                 {TRANSMISSION_TYPES.map((t) => (
                   <SelectItem key={t.value} value={t.value}>
-                    {t.label}
+                    {isAr ? (TRANSMISSION_LABELS_AR[t.value] ?? t.label) : t.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -435,31 +518,39 @@ export default function CarFilters({
           </FilterSection>
 
           {/* Body Type */}
-          <FilterSection title="Body Type" icon={<Car className="w-4 h-4" />} defaultOpen={false}>
+          <FilterSection
+            title={isMotorcycle ? tr('نوع الدراجة', 'Motorcycle Type') : tr('نوع الهيكل', 'Body Type')}
+            icon={<Car className="w-4 h-4" />}
+            defaultOpen={false}
+          >
             <div className="grid grid-cols-2 gap-2">
-              {CAR_BODY_TYPES.map((bt) => (
+              {bodyTypes.map((bt) => (
                 <Label
                   key={bt.value}
                   className={cn(
                     'flex items-center gap-2 cursor-pointer text-xs rounded-lg border px-2.5 py-2 transition-all select-none',
-                    bodyTypeFilters.includes(bt.value as BodyType)
+                    bodyTypeFilters.includes(bt.value)
                       ? 'border-primary bg-primary/5 text-primary font-medium'
                       : 'border-border hover:border-primary/50 text-muted-foreground'
                   )}
                 >
                   <Checkbox
-                    checked={bodyTypeFilters.includes(bt.value as BodyType)}
+                    checked={bodyTypeFilters.includes(bt.value)}
                     onCheckedChange={(checked) => handleBodyTypeToggle(bt.value, !!checked)}
                     className="sr-only"
                   />
-                  {bt.label}
+                  {isAr
+                    ? (isMotorcycle
+                        ? (motorcycleBodyLabelsAr[bt.value] ?? bt.label)
+                        : (BODY_TYPE_LABELS_AR[bt.value] ?? bt.label))
+                    : bt.label}
                 </Label>
               ))}
             </div>
           </FilterSection>
 
           {/* City */}
-          <FilterSection title="City" icon={<MapPin className="w-4 h-4" />} defaultOpen={false}>
+          <FilterSection title={tr('المدينة', 'City')} icon={<MapPin className="w-4 h-4" />} defaultOpen={false}>
             <Select
               value={filters.city || '__all__'}
               onValueChange={(v) =>
@@ -467,13 +558,13 @@ export default function CarFilters({
               }
             >
               <SelectTrigger className="w-full h-9">
-                <SelectValue placeholder="All Cities" />
+                <SelectValue placeholder={tr('كل المدن', 'All Cities')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All Cities</SelectItem>
+                <SelectItem value="__all__">{tr('كل المدن', 'All Cities')}</SelectItem>
                 {CITIES.map((city) => (
                   <SelectItem key={city} value={city}>
-                    {city}
+                    {cityLabel(city)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -481,7 +572,7 @@ export default function CarFilters({
           </FilterSection>
 
           {/* Country */}
-          <FilterSection title="Country" icon={<Building className="w-4 h-4" />} defaultOpen={false}>
+          <FilterSection title={tr('الدولة', 'Country')} icon={<Building className="w-4 h-4" />} defaultOpen={false}>
             <Select
               value={filters.country || '__all__'}
               onValueChange={(v) =>
@@ -489,13 +580,13 @@ export default function CarFilters({
               }
             >
               <SelectTrigger className="w-full h-9">
-                <SelectValue placeholder="All Countries" />
+                <SelectValue placeholder={tr('كل الدول', 'All Countries')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All Countries</SelectItem>
+                <SelectItem value="__all__">{tr('كل الدول', 'All Countries')}</SelectItem>
                 {COUNTRY_NAMES.map((country) => (
                   <SelectItem key={country} value={country}>
-                    {country}
+                    {countryLabel(country)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -503,11 +594,11 @@ export default function CarFilters({
           </FilterSection>
 
           {/* Mileage Range */}
-          <FilterSection title="Mileage" icon={<Gauge className="w-4 h-4" />} defaultOpen={false}>
+          <FilterSection title={tr('المسافة المقطوعة', 'Mileage')} icon={<Gauge className="w-4 h-4" />} defaultOpen={false}>
             <div className="flex items-center gap-2">
               <Input
                 type="number"
-                placeholder="Min km"
+                placeholder={tr('من كم', 'Min km')}
                 min={0}
                 value={filters.mileage?.min || ''}
                 onChange={(e) =>
@@ -520,10 +611,10 @@ export default function CarFilters({
                 }
                 className="h-9 text-sm"
               />
-              <span className="text-xs text-muted-foreground flex-shrink-0">to</span>
+              <span className="text-xs text-muted-foreground flex-shrink-0">{tr('إلى', 'to')}</span>
               <Input
                 type="number"
-                placeholder="Max km"
+                placeholder={tr('إلى كم', 'Max km')}
                 min={0}
                 value={filters.mileage?.max || ''}
                 onChange={(e) =>
@@ -539,9 +630,10 @@ export default function CarFilters({
             </div>
           </FilterSection>
 
-          {/* Available for Rent */}
+          {/* Available for Rent — cars only */}
+          {!isMotorcycle && (
           <FilterSection
-            title="Rental"
+            title={tr('التأجير', 'Rental')}
             icon={<Building className="w-4 h-4" />}
             defaultOpen={false}
           >
@@ -550,7 +642,7 @@ export default function CarFilters({
                 htmlFor="rent-toggle"
                 className="text-sm text-muted-foreground cursor-pointer"
               >
-                Available for Rent
+                {tr('متاح للتأجير', 'Available for Rent')}
               </Label>
               <Switch
                 id="rent-toggle"
@@ -561,6 +653,7 @@ export default function CarFilters({
               />
             </div>
           </FilterSection>
+          )}
         </div>
       </ScrollArea>
     </div>

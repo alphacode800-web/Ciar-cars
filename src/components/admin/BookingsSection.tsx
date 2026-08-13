@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 
 import { getBookings, updateBooking, type AdminBookingFilters } from '@/lib/admin-api';
 import { CURRENCY } from '@/lib/constants';
+import { useAdminTranslation } from '@/hooks/use-admin-translation';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -225,6 +226,8 @@ function BookingsTableSkeleton() {
 // ---------------------------------------------------------------------------
 
 export default function BookingsSection() {
+  const { t } = useAdminTranslation();
+
   // -- Data state --
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
@@ -405,7 +408,7 @@ export default function BookingsSection() {
           className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
         >
           <RefreshCw className="h-4 w-4" />
-          Retry
+          {t('common.retry')}
         </Button>
       </div>
     );
@@ -421,10 +424,10 @@ export default function BookingsSection() {
           </div>
           <div>
             <h2 className="text-lg font-semibold tracking-tight">
-              Bookings Management
+              {t('bookingsMgmt.title')}
             </h2>
             <p className="text-muted-foreground text-xs">
-              {pagination?.total ?? 0} total bookings
+              {pagination?.total ?? 0} {t('bookingsMgmt.totalBookings')}
             </p>
           </div>
         </div>
@@ -435,7 +438,7 @@ export default function BookingsSection() {
           className="gap-1.5"
         >
           <RefreshCw className="h-3.5 w-3.5" />
-          Refresh
+          {t('common.refresh')}
         </Button>
       </div>
 
@@ -448,7 +451,7 @@ export default function BookingsSection() {
               <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
             </div>
             <span className="text-muted-foreground text-xs font-medium">
-              Pending
+              {t('bookingsMgmt.pending')}
             </span>
           </div>
           <p className="mt-2 text-2xl font-bold text-yellow-700 dark:text-yellow-400">
@@ -463,7 +466,7 @@ export default function BookingsSection() {
               <Play className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <span className="text-muted-foreground text-xs font-medium">
-              Active
+              {t('bookingsMgmt.active')}
             </span>
           </div>
           <p className="mt-2 text-2xl font-bold text-emerald-700 dark:text-emerald-400">
@@ -478,7 +481,7 @@ export default function BookingsSection() {
               <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
             </div>
             <span className="text-muted-foreground text-xs font-medium">
-              Completed
+              {t('bookingsMgmt.completed')}
             </span>
           </div>
           <p className="mt-2 text-2xl font-bold text-green-700 dark:text-green-400">
@@ -493,7 +496,7 @@ export default function BookingsSection() {
               <DollarSign className="h-4 w-4 text-teal-600 dark:text-teal-400" />
             </div>
             <span className="text-muted-foreground text-xs font-medium">
-              Total Revenue
+              {t('paymentsMgmt.totalRevenue')}
             </span>
           </div>
           <p className="mt-2 text-2xl font-bold text-teal-700 dark:text-teal-400">

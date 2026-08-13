@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { addDays, format, differenceInCalendarDays, isBefore, startOfDay } from 'date-fns';
+import { ar as arLocale, enUS } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -37,6 +38,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useAppStore } from '@/store/app-store';
 import { useAuthStore } from '@/store/auth-store';
+import { useTranslation } from '@/hooks/use-translation';
 import { CURRENCY, BOOKING } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import type { Car, ApiResponse } from '@/types';
@@ -83,12 +85,16 @@ function CarSummarySkeleton() {
 }
 
 function CarSummaryCard({ car, onContactOwner }: { car: Car; onContactOwner: () => void }) {
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
+
   const primaryImage = car.images?.[0]?.url;
   const weeklyPrice = car.rentalPriceWeekly
-    ? formatPrice(Math.round(car.rentalPriceWeekly / 7)) + '/day'
+    ? formatPrice(Math.round(car.rentalPriceWeekly / 7)) + tr('/يوم', '/day')
     : null;
   const monthlyPrice = car.rentalPriceMonthly
-    ? formatPrice(Math.round(car.rentalPriceMonthly / 30)) + '/day'
+    ? formatPrice(Math.round(car.rentalPriceMonthly / 30)) + tr('/يوم', '/day')
     : null;
 
   return (
@@ -106,8 +112,8 @@ function CarSummaryCard({ car, onContactOwner }: { car: Car; onContactOwner: () 
             <Settings2 className="h-12 w-12" />
           </div>
         )}
-        <Badge className="absolute left-3 top-3 bg-primary text-primary-foreground">
-          For Rent
+        <Badge className={cn('absolute top-3 bg-primary text-primary-foreground', isRTL ? 'right-3' : 'left-3')}>
+          {tr('للإيجار', 'For Rent')}
         </Badge>
       </div>
 
@@ -143,7 +149,7 @@ function CarSummaryCard({ car, onContactOwner }: { car: Car; onContactOwner: () 
           {car.seats && (
             <div className="flex items-center gap-2 text-sm">
               <Users className="h-4 w-4 text-muted-foreground" />
-              <span>{car.seats} seats</span>
+              <span>{tr(`${car.seats} مقاعد`, `${car.seats} seats`)}</span>
             </div>
           )}
         </div>
@@ -152,32 +158,32 @@ function CarSummaryCard({ car, onContactOwner }: { car: Car; onContactOwner: () 
 
         {/* Rental Rates */}
         <div>
-          <h4 className="mb-2 text-sm font-semibold text-foreground">Rental Rates</h4>
+          <h4 className="mb-2 text-sm font-semibold text-foreground">{tr('أسعار الإيجار', 'Rental Rates')}</h4>
           <div className="space-y-2">
             {car.rentalPriceDaily && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Daily</span>
+                <span className="text-sm text-muted-foreground">{tr('يومي', 'Daily')}</span>
                 <span className="font-semibold text-foreground">{formatPrice(car.rentalPriceDaily)}</span>
               </div>
             )}
             {car.rentalPriceWeekly && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Weekly</span>
-                <div className="text-right">
+                <span className="text-sm text-muted-foreground">{tr('أسبوعي', 'Weekly')}</span>
+                <div className={isRTL ? 'text-left' : 'text-right'}>
                   <span className="font-semibold text-foreground">{formatPrice(car.rentalPriceWeekly)}</span>
                   {weeklyPrice && (
-                    <span className="ml-1 text-xs text-emerald-600">{weeklyPrice}</span>
+                    <span className="ms-1 text-xs text-emerald-600">{weeklyPrice}</span>
                   )}
                 </div>
               </div>
             )}
             {car.rentalPriceMonthly && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly</span>
-                <div className="text-right">
+                <span className="text-sm text-muted-foreground">{tr('شهري', 'Monthly')}</span>
+                <div className={isRTL ? 'text-left' : 'text-right'}>
                   <span className="font-semibold text-foreground">{formatPrice(car.rentalPriceMonthly)}</span>
                   {monthlyPrice && (
-                    <span className="ml-1 text-xs text-emerald-600">{monthlyPrice}</span>
+                    <span className="ms-1 text-xs text-emerald-600">{monthlyPrice}</span>
                   )}
                 </div>
               </div>
@@ -197,7 +203,7 @@ function CarSummaryCard({ car, onContactOwner }: { car: Car; onContactOwner: () 
                 className="h-10 w-10 rounded-full object-cover"
               />
               {car.owner.rating > 0 && (
-                <div className="absolute -bottom-1 -right-1 rounded-full bg-background px-1">
+                <div className={cn('absolute -bottom-1 rounded-full bg-background px-1', isRTL ? '-left-1' : '-right-1')}>
                   <span className="flex items-center gap-0.5 text-[10px] font-semibold">
                     <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
                     {car.owner.rating.toFixed(1)}
@@ -206,9 +212,12 @@ function CarSummaryCard({ car, onContactOwner }: { car: Car; onContactOwner: () 
               )}
             </div>
             <div>
-              <p className="text-sm font-semibold">{car.owner.name || 'Owner'}</p>
+              <p className="text-sm font-semibold">{car.owner.name || tr('المالك', 'Owner')}</p>
               <p className="text-xs text-muted-foreground">
-                {car.owner.city || ''}{car.owner.totalReviews > 0 ? ` · ${car.owner.totalReviews} reviews` : ''}
+                {car.owner.city || ''}
+                {car.owner.totalReviews > 0
+                  ? ` · ${tr(`${car.owner.totalReviews} تقييم`, `${car.owner.totalReviews} reviews`)}`
+                  : ''}
               </p>
             </div>
           </div>
@@ -221,7 +230,7 @@ function CarSummaryCard({ car, onContactOwner }: { car: Car; onContactOwner: () 
           onClick={onContactOwner}
         >
           <MessageSquare className="h-4 w-4" />
-          Contact Owner
+          {tr('تواصل مع المالك', 'Contact Owner')}
         </Button>
       </CardContent>
     </Card>
@@ -233,6 +242,10 @@ function CarSummaryCard({ car, onContactOwner }: { car: Car; onContactOwner: () 
 export default function RentalBookingView() {
   const { viewParams, setView } = useAppStore();
   const { user } = useAuthStore();
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
+  const dateLocale = isAr ? arLocale : enUS;
   const carId = viewParams.carId as string;
 
   const [car, setCar] = useState<Car | null>(null);
@@ -266,17 +279,17 @@ export default function RentalBookingView() {
         if (data.success && data.data) {
           setCar(data.data);
         } else {
-          setCarError(data.error || 'Car not found');
+          setCarError(data.error || (isAr ? 'السيارة غير موجودة' : 'Car not found'));
         }
       } catch {
-        setCarError('Failed to load car details');
+        setCarError(isAr ? 'فشل تحميل تفاصيل السيارة' : 'Failed to load car details');
       } finally {
         setIsLoadingCar(false);
       }
     }
 
     fetchCar();
-  }, [carId]);
+  }, [carId, isAr]);
 
   // ============ Fetch Availability ============
 
@@ -371,14 +384,14 @@ export default function RentalBookingView() {
       if (data.success) {
         setBookingSuccess(true);
       } else {
-        setBookingError(data.error || 'Failed to create booking');
+        setBookingError(data.error || (isAr ? 'فشل إنشاء الحجز' : 'Failed to create booking'));
       }
     } catch {
-      setBookingError('Something went wrong. Please try again.');
+      setBookingError(isAr ? 'حدث خطأ ما. يرجى المحاولة مرة أخرى.' : 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  }, [dateRange, carId, pricing, deliveryAddress, notes, paymentMethod]);
+  }, [dateRange, carId, pricing, deliveryAddress, notes, paymentMethod, isAr]);
 
   // ============ Contact Owner ============
 
@@ -413,6 +426,7 @@ export default function RentalBookingView() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="flex min-h-[60vh] items-center justify-center"
+        dir={isRTL ? 'rtl' : 'ltr'}
       >
         <Card className="w-full max-w-md text-center">
           <CardContent className="p-8">
@@ -424,20 +438,23 @@ export default function RentalBookingView() {
             >
               <CheckCircle className="h-8 w-8 text-emerald-600" />
             </motion.div>
-            <h2 className="text-2xl font-bold">Booking Confirmed!</h2>
+            <h2 className="text-2xl font-bold">{tr('تم تأكيد الحجز!', 'Booking Confirmed!')}</h2>
             <p className="mt-2 text-muted-foreground">
-              Your rental request has been submitted. The owner will review and confirm your booking shortly.
+              {tr(
+                'تم إرسال طلب الإيجار. سيراجع المالك ويؤكد حجزك قريبًا.',
+                'Your rental request has been submitted. The owner will review and confirm your booking shortly.'
+              )}
             </p>
             <div className="mt-6 flex flex-col gap-2">
               <Button
                 onClick={() => setView('my-bookings')}
                 className="w-full gap-2"
               >
-                View My Bookings
-                <ArrowRight className="h-4 w-4" />
+                {tr('عرض حجوزاتي', 'View My Bookings')}
+                <ArrowRight className={cn('h-4 w-4', isRTL && 'rotate-180')} />
               </Button>
               <Button variant="outline" onClick={() => setView('home')} className="w-full">
-                Back to Home
+                {tr('العودة للرئيسية', 'Back to Home')}
               </Button>
             </div>
           </CardContent>
@@ -450,16 +467,20 @@ export default function RentalBookingView() {
 
   if (!isLoadingCar && (carError || !car)) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center" dir={isRTL ? 'rtl' : 'ltr'}>
         <Card className="w-full max-w-md text-center">
           <CardContent className="p-8">
             <AlertCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
-            <h2 className="text-xl font-semibold">Car Not Available</h2>
+            <h2 className="text-xl font-semibold">{tr('السيارة غير متاحة', 'Car Not Available')}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {carError || 'This car could not be found or is not available for rent.'}
+              {carError ||
+                tr(
+                  'تعذر العثور على هذه السيارة أو أنها غير متاحة للإيجار.',
+                  'This car could not be found or is not available for rent.'
+                )}
             </p>
             <Button className="mt-4" onClick={() => setView('home')}>
-              Browse Cars
+              {tr('تصفّح السيارات', 'Browse Cars')}
             </Button>
           </CardContent>
         </Card>
@@ -470,7 +491,7 @@ export default function RentalBookingView() {
   // ============ Main Render ============
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-6 md:px-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Breadcrumb-like header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -481,12 +502,15 @@ export default function RentalBookingView() {
           onClick={() => setView('detail', { carId })}
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          &larr; Back to Car Details
+          {tr('→ العودة لتفاصيل السيارة', '← Back to Car Details')}
         </button>
-        <h1 className="mt-2 text-2xl font-bold md:text-3xl">Book Your Rental</h1>
+        <h1 className="mt-2 text-2xl font-bold md:text-3xl">{tr('احجز إيجارك', 'Book Your Rental')}</h1>
         {car && (
           <p className="mt-1 text-muted-foreground">
-            Reserve the {car.year} {car.brand} {car.model} for your trip
+            {tr(
+              `احجز ${car.year} ${car.brand} ${car.model} لرحلتك`,
+              `Reserve the ${car.year} ${car.brand} ${car.model} for your trip`
+            )}
           </p>
         )}
       </motion.div>
@@ -504,10 +528,10 @@ export default function RentalBookingView() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <CalendarIcon className="h-5 w-5 text-primary" />
-                  Select Dates
+                  {tr('اختر التواريخ', 'Select Dates')}
                 </CardTitle>
                 <CardDescription>
-                  Choose your pickup and return dates
+                  {tr('اختر تاريخ الاستلام والإرجاع', 'Choose your pickup and return dates')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -522,6 +546,7 @@ export default function RentalBookingView() {
                       selected={dateRange}
                       onSelect={handleDateSelect}
                       numberOfMonths={1}
+                      locale={dateLocale}
                       disabled={(date) => {
                         const today = startOfDay(new Date());
                         return (
@@ -544,8 +569,8 @@ export default function RentalBookingView() {
                           'data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground'
                         ),
                         range_middle: 'bg-primary/10 rounded-none',
-                        range_start: 'rounded-l-md bg-primary',
-                        range_end: 'rounded-r-md bg-primary',
+                        range_start: isRTL ? 'rounded-r-md bg-primary' : 'rounded-l-md bg-primary',
+                        range_end: isRTL ? 'rounded-l-md bg-primary' : 'rounded-r-md bg-primary',
                       }}
                     />
                   </div>
@@ -559,10 +584,15 @@ export default function RentalBookingView() {
                     className="mt-4 rounded-lg bg-primary/5 p-3"
                   >
                     <p className="text-sm font-medium text-primary">
-                      Selected: {format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d')}
+                      {tr('المحدد:', 'Selected:')}{' '}
+                      {format(dateRange.from, 'MMM d', { locale: dateLocale })} -{' '}
+                      {format(dateRange.to, 'MMM d', { locale: dateLocale })}
                       {pricing && (
-                        <span className="ml-2 text-muted-foreground">
-                          ({pricing.days} day{pricing.days > 1 ? 's' : ''})
+                        <span className="ms-2 text-muted-foreground">
+                          ({tr(
+                            `${pricing.days} يوم`,
+                            `${pricing.days} day${pricing.days > 1 ? 's' : ''}`
+                          )})
                         </span>
                       )}
                     </p>
@@ -583,30 +613,37 @@ export default function RentalBookingView() {
               >
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Pricing Breakdown</CardTitle>
+                    <CardTitle className="text-lg">{tr('تفاصيل السعر', 'Pricing Breakdown')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">
-                        {formatPrice(pricing.dailyRate)} x {pricing.days} day{pricing.days > 1 ? 's' : ''}
+                        {formatPrice(pricing.dailyRate)} x{' '}
+                        {tr(
+                          `${pricing.days} يوم`,
+                          `${pricing.days} day${pricing.days > 1 ? 's' : ''}`
+                        )}
                       </span>
                       <span className="font-medium">{formatPrice(pricing.subtotal)}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">
-                        Platform fee ({BOOKING.platformFeePercent}%)
+                        {tr(
+                          `رسوم المنصة (${BOOKING.platformFeePercent}%)`,
+                          `Platform fee (${BOOKING.platformFeePercent}%)`
+                        )}
                       </span>
                       <span className="font-medium">{formatPrice(pricing.platformFee)}</span>
                     </div>
                     {pricing.deliveryFee > 0 && (
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Delivery fee</span>
+                        <span className="text-muted-foreground">{tr('رسوم التوصيل', 'Delivery fee')}</span>
                         <span className="font-medium">{formatPrice(pricing.deliveryFee)}</span>
                       </div>
                     )}
                     <Separator />
                     <div className="flex items-center justify-between">
-                      <span className="text-base font-bold">Total</span>
+                      <span className="text-base font-bold">{tr('الإجمالي', 'Total')}</span>
                       <span className="text-xl font-bold text-primary">{formatPrice(pricing.total)}</span>
                     </div>
                   </CardContent>
@@ -623,25 +660,30 @@ export default function RentalBookingView() {
           >
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Booking Details</CardTitle>
-                <CardDescription>Complete your rental reservation</CardDescription>
+                <CardTitle className="text-lg">{tr('تفاصيل الحجز', 'Booking Details')}</CardTitle>
+                <CardDescription>
+                  {tr('أكمل حجز الإيجار', 'Complete your rental reservation')}
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Delivery Address */}
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    Delivery Address
-                    <span className="text-xs text-muted-foreground">(optional)</span>
+                    {tr('عنوان التوصيل', 'Delivery Address')}
+                    <span className="text-xs text-muted-foreground">({tr('اختياري', 'optional')})</span>
                   </label>
                   <Input
-                    placeholder="Enter delivery address for the car"
+                    placeholder={tr('أدخل عنوان توصيل السيارة', 'Enter delivery address for the car')}
                     value={deliveryAddress}
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                   />
                   {deliveryAddress.trim() && (
                     <p className="text-xs text-muted-foreground">
-                      + {formatPrice(200)} delivery fee will be added
+                      {tr(
+                        `+ ${formatPrice(200)} رسوم توصيل ستُضاف`,
+                        `+ ${formatPrice(200)} delivery fee will be added`
+                      )}
                     </p>
                   )}
                 </div>
@@ -650,11 +692,14 @@ export default function RentalBookingView() {
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium">
                     <FileText className="h-4 w-4 text-muted-foreground" />
-                    Notes
-                    <span className="text-xs text-muted-foreground">(optional)</span>
+                    {tr('ملاحظات', 'Notes')}
+                    <span className="text-xs text-muted-foreground">({tr('اختياري', 'optional')})</span>
                   </label>
                   <Textarea
-                    placeholder="Any special requests or notes for the owner..."
+                    placeholder={tr(
+                      'أي طلبات خاصة أو ملاحظات للمالك...',
+                      'Any special requests or notes for the owner...'
+                    )}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
@@ -665,20 +710,20 @@ export default function RentalBookingView() {
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium">
                     <Shield className="h-4 w-4 text-muted-foreground" />
-                    Payment Method
+                    {tr('طريقة الدفع', 'Payment Method')}
                   </label>
                   <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as 'wallet' | 'cod')}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="wallet">CIAR Wallet</SelectItem>
-                      <SelectItem value="cod">Cash on Delivery</SelectItem>
+                      <SelectItem value="wallet">{tr('محفظة CIAR', 'CIAR Wallet')}</SelectItem>
+                      <SelectItem value="cod">{tr('الدفع عند الاستلام', 'Cash on Delivery')}</SelectItem>
                     </SelectContent>
                   </Select>
                   {paymentMethod === 'wallet' && user && (
                     <p className="text-xs text-muted-foreground">
-                      Your wallet balance: {formatPrice(user.walletBalance)}
+                      {tr('رصيد محفظتك:', 'Your wallet balance:')} {formatPrice(user.walletBalance)}
                     </p>
                   )}
                 </div>
@@ -708,14 +753,14 @@ export default function RentalBookingView() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Processing...
+                      {tr('جارٍ المعالجة...', 'Processing...')}
                     </>
                   ) : (
                     <>
                       <Clock className="h-4 w-4" />
-                      Confirm Booking
+                      {tr('تأكيد الحجز', 'Confirm Booking')}
                       {pricing && (
-                        <span className="ml-1 text-primary-foreground/80">
+                        <span className="ms-1 text-primary-foreground/80">
                           &middot; {formatPrice(pricing.total)}
                         </span>
                       )}
@@ -733,7 +778,7 @@ export default function RentalBookingView() {
             <CarSummarySkeleton />
           ) : car ? (
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >

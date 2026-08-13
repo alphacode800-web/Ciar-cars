@@ -6,6 +6,7 @@ const DEFAULT_FILTERS: SearchFilters = {
   sortOrder: 'desc',
   page: 1,
   limit: 12,
+  vehicleType: 'car',
 };
 
 interface AppState {
@@ -44,5 +45,10 @@ export const useAppStore = create<AppState>((set) => ({
     })),
 
   resetFilters: () =>
-    set({ filters: { ...DEFAULT_FILTERS } }),
+    set((state) => ({
+      filters: {
+        ...DEFAULT_FILTERS,
+        vehicleType: state.filters.vehicleType ?? 'car',
+      },
+    })),
 }));

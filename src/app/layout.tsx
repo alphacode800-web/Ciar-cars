@@ -40,7 +40,8 @@ export const metadata: Metadata = {
     "car dealer",
   ],
   icons: {
-    icon: [{ url: '/logo.svg', type: 'image/svg+xml' }],
+    icon: [{ url: '/favicon.png', type: 'image/png' }],
+    apple: [{ url: '/favicon.png', type: 'image/png' }],
   },
   openGraph: {
     title: "RCiAR Cars",

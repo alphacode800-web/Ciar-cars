@@ -167,6 +167,13 @@ export async function POST(
       data: { inquiriesCount: { increment: 1 } },
     });
 
+    // Experimental AI sentiment (non-blocking)
+    void import("@/services/ai/sentiment.service")
+      .then(({ analyzeReviewSentiment }) =>
+        analyzeReviewSentiment(review.id, user.id).catch(() => undefined)
+      )
+      .catch(() => undefined);
+
     return NextResponse.json(
       { success: true, data: review, message: "Review added successfully" },
       { status: 201 }

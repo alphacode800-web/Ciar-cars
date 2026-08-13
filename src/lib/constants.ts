@@ -83,6 +83,61 @@ export const CAR_BODY_TYPES = [
   { value: "wagon", label: "Wagon / Estate", icon: "Luggage" },
 ] as const;
 
+// ============ MOTORCYCLE BRANDS ============
+
+export const MOTORCYCLE_BRANDS = [
+  "Honda",
+  "Yamaha",
+  "Suzuki",
+  "Kawasaki",
+  "BMW",
+  "Harley-Davidson",
+  "Ducati",
+  "KTM",
+  "Triumph",
+  "Royal Enfield",
+  "Bajaj",
+  "TVS",
+  "Hero",
+  "Aprilia",
+  "Benelli",
+  "Husqvarna",
+  "Piaggio",
+  "Vespa",
+  "CFMoto",
+  "Lifan",
+  "SYM",
+  "Keeway",
+  "GasGas",
+  "Indian",
+  "MV Agusta",
+  "Zero",
+  "Can-Am",
+  "Polaris",
+] as const;
+
+export type MotorcycleBrand = (typeof MOTORCYCLE_BRANDS)[number];
+
+// ============ MOTORCYCLE BODY TYPES ============
+
+export const MOTORCYCLE_BODY_TYPES = [
+  { value: "sport", label: "Sport", icon: "Zap" },
+  { value: "cruiser", label: "Cruiser", icon: "Bike" },
+  { value: "touring", label: "Touring", icon: "Route" },
+  { value: "naked", label: "Naked / Street", icon: "Bike" },
+  { value: "adventure", label: "Adventure", icon: "Mountain" },
+  { value: "scooter", label: "Scooter", icon: "Circle" },
+  { value: "offroad", label: "Off-Road / Motocross", icon: "Mountain" },
+  { value: "dual_sport", label: "Dual Sport", icon: "Compass" },
+  { value: "chopper", label: "Chopper", icon: "Bike" },
+  { value: "electric", label: "Electric", icon: "Zap" },
+] as const;
+
+export const VEHICLE_TYPES = [
+  { value: "car", label: "Car" },
+  { value: "motorcycle", label: "Motorcycle" },
+] as const;
+
 // ============ FUEL TYPES ============
 
 export const FUEL_TYPES = [
@@ -230,6 +285,7 @@ export const PAYMENT_TYPES = [
   { value: "rental", label: "Rental Payment" },
   { value: "wallet_topup", label: "Wallet Top-Up" },
   { value: "featured_fee", label: "Featured Fee" },
+  { value: "ad_fee", label: "Advertisement Fee" },
 ] as const;
 
 // ============ PAYMENT METHODS ============

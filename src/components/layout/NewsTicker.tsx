@@ -7,6 +7,7 @@ import {
   parseNewsTicker,
   resolveTickerLink,
   TICKER_VIEW_MAP,
+  DEFAULT_NEWS_TICKER,
   type NewsTickerConfig,
 } from '@/lib/news-ticker';
 import { NewsTickerBar } from '@/components/layout/NewsTickerBar';
@@ -29,11 +30,15 @@ export function NewsTicker() {
     fetch('/api/public/site-content', { cache: 'no-store' })
       .then((res) => res.json())
       .then((json) => {
-        if (cancelled || !json.success) return;
-        setConfig(json.data?.newsTicker ?? null);
+        if (cancelled) return;
+        if (json.success && json.data?.newsTicker) {
+          setConfig(json.data.newsTicker);
+          return;
+        }
+        setConfig(DEFAULT_NEWS_TICKER);
       })
       .catch(() => {
-        if (!cancelled) setConfig(null);
+        if (!cancelled) setConfig(DEFAULT_NEWS_TICKER);
       });
 
     return () => {

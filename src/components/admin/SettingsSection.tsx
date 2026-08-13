@@ -40,6 +40,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { getSettings, saveSettings } from '@/lib/admin-api';
+import { useAdminTranslation } from '@/hooks/use-admin-translation';
 import { toast } from 'sonner';
 import { CURRENCY } from '@/lib/constants';
 
@@ -71,6 +72,7 @@ const DEFAULT_SETTINGS: SettingsState = {
   max_listing_images: 10,
   support_email: '',
   support_phone: '',
+  support_whatsapp: '',
 };
 
 // ============ FIELD DEFINITIONS ============
@@ -253,10 +255,19 @@ const SUPPORT_FIELDS: FieldDef[] = [
     type: 'text',
     placeholder: 'e.g. +1 (555) 000-0000',
   },
+  {
+    key: 'support_whatsapp',
+    label: 'WhatsApp Number',
+    description: 'Number or wa.me link for the floating WhatsApp button (e.g. +2499... or https://wa.me/2499...)',
+    icon: Phone,
+    type: 'text',
+    placeholder: 'e.g. +249900000000',
+  },
 ];
 
 // ============ COMPONENT ============
 export default function SettingsSection() {
+  const { t } = useAdminTranslation();
   const [settings, setSettings] = useState<SettingsState>({ ...DEFAULT_SETTINGS });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -312,7 +323,7 @@ export default function SettingsSection() {
 
       const res = await saveSettings(settingsToSave);
       if (res.success) {
-        toast.success('Settings saved successfully');
+        toast.success(t('settingsMgmt.saved'));
         setOriginalSettings({ ...settings });
       } else {
         toast.error(res.error || 'Failed to save settings');
@@ -495,9 +506,9 @@ export default function SettingsSection() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Site Settings</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t('settingsMgmt.title')}</h2>
           <p className="text-muted-foreground">
-            Configure platform-wide settings and preferences.
+            {t('settingsMgmt.subtitle')}
           </p>
         </div>
       </div>
@@ -507,19 +518,19 @@ export default function SettingsSection() {
         <TabsList className="flex flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="general" className="gap-1.5">
             <Globe className="w-4 h-4" />
-            General
+            {t('settingsMgmt.tabGeneral')}
           </TabsTrigger>
           <TabsTrigger value="features" className="gap-1.5">
             <ToggleLeft className="w-4 h-4" />
-            Features
+            {t('settingsMgmt.tabFeatures')}
           </TabsTrigger>
           <TabsTrigger value="fees" className="gap-1.5">
             <DollarSign className="w-4 h-4" />
-            Fees
+            {t('settingsMgmt.tabFees')}
           </TabsTrigger>
           <TabsTrigger value="support" className="gap-1.5">
             <Headphones className="w-4 h-4" />
-            Support
+            {t('settingsMgmt.tabSupport')}
           </TabsTrigger>
         </TabsList>
 
@@ -527,9 +538,9 @@ export default function SettingsSection() {
         <TabsContent value="general">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">General Settings</CardTitle>
+              <CardTitle className="text-base">{t('settingsMgmt.generalTitle')}</CardTitle>
               <CardDescription>
-                Basic site information displayed across the platform
+                {t('settingsMgmt.generalDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -543,9 +554,9 @@ export default function SettingsSection() {
         <TabsContent value="features">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Feature Toggles</CardTitle>
+              <CardTitle className="text-base">{t('settingsMgmt.featuresTitle')}</CardTitle>
               <CardDescription>
-                Enable or disable platform features. Changes take effect immediately.
+                {t('settingsMgmt.featuresDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -554,7 +565,7 @@ export default function SettingsSection() {
                   <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
                     <Wrench className="w-4 h-4 flex-shrink-0" />
                     <p className="text-sm font-medium">
-                      Maintenance mode is active. Some features may be disabled.
+                      {t('settingsMgmt.maintenanceWarn')}
                     </p>
                   </div>
                 </div>
@@ -570,9 +581,9 @@ export default function SettingsSection() {
         <TabsContent value="fees">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Platform Fees & Pricing</CardTitle>
+              <CardTitle className="text-base">{t('settingsMgmt.feesTitle')}</CardTitle>
               <CardDescription>
-                Configure commission rates and service charges
+                {t('settingsMgmt.feesDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -587,9 +598,9 @@ export default function SettingsSection() {
         <TabsContent value="support">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Support & Contact</CardTitle>
+              <CardTitle className="text-base">{t('settingsMgmt.supportTitle')}</CardTitle>
               <CardDescription>
-                Contact information for customer support. Displayed across help and contact pages.
+                {t('settingsMgmt.supportDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">

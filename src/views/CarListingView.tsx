@@ -30,12 +30,11 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Car,
   Sparkles,
   Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CAR_SORT_OPTIONS, CURRENCY } from '@/lib/constants';
+import { CAR_SORT_OPTIONS } from '@/lib/constants';
 import {
   COUNTRIES,
   DEFAULT_COUNTRY,
@@ -45,15 +44,12 @@ import {
 import { useAppStore } from '@/store/app-store';
 import { useCarStore } from '@/store/car-store';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTranslation } from '@/hooks/use-translation';
 import { CarGrid } from '@/components/cars/CarGrid';
 import CarFilters from '@/components/cars/CarFilters';
-import type { CarListItem, PaginatedResponse, CarSearchFilters } from '@/types';
+import type { Car, CarListItem, PaginatedResponse, CarSearchFilters } from '@/types';
 
 // ============ Helper ============
-
-function formatPrice(price: number): string {
-  return new Intl.NumberFormat('en-US').format(Math.round(price));
-}
 
 function buildQueryString(filters: CarSearchFilters & { sortBy?: string; sortOrder?: string; page?: number; limit?: number }): string {
   const params = new URLSearchParams();
@@ -63,6 +59,7 @@ function buildQueryString(filters: CarSearchFilters & { sortBy?: string; sortOrd
   if (filters.year?.min) params.set('year', String(filters.year.min));
   if (filters.year?.max) params.set('yearMax', String(filters.year.max));
   if (filters.condition) params.set('condition', filters.condition);
+  if (filters.vehicleType) params.set('vehicleType', filters.vehicleType);
   if (filters.price?.min) params.set('minPrice', String(filters.price.min));
   if (filters.price?.max) params.set('maxPrice', String(filters.price.max));
   if (filters.fuelType) params.set('fuelType', filters.fuelType);
@@ -82,12 +79,56 @@ function buildQueryString(filters: CarSearchFilters & { sortBy?: string; sortOrd
   return params.toString();
 }
 
+const SORT_LABELS_AR: Record<string, string> = {
+  'createdAt-desc': 'الأحدث أولاً',
+  'createdAt-asc': 'الأقدم أولاً',
+  'price-asc': 'السعر: من الأقل للأعلى',
+  'price-desc': 'السعر: من الأعلى للأقل',
+  'year-desc': 'السنة: الأحدث أولاً',
+  'year-asc': 'السنة: الأقدم أولاً',
+  'mileage-asc': 'المسافة: من الأقل للأعلى',
+  'mileage-desc': 'المسافة: من الأعلى للأقل',
+  'viewsCount-desc': 'الأكثر مشاهدة',
+  'horsepower-desc': 'القوة: من الأعلى للأقل',
+};
+
+const MOTORCYCLE_BODY_TYPE_LABELS_AR: Record<string, string> = {
+  sport: 'رياضية',
+  cruiser: 'كروزر',
+  touring: 'سياحية',
+  naked: 'نيكد / شارع',
+  adventure: 'مغامرات',
+  scooter: 'سكوتر',
+  offroad: 'طرق وعرة',
+  dual_sport: 'ثنائية الاستخدام',
+  chopper: 'شopper',
+  electric: 'كهربائية',
+};
+
+const BODY_TYPE_LABELS_AR: Record<string, string> = {
+  sedan: 'سيدان',
+  suv: 'دفع رباعي',
+  coupe: 'كوبيه',
+  truck: 'شاحنة',
+  van: 'فان / ميني فان',
+  convertible: 'مكشوفة',
+  hatchback: 'هاتشباك',
+  wagon: 'ستيشن',
+};
+
 // ============ Main Component ============
 
 export default function CarListingView() {
   const isMobile = useIsMobile();
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, other: string) => (isAr ? ar : other), [isAr]);
+
   const { filters, setFilters, resetFilters, viewParams } = useAppStore();
   const { setCars, setLoading } = useCarStore();
+
+  const vehicleType = filters.vehicleType ?? 'car';
+  const isMotorcycle = vehicleType === 'motorcycle';
 
   const [cars, setLocalCars] = useState<CarListItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -96,6 +137,27 @@ export default function CarListingView() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchInput, setSearchInput] = useState('');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  const countryLabel = useCallback(
+    (nameEn: string) => {
+      const found = COUNTRIES.find((c) => c.nameEn === nameEn);
+      return isAr && found ? found.nameAr : nameEn;
+    },
+    [isAr]
+  );
+
+  const sortOptionLabel = useCallback(
+    (opt: (typeof CAR_SORT_OPTIONS)[number]) => {
+      const key = `${opt.value}-${opt.order}`;
+      return isAr ? (SORT_LABELS_AR[key] ?? opt.label) : opt.label;
+    },
+    [isAr]
+  );
+
+  const bodyTypeLabel = useCallback(
+    (value: string) => (isAr ? (BODY_TYPE_LABELS_AR[value] ?? value) : value),
+    [isAr]
+  );
 
   // Initialize search input from filters
   useEffect(() => {
@@ -165,6 +227,10 @@ export default function CarListingView() {
         setSearchInput(viewParams.query);
         hasUpdates = true;
       }
+      if (viewParams.vehicleType && typeof viewParams.vehicleType === 'string') {
+        updates.vehicleType = viewParams.vehicleType as CarSearchFilters['vehicleType'];
+        hasUpdates = true;
+      }
 
       if (hasUpdates) {
         setFilters(updates);
@@ -183,7 +249,7 @@ export default function CarListingView() {
 
       if (json.data) {
         setLocalCars(json.data);
-        setCars(json.data, json.pagination.total);
+        setCars(json.data as Car[], json.pagination.total);
         setTotalCount(json.pagination.total);
         setTotalPages(json.pagination.totalPages);
       }
@@ -246,6 +312,13 @@ export default function CarListingView() {
     setSearchInput('');
   }, [resetFilters]);
 
+  const handleVehicleTypeChange = useCallback(
+    (type: 'car' | 'motorcycle') => {
+      setFilters({ vehicleType: type, page: 1, bodyType: undefined });
+    },
+    [setFilters]
+  );
+
   // Sort value
   const sortValue = useMemo(
     () => `${filters.sortBy || 'createdAt'}-${filters.sortOrder || 'desc'}`,
@@ -274,30 +347,31 @@ export default function CarListingView() {
   }, [filters.page, totalPages]);
 
   const selectedCountry = filters.country || DEFAULT_COUNTRY;
+  const chevronFlip = isRTL ? 'rotate-180' : undefined;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Country selector */}
       <div className="border-b border-border/50 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex items-center gap-2 text-sm font-medium shrink-0">
               <Globe className="h-4 w-4 text-emerald-600" />
-              <span>Browse cars in</span>
+              <span>{tr(isMotorcycle ? 'تصفح الدراجات في' : 'تصفح السيارات في', isMotorcycle ? 'Browse motorcycles in' : 'Browse cars in')}</span>
             </div>
             <Select value={selectedCountry} onValueChange={handleCountryChange}>
               <SelectTrigger className="w-full sm:w-[280px] h-10 bg-background">
-                <SelectValue placeholder="Select country" />
+                <SelectValue placeholder={tr('اختر الدولة', 'Select country')} />
               </SelectTrigger>
               <SelectContent className="max-h-[320px]">
                 {COUNTRIES.map((c) => (
                   <SelectItem key={c.code} value={c.nameEn}>
                     <span className="flex items-center gap-2">
                       <span>{c.flag}</span>
-                      <span>{c.nameEn}</span>
+                      <span>{isAr ? c.nameAr : c.nameEn}</span>
                       {c.featured && (
-                        <Badge variant="secondary" className="text-[10px] ml-1">
-                          Popular
+                        <Badge variant="secondary" className="text-[10px] ms-1">
+                          {tr('شائع', 'Popular')}
                         </Badge>
                       )}
                     </span>
@@ -305,8 +379,9 @@ export default function CarListingView() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground sm:ml-auto">
-              Showing listings in <strong className="text-foreground">{selectedCountry}</strong>
+            <p className="text-xs text-muted-foreground sm:ms-auto">
+              {tr('عرض الإعلانات في', 'Showing listings in')}{' '}
+              <strong className="text-foreground">{countryLabel(selectedCountry)}</strong>
             </p>
           </div>
         </div>
@@ -323,21 +398,25 @@ export default function CarListingView() {
           <div className="flex items-center gap-3 py-3">
             {/* Search bar — more prominent */}
             <div className="relative flex-1 max-w-2xl">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center h-5 w-5 rounded-full bg-emerald-100 dark:bg-emerald-950/50">
+              <div className="absolute start-3 top-1/2 -translate-y-1/2 flex items-center justify-center h-5 w-5 rounded-full bg-emerald-100 dark:bg-emerald-950/50">
                 <Search className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
               </div>
               <Input
-                placeholder="Search by make, model, year, or keyword..."
+                placeholder={tr(
+                  'ابحث بالماركة أو الموديل أو السنة أو كلمة مفتاحية...',
+                  'Search by make, model, year, or keyword...'
+                )}
                 value={searchInput}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pl-11 pr-10 h-11 bg-muted/60 border-border/50 focus-visible:bg-background focus-visible:border-emerald-300 dark:focus-visible:border-emerald-700 focus-visible:ring-emerald-200/50 dark:focus-visible:ring-emerald-800/30 transition-all duration-200 rounded-xl text-sm"
+                className="ps-11 pe-10 h-11 bg-muted/60 border-border/50 focus-visible:bg-background focus-visible:border-emerald-300 dark:focus-visible:border-emerald-700 focus-visible:ring-emerald-200/50 dark:focus-visible:ring-emerald-800/30 transition-all duration-200 rounded-xl text-sm"
               />
               {searchInput && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-muted"
+                  className="absolute end-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-muted"
                   onClick={() => handleSearch('')}
+                  aria-label={tr('مسح البحث', 'Clear search')}
                 >
                   <X className="w-3.5 h-3.5" />
                 </Button>
@@ -347,12 +426,12 @@ export default function CarListingView() {
             {/* Sort dropdown */}
             <Select value={sortValue} onValueChange={handleSortChange}>
               <SelectTrigger className="w-[180px] h-11 bg-muted/60 border-border/50 rounded-xl text-sm">
-                <SelectValue placeholder="Sort by" />
+                <SelectValue placeholder={tr('ترتيب حسب', 'Sort by')} />
               </SelectTrigger>
               <SelectContent>
                 {CAR_SORT_OPTIONS.map((opt, idx) => (
                   <SelectItem key={`${opt.value}-${opt.order}-${idx}`} value={`${opt.value}-${opt.order}`}>
-                    {opt.label}
+                    {sortOptionLabel(opt)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -366,6 +445,7 @@ export default function CarListingView() {
                   size="icon"
                   className="h-8 w-8 rounded-lg"
                   onClick={() => setViewMode('grid')}
+                  aria-label={tr('عرض شبكة', 'Grid view')}
                 >
                   <LayoutGrid className="w-4 h-4" />
                 </Button>
@@ -374,6 +454,7 @@ export default function CarListingView() {
                   size="icon"
                   className="h-8 w-8 rounded-lg"
                   onClick={() => setViewMode('list')}
+                  aria-label={tr('عرض قائمة', 'List view')}
                 >
                   <List className="w-4 h-4" />
                 </Button>
@@ -386,7 +467,7 @@ export default function CarListingView() {
                 <SheetTrigger asChild>
                   <Button className="h-11 gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex-1 sm:flex-none min-h-[44px]">
                     <SlidersHorizontal className="w-4 h-4" />
-                    Filters
+                    {tr('الفلاتر', 'Filters')}
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="bottom" className="h-[85dvh] rounded-t-2xl p-0">
@@ -394,7 +475,7 @@ export default function CarListingView() {
                   <SheetHeader className="px-5 py-3 border-b border-border/50">
                     <SheetTitle className="text-base font-semibold flex items-center gap-2">
                       <SlidersHorizontal className="w-4 h-4" />
-                      Filters
+                      {tr('الفلاتر', 'Filters')}
                     </SheetTitle>
                   </SheetHeader>
                   <div className="overflow-y-auto px-4 py-3 max-h-[calc(85dvh-8rem)]">
@@ -414,7 +495,9 @@ export default function CarListingView() {
                       className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white"
                       onClick={() => setMobileFiltersOpen(false)}
                     >
-                      Show {totalCount > 0 ? `${totalCount} Results` : 'Results'}
+                      {totalCount > 0
+                        ? tr(`عرض ${totalCount} نتيجة`, `Show ${totalCount} Results`)
+                        : tr('عرض النتائج', 'Show Results')}
                     </Button>
                   </div>
                 </SheetContent>
@@ -430,7 +513,7 @@ export default function CarListingView() {
           {/* Sidebar (desktop) */}
           {!isMobile && (
             <motion.aside
-              initial={{ opacity: 0, x: -12 }}
+              initial={{ opacity: 0, x: isRTL ? 12 : -12 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: 0.1 }}
               className="w-64 flex-shrink-0"
@@ -458,23 +541,47 @@ export default function CarListingView() {
               <div className="flex items-center gap-2.5 mb-1.5">
                 <Sparkles className="h-5 w-5 text-emerald-500" />
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-                  Browse Cars
+                  {tr(
+                    isMotorcycle ? 'تصفح الدراجات' : 'تصفح السيارات',
+                    isMotorcycle ? 'Browse Motorcycles' : 'Browse Cars'
+                  )}
                 </h1>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="inline-flex rounded-xl bg-muted/60 p-1 border border-border/50">
+                  <Button
+                    variant={!isMotorcycle ? 'default' : 'ghost'}
+                    size="sm"
+                    className="rounded-lg h-9 px-4"
+                    onClick={() => handleVehicleTypeChange('car')}
+                  >
+                    {tr('السيارات', 'Cars')}
+                  </Button>
+                  <Button
+                    variant={isMotorcycle ? 'default' : 'ghost'}
+                    size="sm"
+                    className="rounded-lg h-9 px-4"
+                    onClick={() => handleVehicleTypeChange('motorcycle')}
+                  >
+                    {tr('الدراجات', 'Motorcycles')}
+                  </Button>
+                </div>
                 {isLoading ? (
                   <Skeleton className="h-4 w-52" />
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Showing{' '}
+                    {tr('عرض', 'Showing')}{' '}
                     <span className="font-semibold text-foreground">
                       {cars.length}
                     </span>{' '}
-                    of{' '}
+                    {tr('من', 'of')}{' '}
                     <span className="font-semibold text-foreground">
-                      {totalCount.toLocaleString()}
+                      {totalCount.toLocaleString(isAr ? 'ar' : 'en-US')}
                     </span>{' '}
-                    cars available
+                    {tr(
+                      isMotorcycle ? 'دراجة متاحة' : 'سيارة متاحة',
+                      isMotorcycle ? 'motorcycles available' : 'cars available'
+                    )}
                   </p>
                 )}
               </div>
@@ -495,16 +602,25 @@ export default function CarListingView() {
                   <FilterBadge label={filters.model} onRemove={() => handleFilterChange({ model: undefined })} />
                 )}
                 {!isMobile && filters.condition && (
-                  <FilterBadge label={filters.condition === 'new' ? 'New' : 'Used'} onRemove={() => handleFilterChange({ condition: undefined })} />
+                  <FilterBadge
+                    label={filters.condition === 'new' ? tr('جديد', 'New') : tr('مستعمل', 'Used')}
+                    onRemove={() => handleFilterChange({ condition: undefined })}
+                  />
                 )}
                 {!isMobile && filters.city && (
                   <FilterBadge label={filters.city} onRemove={() => handleFilterChange({ city: undefined })} />
                 )}
                 {!isMobile && filters.country && (
-                  <FilterBadge label={filters.country} onRemove={() => handleFilterChange({ country: undefined })} />
+                  <FilterBadge
+                    label={countryLabel(filters.country)}
+                    onRemove={() => handleFilterChange({ country: undefined })}
+                  />
                 )}
                 {!isMobile && filters.bodyType && (
-                  <FilterBadge label={filters.bodyType} onRemove={() => handleFilterChange({ bodyType: undefined })} />
+                  <FilterBadge
+                    label={bodyTypeLabel(filters.bodyType)}
+                    onRemove={() => handleFilterChange({ bodyType: undefined })}
+                  />
                 )}
               </div>
             </motion.div>
@@ -538,8 +654,9 @@ export default function CarListingView() {
                     className="h-9 w-9"
                     disabled={(filters.page || 1) <= 1}
                     onClick={() => goToPage(1)}
+                    aria-label={tr('الصفحة الأولى', 'First page')}
                   >
-                    <ChevronsLeft className="w-4 h-4" />
+                    <ChevronsLeft className={cn('w-4 h-4', chevronFlip)} />
                   </Button>
                   <Button
                     variant="outline"
@@ -547,8 +664,9 @@ export default function CarListingView() {
                     className="h-9 w-9"
                     disabled={(filters.page || 1) <= 1}
                     onClick={() => goToPage((filters.page || 1) - 1)}
+                    aria-label={tr('الصفحة السابقة', 'Previous page')}
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className={cn('w-4 h-4', chevronFlip)} />
                   </Button>
 
                   {paginationRange.map((p, idx) =>
@@ -569,6 +687,7 @@ export default function CarListingView() {
                           p === (filters.page || 1) && 'shadow-sm'
                         )}
                         onClick={() => goToPage(p)}
+                        aria-label={tr(`الصفحة ${p}`, `Page ${p}`)}
                       >
                         {p}
                       </Button>
@@ -581,8 +700,9 @@ export default function CarListingView() {
                     className="h-9 w-9"
                     disabled={(filters.page || 1) >= totalPages}
                     onClick={() => goToPage((filters.page || 1) + 1)}
+                    aria-label={tr('الصفحة التالية', 'Next page')}
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className={cn('w-4 h-4', chevronFlip)} />
                   </Button>
                   <Button
                     variant="outline"
@@ -590,8 +710,9 @@ export default function CarListingView() {
                     className="h-9 w-9"
                     disabled={(filters.page || 1) >= totalPages}
                     onClick={() => goToPage(totalPages)}
+                    aria-label={tr('الصفحة الأخيرة', 'Last page')}
                   >
-                    <ChevronsRight className="w-4 h-4" />
+                    <ChevronsRight className={cn('w-4 h-4', chevronFlip)} />
                   </Button>
                 </div>
               </motion.div>
@@ -615,12 +736,13 @@ function FilterBadge({
   return (
     <Badge
       variant="secondary"
-      className="gap-1 pl-2 pr-1 h-6 text-xs font-medium cursor-default"
+      className="gap-1 ps-2 pe-1 h-6 text-xs font-medium cursor-default"
     >
       {label}
       <button
         onClick={onRemove}
-        className="ml-0.5 hover:bg-foreground/10 rounded-full p-0.5 transition-colors"
+        className="ms-0.5 hover:bg-foreground/10 rounded-full p-0.5 transition-colors"
+        aria-label="Remove filter"
       >
         <X className="w-3 h-3" />
       </button>

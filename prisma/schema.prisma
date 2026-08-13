@@ -58,6 +58,7 @@ model User {
   notifications  Notification[]
   walletTransactions WalletTransaction[]
   payments       Payment[]
+  advertisements Advertisement[]
   auditLogs      AuditLog[]
 
   @@index([role])
@@ -77,6 +78,7 @@ model Car {
   brand           String
   model           String
   year            Int
+  vehicleType     String    @default("car") // car, motorcycle
   condition       String    @default("used") // new, used
   mileage         Float?
   exteriorColor   String?
@@ -144,6 +146,7 @@ model Car {
   @@index([brand])
   @@index([model])
   @@index([year])
+  @@index([vehicleType])
   @@index([condition])
   @@index([fuelType])
   @@index([transmission])
@@ -247,6 +250,8 @@ model ChatRoom {
   lastMessageAt DateTime?
   lastMessage   String?
   isArchived    Boolean @default(false)
+  isAiAssisted  Boolean @default(false)
+  aiLocale      String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -256,6 +261,7 @@ model ChatRoom {
 
   @@index([carId])
   @@index([lastMessageAt])
+  @@index([isAiAssisted])
 }
 
 model ChatRoomUser {
@@ -303,7 +309,7 @@ model Payment {
   userId          String
   amount          Float
   currency        String    @default("EGP")
-  type            String    // listing_fee, boost_fee, rental, wallet_topup, featured_fee
+  type            String    // listing_fee, boost_fee, rental, wallet_topup, featured_fee, ad_fee
   status          String    @default("pending") // pending, completed, failed, refunded
   method          String?   // stripe, wallet, bank_transfer
   
@@ -314,19 +320,31 @@ model Payment {
   // Related entities
   carId           String?
   bookingId       String?
+  advertisementId String?
   
   description     String?
   metadata        String?   // JSON string for extra data
+  proofUrl        String?   // bank transfer proof image
+
+  // Experimental AI risk flags (advisory only — no auto-block)
+  riskScore       Float?
+  riskLevel       String?   // low | medium | high
+  riskFlags       String?   // JSON string[]
+  riskNotes       String?
+  riskReviewedAt  DateTime?
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   user            User      @relation(fields: [userId], references: [id])
+  advertisement   Advertisement? @relation(fields: [advertisementId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([status])
   @@index([type])
   @@index([createdAt])
+  @@index([riskLevel])
+  @@index([advertisementId])
 }
 
 model WalletTransaction {
@@ -356,12 +374,19 @@ model Review {
   comment   String?
   createdAt DateTime @default(now())
 
+  // Experimental AI sentiment
+  sentimentLabel  String?   // positive | neutral | negative
+  sentimentScore  Float?    // -1..1
+  sentimentTopics String?   // JSON string[]
+  sentimentAt     DateTime?
+
   car       Car      @relation(fields: [carId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
 
   @@unique([carId, userId])
   @@index([carId])
   @@index([userId])
+  @@index([sentimentLabel])
 }
 
 // ============ SAVED SEARCHES ============
@@ -461,6 +486,192 @@ model NavigationItem {
 
   @@index([position])
   @@index([isActive])
+  @@index([order])
+}
+
+// Media library for reusable uploaded assets
+model MediaAsset {
+  id           String   @id @default(cuid())
+  url          String
+  filename     String
+  originalName String?
+  mimeType     String
+  size         Int      @default(0)
+  alt          String?
+  folder       String   @default("general")
+  uploadedBy   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([folder])
+  @@index([createdAt])
+  @@index([mimeType])
+}
+
+// Typed page content (about, contact, legal, etc.) — multilang JSON in `content`
+model PageContent {
+  id          String   @id @default(cuid())
+  slug        String   @unique // about, contact, privacy, terms, cookies
+  title       String?
+  status      String   @default("published") // draft | published
+  content     String   // JSON LocalizedPagePayload
+  seoTitle    String?
+  seoDescription String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+}
+
+// Configurable payment method logos shown on the storefront
+model PaymentMethodItem {
+  id        String   @id @default(cuid())
+  name      String
+  imageUrl  String
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+  @@index([isActive])
+}
+
+// Contact form submissions
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  status    String   @default("new") // new | read | archived
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============ AI INTERACTIONS (experimental telemetry) ============
+
+model AiInteraction {
+  id         String   @id @default(cuid())
+  kind       String   // chat | recommend | sentiment | seo | insights | risk | marketing | health
+  userId     String?
+  model      String?
+  durationMs Int?
+  status     String   // success | error | fallback
+  error      String?
+  meta       String?  // JSON (non-sensitive)
+  createdAt  DateTime @default(now())
+
+  @@index([kind])
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+// ============ PAID ADVERTISEMENTS ============
+
+model AdPlan {
+  id            String   @id @default(cuid())
+  name          String
+  nameAr        String?
+  description   String?
+  descriptionAr String?
+  price         Float
+  currency      String   @default("EGP")
+  durationDays  Int      @default(30)
+  maxImages     Int      @default(5)
+  allowVideo    Boolean  @default(false)
+  isFeatured    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  advertisements Advertisement[]
+
+  @@index([isActive])
+  @@index([order])
+}
+
+model Advertisement {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  title           String
+  description     String?
+  category        String    // clothing, electronics, services, general, ...
+  subcategory     String?
+
+  // Clothing / product attributes (JSON strings where multi-value)
+  fabricType      String?
+  colors          String?   // JSON string[]
+  sizes           String?   // JSON string[]
+  quantity        Int?
+
+  // Pricing
+  price           Float
+  currency        String    @default("EGP")
+  discountPercent Float     @default(0)
+  shippingInfo    String?
+  shippingAvailable Boolean @default(false)
+
+  // Contact
+  phone           String?
+  whatsapp        String?   // phone or wa.me link
+  city            String?
+  country         String?
+
+  // Media / plan / schedule
+  planId          String?
+  status          String    @default("draft")
+  // draft | pending_payment | pending_review | published | rejected | paused | expired | deleted
+  isFeatured      Boolean   @default(false)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  publishedAt     DateTime?
+  rejectedReason  String?
+  paymentStatus   String    @default("unpaid") // unpaid | pending | paid | refunded
+  viewsCount      Int       @default(0)
+
+  ownerId         String
+  reviewedBy      String?
+  reviewedAt      DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  owner           User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  plan            AdPlan?   @relation(fields: [planId], references: [id], onDelete: SetNull)
+  media           AdvertisementMedia[]
+  payments        Payment[]
+
+  @@index([status])
+  @@index([category])
+  @@index([ownerId])
+  @@index([isFeatured])
+  @@index([endsAt])
+  @@index([paymentStatus])
+  @@index([createdAt])
+}
+
+model AdvertisementMedia {
+  id              String   @id @default(cuid())
+  advertisementId String
+  url             String
+  type            String   @default("image") // image | video
+  mimeType        String?
+  alt             String?
+  isPrimary       Boolean  @default(false)
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  advertisement   Advertisement @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+
+  @@index([advertisementId])
+  @@index([type])
   @@index([order])
 }
 

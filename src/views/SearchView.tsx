@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { CURRENCY, CAR_BODY_TYPES, FUEL_TYPES, TRANSMISSION_TYPES } from '@/lib/constants';
 import { useAppStore } from '@/store/app-store';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTranslation } from '@/hooks/use-translation';
 import type { CarListItem } from '@/types';
 
 // ============ Types ============
@@ -70,6 +71,10 @@ function ResultCard({
   isSelected: boolean;
   onClick: () => void;
 }) {
+  const { locale } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
+
   const conditionColor =
     car.condition === 'new'
       ? 'bg-emerald-500/10 text-emerald-600 border-emerald-200'
@@ -119,7 +124,7 @@ function ResultCard({
                     conditionColor
                   )}
                 >
-                  {car.condition === 'new' ? 'New' : 'Used'}
+                  {car.condition === 'new' ? tr('جديدة', 'New') : tr('مستعملة', 'Used')}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -166,6 +171,9 @@ function ResultSkeleton() {
 export default function SearchView() {
   const isMobile = useIsMobile();
   const { setView, setFilters } = useAppStore();
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -278,7 +286,7 @@ export default function SearchView() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Full-screen search overlay */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -291,11 +299,11 @@ export default function SearchView() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-foreground -ml-2"
+            className="text-muted-foreground hover:text-foreground -ms-2"
             onClick={handleClose}
           >
-            <X className="w-4 h-4 mr-1" />
-            Close
+            <X className="w-4 h-4 me-1" />
+            {tr('إغلاق', 'Close')}
           </Button>
         </div>
 
@@ -307,26 +315,29 @@ export default function SearchView() {
             transition={{ duration: 0.3, delay: 0.05 }}
           >
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 ref={inputRef}
                 type="text"
-                placeholder="Search cars by make, model, or keyword..."
+                placeholder={tr(
+                  'ابحث عن سيارات بالماركة أو الموديل أو الكلمة المفتاحية...',
+                  'Search cars by make, model, or keyword...'
+                )}
                 value={query}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                className="h-14 pl-12 pr-12 text-lg bg-muted/50 border-border/60 rounded-2xl focus-visible:bg-background focus-visible:rounded-2xl"
+                className="h-14 ps-12 pe-12 text-lg bg-muted/50 border-border/60 rounded-2xl focus-visible:bg-background focus-visible:rounded-2xl"
                 autoComplete="off"
               />
               {isLoading ? (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                <div className="absolute end-4 top-1/2 -translate-y-1/2">
                   <Loader2 className="w-5 h-5 text-primary animate-spin" />
                 </div>
               ) : query ? (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9"
+                  className="absolute end-2 top-1/2 -translate-y-1/2 h-9 w-9"
                   onClick={() => {
                     setQuery('');
                     setResults([]);
@@ -362,10 +373,13 @@ export default function SearchView() {
                 <>
                   <div className="flex items-center justify-between mb-3 px-1">
                     <span className="text-xs text-muted-foreground">
-                      {results.length} result{results.length !== 1 ? 's' : ''} found
+                      {tr(
+                        `${results.length} نتيجة`,
+                        `${results.length} result${results.length !== 1 ? 's' : ''} found`
+                      )}
                     </span>
                     <span className="text-[11px] text-muted-foreground">
-                      Use ↑↓ to navigate · Enter to select
+                      {tr('استخدم ↑↓ للتنقل · Enter للاختيار', 'Use ↑↓ to navigate · Enter to select')}
                     </span>
                   </div>
                   <div className="space-y-2">
@@ -388,8 +402,8 @@ export default function SearchView() {
                     className="w-full mt-3 gap-2"
                     onClick={handleViewAll}
                   >
-                    View all results
-                    <ArrowRight className="w-4 h-4" />
+                    {tr('عرض كل النتائج', 'View all results')}
+                    <ArrowRight className={cn('w-4 h-4', isRTL && 'rotate-180')} />
                   </Button>
                 </>
               )}
@@ -401,15 +415,15 @@ export default function SearchView() {
                     <Search className="w-7 h-7 text-muted-foreground/40" />
                   </div>
                   <h3 className="text-base font-semibold text-foreground mb-1">
-                    No results found
+                    {tr('لا توجد نتائج', 'No results found')}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Try different keywords or{' '}
+                    {tr('جرّب كلمات مختلفة أو', 'Try different keywords or')}{' '}
                     <button
                       onClick={handleViewAll}
                       className="text-primary hover:underline font-medium"
                     >
-                      browse all cars
+                      {tr('تصفّح كل السيارات', 'browse all cars')}
                     </button>
                   </p>
                 </div>
@@ -420,7 +434,7 @@ export default function SearchView() {
                 <div className="py-8">
                   <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                    Popular Searches
+                    {tr('عمليات بحث شائعة', 'Popular Searches')}
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {popularSearches.map((term) => (

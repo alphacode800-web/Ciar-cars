@@ -68,7 +68,7 @@ const imageVariants = {
 };
 
 // ─── Component ──────────────────────────────────────────────────────────────
-export function HeroSection() {
+export function HeroSection({ cmsContent: _cmsContent }: { cmsContent?: unknown } = {}) {
   const { t, isRTL } = useTranslation();
   const { setView, setFilters, setSearchQuery } = useAppStore();
   const [searchValue, setSearchValue] = useState('');

@@ -57,10 +57,12 @@ import {
   TRANSMISSION_TYPES,
   SPECIFICATION_GROUPS,
 } from '@/lib/constants';
+import { resolveVehicleImageUrl, getVehicleImageById } from '@/lib/car-images';
 import { useAppStore } from '@/store/app-store';
 import { useCarStore } from '@/store/car-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTranslation } from '@/hooks/use-translation';
 import type {
   Car,
   CarImage,
@@ -75,8 +77,8 @@ function formatPrice(price: number): string {
   return new Intl.NumberFormat('en-US').format(Math.round(price));
 }
 
-function formatDate(date: string | Date): string {
-  return new Date(date).toLocaleDateString('en-US', {
+function formatDate(date: string | Date, locale: string): string {
+  return new Date(date).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -141,14 +143,37 @@ function DetailSkeleton() {
 
 // ============ Image Gallery ============
 
-function ImageGallery({ images }: { images: CarImage[] }) {
+function ImageGallery({
+  images,
+  carId,
+  vehicleType,
+}: {
+  images: CarImage[];
+  carId: string;
+  vehicleType?: string | null;
+}) {
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
+  const isMotorcycle = vehicleType === 'motorcycle';
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const allImages =
     images.length > 0
-      ? images
-      : [{ id: 'placeholder', url: '/placeholder-car.png', isPrimary: true, order: 0, carId: '' }];
+      ? images.map((img, idx) => ({
+          ...img,
+          url: resolveVehicleImageUrl(carId, vehicleType, img.url, idx),
+        }))
+      : [
+          {
+            id: 'placeholder',
+            url: resolveVehicleImageUrl(carId, vehicleType, null, 0),
+            isPrimary: true,
+            order: 0,
+            carId,
+          },
+        ];
 
   const navigate = (dir: -1 | 1) => {
     setCurrentIndex((prev) => {
@@ -157,13 +182,19 @@ function ImageGallery({ images }: { images: CarImage[] }) {
     });
   };
 
+  const PrevIcon = isRTL ? ChevronRight : ChevronLeft;
+  const NextIcon = isRTL ? ChevronLeft : ChevronRight;
+
   return (
     <>
       {/* Main image */}
       <div className="relative group rounded-2xl overflow-hidden bg-muted aspect-[4/3]">
         <img
           src={allImages[currentIndex].url}
-          alt={allImages[currentIndex].alt || `Car image ${currentIndex + 1}`}
+          alt={allImages[currentIndex].alt || tr(
+            isMotorcycle ? `صورة الدراجة ${currentIndex + 1}` : `صورة السيارة ${currentIndex + 1}`,
+            isMotorcycle ? `Motorcycle image ${currentIndex + 1}` : `Car image ${currentIndex + 1}`
+          )}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
         />
 
@@ -173,24 +204,24 @@ function ImageGallery({ images }: { images: CarImage[] }) {
             <Button
               variant="ghost"
               size="icon"
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+              className="absolute start-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
               onClick={() => navigate(-1)}
             >
-              <ChevronLeft className="w-5 h-5" />
+              <PrevIcon className="w-5 h-5" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+              className="absolute end-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
               onClick={() => navigate(1)}
             >
-              <ChevronRight className="w-5 h-5" />
+              <NextIcon className="w-5 h-5" />
             </Button>
           </>
         )}
 
         {/* Counter + fullscreen */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+        <div className="absolute bottom-3 start-3 end-3 flex items-center justify-between">
           <span className="text-xs px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white font-medium">
             {currentIndex + 1} / {allImages.length}
           </span>
@@ -221,7 +252,7 @@ function ImageGallery({ images }: { images: CarImage[] }) {
             >
               <img
                 src={img.url}
-                alt={`Thumbnail ${idx + 1}`}
+                alt={tr(`صورة مصغرة ${idx + 1}`, `Thumbnail ${idx + 1}`)}
                 className="w-full h-full object-cover"
               />
             </button>
@@ -232,13 +263,16 @@ function ImageGallery({ images }: { images: CarImage[] }) {
       {/* Lightbox */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
         <DialogContent className="max-w-5xl p-0 bg-black/95 border-none">
-          <DialogTitle className="sr-only">Image Lightbox</DialogTitle>
+          <DialogTitle className="sr-only">{tr('عرض الصور', 'Image Lightbox')}</DialogTitle>
           <div className="relative w-full aspect-[16/10] flex items-center justify-center">
             <AnimatePresence mode="wait">
               <motion.img
                 key={currentIndex}
                 src={allImages[currentIndex].url}
-                alt={allImages[currentIndex].alt || `Car image ${currentIndex + 1}`}
+                alt={allImages[currentIndex].alt || tr(
+                  isMotorcycle ? `صورة الدراجة ${currentIndex + 1}` : `صورة السيارة ${currentIndex + 1}`,
+                  isMotorcycle ? `Motorcycle image ${currentIndex + 1}` : `Car image ${currentIndex + 1}`
+                )}
                 className="max-w-full max-h-[80vh] object-contain rounded"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -249,18 +283,18 @@ function ImageGallery({ images }: { images: CarImage[] }) {
             <Button
               variant="ghost"
               size="icon"
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/10 text-white hover:bg-white/20"
+              className="absolute start-3 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/10 text-white hover:bg-white/20"
               onClick={() => navigate(-1)}
             >
-              <ChevronLeft className="w-6 h-6" />
+              <PrevIcon className="w-6 h-6" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/10 text-white hover:bg-white/20"
+              className="absolute end-3 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/10 text-white hover:bg-white/20"
               onClick={() => navigate(1)}
             >
-              <ChevronRight className="w-6 h-6" />
+              <NextIcon className="w-6 h-6" />
             </Button>
             <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-white/70 font-medium">
               {currentIndex + 1} / {allImages.length}
@@ -278,17 +312,19 @@ function QuickSpecCard({
   icon: Icon,
   label,
   value,
+  naLabel = 'N/A',
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string | number | null | undefined;
+  naLabel?: string;
 }) {
   return (
     <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-muted/50 border border-border/40 text-center min-w-0">
       <Icon className="w-4.5 h-4.5 text-muted-foreground flex-shrink-0" />
       <span className="text-xs text-muted-foreground truncate w-full">{label}</span>
       <span className="text-sm font-semibold text-foreground truncate w-full">
-        {value ?? 'N/A'}
+        {value ?? naLabel}
       </span>
     </div>
   );
@@ -330,21 +366,25 @@ function StarRating({ rating, onChange }: { rating: number; onChange?: (r: numbe
 // ============ Review Item ============
 
 function ReviewItem({ review }: { review: Review & { user?: { id: string; name?: string | null; avatar?: string | null } } }) {
+  const { locale } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
+
   return (
     <div className="flex gap-3 py-4">
       <Avatar className="h-10 w-10 flex-shrink-0">
         <AvatarImage src={review.user?.avatar || undefined} />
         <AvatarFallback className="text-xs">
-          {getInitials(review.user?.name || 'User')}
+          {getInitials(review.user?.name || tr('مستخدم', 'User'))}
         </AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-medium text-foreground">
-            {review.user?.name || 'Anonymous'}
+            {review.user?.name || tr('مجهول', 'Anonymous')}
           </span>
           <span className="text-xs text-muted-foreground">
-            {formatDate(review.createdAt)}
+            {formatDate(review.createdAt, locale)}
           </span>
         </div>
         <div className="mt-0.5">
@@ -363,6 +403,9 @@ function ReviewItem({ review }: { review: Review & { user?: { id: string; name?:
 // ============ Review Form ============
 
 function ReviewForm({ carId, onSubmitted }: { carId: string; onSubmitted: () => void }) {
+  const { locale } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -390,13 +433,13 @@ function ReviewForm({ carId, onSubmitted }: { carId: string; onSubmitted: () => 
 
   return (
     <div className="space-y-4 p-4 rounded-xl border border-border/60 bg-muted/30">
-      <h4 className="text-sm font-semibold text-foreground">Write a Review</h4>
+      <h4 className="text-sm font-semibold text-foreground">{tr('اكتب تقييمًا', 'Write a Review')}</h4>
       <div>
-        <span className="text-xs text-muted-foreground mb-1 block">Your Rating</span>
+        <span className="text-xs text-muted-foreground mb-1 block">{tr('تقييمك', 'Your Rating')}</span>
         <StarRating rating={rating} onChange={setRating} />
       </div>
       <Textarea
-        placeholder="Share your experience with this car..."
+        placeholder={tr('شارك تجربتك مع هذه السيارة...', 'Share your experience with this car...')}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
         rows={3}
@@ -407,7 +450,7 @@ function ReviewForm({ carId, onSubmitted }: { carId: string; onSubmitted: () => 
         disabled={rating === 0 || isSubmitting}
         onClick={handleSubmit}
       >
-        {isSubmitting ? 'Submitting...' : 'Submit Review'}
+        {isSubmitting ? tr('جارٍ الإرسال...', 'Submitting...') : tr('إرسال التقييم', 'Submit Review')}
       </Button>
     </div>
   );
@@ -416,17 +459,24 @@ function ReviewForm({ carId, onSubmitted }: { carId: string; onSubmitted: () => 
 // ============ Similar Car Card ============
 
 function SimilarCarCard({ car, onClick }: { car: Record<string, unknown>; onClick: () => void }) {
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
+
   const c = car as unknown as {
     id: string;
     title: string;
     year: number;
     price: number;
     currency: string;
+    vehicleType?: string | null;
     primaryImage?: string | null;
     city: string;
     condition: string;
     mileage?: number | null;
   };
+
+  const imageSrc = getVehicleImageById(c.id, c.vehicleType, c.primaryImage);
 
   const conditionColor =
     c.condition === 'new'
@@ -439,24 +489,19 @@ function SimilarCarCard({ car, onClick }: { car: Record<string, unknown>; onClic
       onClick={onClick}
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-        {c.primaryImage ? (
-          <img
-            src={c.primaryImage}
-            alt={c.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Car className="w-12 h-12 text-muted-foreground/20" />
-          </div>
-        )}
+        <img
+          src={imageSrc}
+          alt={c.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
         <Badge
           className={cn(
-            'absolute top-2 left-2 text-[10px] font-medium border',
+            'absolute top-2 text-[10px] font-medium border',
+            isRTL ? 'right-2' : 'left-2',
             conditionColor
           )}
         >
-          {c.condition === 'new' ? 'New' : 'Used'}
+          {c.condition === 'new' ? tr('جديدة', 'New') : tr('مستعملة', 'Used')}
         </Badge>
       </div>
       <CardContent className="p-3">
@@ -485,6 +530,10 @@ export default function CarDetailView() {
   const { viewParams, setView } = useAppStore();
   const { setCurrentCar } = useCarStore();
   const { isAuthenticated, user } = useAuthStore();
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
+  const na = tr('غير متوفر', 'N/A');
 
   const carId = viewParams.carId as string;
 
@@ -511,10 +560,19 @@ export default function CarDetailView() {
     }
   }, [carId, setCurrentCar]);
 
-  // Fetch similar cars
+  // Fetch similar / AI-recommended cars
   const fetchSimilar = useCallback(async () => {
     if (!carId) return;
     try {
+      const aiRes = await fetch(
+        `/api/ai/recommendations?carId=${encodeURIComponent(carId)}&limit=4&locale=ar`,
+        { credentials: 'include' }
+      );
+      const aiJson = await aiRes.json();
+      if (aiJson.success && Array.isArray(aiJson.data?.cars) && aiJson.data.cars.length > 0) {
+        setSimilarCars(aiJson.data.cars as Record<string, unknown>[]);
+        return;
+      }
       const res = await fetch(`/api/cars?limit=4&sortBy=createdAt&sortOrder=desc`);
       const json = (await res.json()) as PaginatedResponse<Record<string, unknown>>;
       if (json.data) {
@@ -533,15 +591,18 @@ export default function CarDetailView() {
   if (isLoading) return <DetailSkeleton />;
   if (!car) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="text-center">
           <Car className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-foreground">Car not found</h2>
+          <h2 className="text-xl font-semibold text-foreground">{tr('السيارة غير موجودة', 'Car not found')}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            The car you&apos;re looking for doesn&apos;t exist or has been removed.
+            {tr(
+              'السيارة التي تبحث عنها غير موجودة أو تم حذفها.',
+              "The car you're looking for doesn't exist or has been removed."
+            )}
           </p>
           <Button variant="outline" className="mt-4" onClick={() => setView('listing')}>
-            Browse all cars
+            {tr('تصفّح كل السيارات', 'Browse all cars')}
           </Button>
         </div>
       </div>
@@ -555,7 +616,7 @@ export default function CarDetailView() {
   // Group specs
   const specsByGroup = specs.reduce<Record<string, CarSpecification[]>>(
     (acc, spec) => {
-      const group = spec.group || 'General';
+      const group = spec.group || tr('عام', 'General');
       if (!acc[group]) acc[group] = [];
       acc[group].push(spec);
       return acc;
@@ -563,23 +624,29 @@ export default function CarDetailView() {
     {}
   );
 
+  const reviewCount = car.reviewCount || 0;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Back button */}
         <motion.div
-          initial={{ opacity: 0, x: -8 }}
+          initial={{ opacity: 0, x: isRTL ? 8 : -8 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.2 }}
         >
           <Button
             variant="ghost"
             size="sm"
-            className="mb-5 -ml-2 text-muted-foreground hover:text-foreground"
+            className="mb-5 -ms-2 text-muted-foreground hover:text-foreground"
             onClick={() => setView('listing')}
           >
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Back to listings
+            {isRTL ? (
+              <ChevronRight className="w-4 h-4 me-1" />
+            ) : (
+              <ChevronLeft className="w-4 h-4 me-1" />
+            )}
+            {tr('العودة للقوائم', 'Back to listings')}
           </Button>
         </motion.div>
 
@@ -591,7 +658,7 @@ export default function CarDetailView() {
             transition={{ duration: 0.35 }}
             className="lg:col-span-3"
           >
-            <ImageGallery images={images} />
+            <ImageGallery images={images} carId={car.id} vehicleType={car.vehicleType} />
           </motion.div>
 
           {/* Right: Info (2 cols) */}
@@ -610,7 +677,7 @@ export default function CarDetailView() {
                   : 'bg-amber-500/10 text-amber-600 border-amber-200'
               )}
             >
-              {car.condition === 'new' ? 'Brand New' : 'Pre-Owned'}
+              {car.condition === 'new' ? tr('جديدة تمامًا', 'Brand New') : tr('مستعملة', 'Pre-Owned')}
             </Badge>
 
             {/* Title */}
@@ -619,10 +686,10 @@ export default function CarDetailView() {
             </h1>
 
             {/* Meta row */}
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
               <span className="flex items-center gap-1">
                 <Eye className="w-3.5 h-3.5" />
-                {car.viewsCount} views
+                {tr(`${car.viewsCount} مشاهدة`, `${car.viewsCount} views`)}
               </span>
               <span>·</span>
               <span className="flex items-center gap-1">
@@ -630,7 +697,7 @@ export default function CarDetailView() {
                 {car.city}, {car.country}
               </span>
               <span>·</span>
-              <span>{formatDate(car.createdAt)}</span>
+              <span>{formatDate(car.createdAt, locale)}</span>
             </div>
 
             {/* Price */}
@@ -641,41 +708,44 @@ export default function CarDetailView() {
                 </span>
                 {car.isNegotiable && (
                   <Badge variant="secondary" className="text-xs">
-                    Negotiable
+                    {tr('قابل للتفاوض', 'Negotiable')}
                   </Badge>
                 )}
               </div>
               {car.isAvailableForRent && car.rentalPriceDaily && (
                 <p className="text-sm text-muted-foreground mt-1.5">
-                  Rent from{' '}
+                  {tr('الإيجار من', 'Rent from')}{' '}
                   <span className="font-semibold text-foreground">
                     {CURRENCY.symbol} {formatPrice(car.rentalPriceDaily)}
                   </span>{' '}
-                  / day
+                  {tr('/ يوم', '/ day')}
                 </p>
               )}
             </div>
 
             {/* Quick specs grid */}
             <div className="grid grid-cols-3 gap-2.5">
-              <QuickSpecCard icon={Calendar} label="Year" value={car.year} />
+              <QuickSpecCard icon={Calendar} label={tr('السنة', 'Year')} value={car.year} naLabel={na} />
               <QuickSpecCard
                 icon={Gauge}
-                label="Mileage"
-                value={car.mileage ? `${formatPrice(car.mileage)} km` : null}
+                label={tr('المسافة', 'Mileage')}
+                value={car.mileage ? `${formatPrice(car.mileage)} ${tr('كم', 'km')}` : null}
+                naLabel={na}
               />
               <QuickSpecCard
                 icon={Fuel}
-                label="Fuel"
+                label={tr('الوقود', 'Fuel')}
                 value={car.fuelType ? getFuelTypeLabel(car.fuelType) : null}
+                naLabel={na}
               />
               <QuickSpecCard
                 icon={Settings2}
-                label="Transmission"
+                label={tr('ناقل الحركة', 'Transmission')}
                 value={car.transmission ? getTransmissionLabel(car.transmission) : null}
+                naLabel={na}
               />
-              <QuickSpecCard icon={Users} label="Seats" value={car.seats} />
-              <QuickSpecCard icon={DoorOpen} label="Doors" value={car.doors} />
+              <QuickSpecCard icon={Users} label={tr('المقاعد', 'Seats')} value={car.seats} naLabel={na} />
+              <QuickSpecCard icon={DoorOpen} label={tr('الأبواب', 'Doors')} value={car.doors} naLabel={na} />
             </div>
 
             {/* Action buttons */}
@@ -692,15 +762,15 @@ export default function CarDetailView() {
                 <Heart
                   className={cn('w-4 h-4', isFavorited && 'fill-current')}
                 />
-                {isFavorited ? 'Saved' : 'Save'}
+                {isFavorited ? tr('محفوظة', 'Saved') : tr('حفظ', 'Save')}
               </Button>
               <Button variant="outline" size="sm" className="gap-2 flex-1 min-w-[120px]">
                 <Share2 className="w-4 h-4" />
-                Share
+                {tr('مشاركة', 'Share')}
               </Button>
               <Button variant="ghost" size="sm" className="gap-2">
                 <Flag className="w-4 h-4" />
-                Report
+                {tr('إبلاغ', 'Report')}
               </Button>
             </div>
 
@@ -712,12 +782,12 @@ export default function CarDetailView() {
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={car.owner.avatar || undefined} />
                       <AvatarFallback>
-                        {getInitials(car.owner.name || 'User')}
+                        {getInitials(car.owner.name || tr('مستخدم', 'User'))}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-semibold text-foreground truncate">
-                        {car.owner.name || 'Anonymous'}
+                        {car.owner.name || tr('مجهول', 'Anonymous')}
                       </h4>
                       {car.owner.businessName && (
                         <p className="text-xs text-muted-foreground truncate">
@@ -732,7 +802,7 @@ export default function CarDetailView() {
                           </span>
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          ({car.owner.totalReviews || 0} reviews)
+                          ({tr(`${car.owner.totalReviews || 0} تقييم`, `${car.owner.totalReviews || 0} reviews`)})
                         </span>
                       </div>
                     </div>
@@ -740,7 +810,7 @@ export default function CarDetailView() {
                   <div className="flex gap-2.5 mt-4">
                     <Button className="flex-1 gap-2" size="sm">
                       <Phone className="w-4 h-4" />
-                      Contact Seller
+                      {tr('تواصل مع البائع', 'Contact Seller')}
                     </Button>
                     <Button
                       variant="outline"
@@ -749,7 +819,7 @@ export default function CarDetailView() {
                       onClick={() => setView('chat')}
                     >
                       <MessageCircle className="w-4 h-4" />
-                      Start Chat
+                      {tr('بدء محادثة', 'Start Chat')}
                     </Button>
                   </div>
                 </CardContent>
@@ -763,13 +833,13 @@ export default function CarDetailView() {
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-violet-600" />
                     <h4 className="text-sm font-semibold text-foreground">
-                      Available for Rental
+                      {tr('متاحة للإيجار', 'Available for Rental')}
                     </h4>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     {car.rentalPriceDaily && (
                       <div className="text-center p-2 rounded-lg bg-background border border-border/40">
-                        <p className="text-xs text-muted-foreground">Daily</p>
+                        <p className="text-xs text-muted-foreground">{tr('يومي', 'Daily')}</p>
                         <p className="text-sm font-bold text-foreground mt-0.5">
                           {CURRENCY.symbol} {formatPrice(car.rentalPriceDaily)}
                         </p>
@@ -777,7 +847,7 @@ export default function CarDetailView() {
                     )}
                     {car.rentalPriceWeekly && (
                       <div className="text-center p-2 rounded-lg bg-background border border-border/40">
-                        <p className="text-xs text-muted-foreground">Weekly</p>
+                        <p className="text-xs text-muted-foreground">{tr('أسبوعي', 'Weekly')}</p>
                         <p className="text-sm font-bold text-foreground mt-0.5">
                           {CURRENCY.symbol} {formatPrice(car.rentalPriceWeekly)}
                         </p>
@@ -785,7 +855,7 @@ export default function CarDetailView() {
                     )}
                     {car.rentalPriceMonthly && (
                       <div className="text-center p-2 rounded-lg bg-background border border-border/40">
-                        <p className="text-xs text-muted-foreground">Monthly</p>
+                        <p className="text-xs text-muted-foreground">{tr('شهري', 'Monthly')}</p>
                         <p className="text-sm font-bold text-foreground mt-0.5">
                           {CURRENCY.symbol} {formatPrice(car.rentalPriceMonthly)}
                         </p>
@@ -797,7 +867,7 @@ export default function CarDetailView() {
                     onClick={() => setView('rental', { carId: car.id })}
                   >
                     <PlayCircle className="w-4 h-4" />
-                    Book This Car
+                    {tr('احجز هذه السيارة', 'Book This Car')}
                   </Button>
                 </CardContent>
               </Card>
@@ -818,25 +888,25 @@ export default function CarDetailView() {
                 value="overview"
                 className="rounded-lg text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                Overview
+                {tr('نظرة عامة', 'Overview')}
               </TabsTrigger>
               <TabsTrigger
                 value="specs"
                 className="rounded-lg text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                Features & Specs
+                {tr('المميزات والمواصفات', 'Features & Specs')}
               </TabsTrigger>
               <TabsTrigger
                 value="reviews"
                 className="rounded-lg text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                Reviews ({reviews.length})
+                {tr(`التقييمات (${reviews.length})`, `Reviews (${reviews.length})`)}
               </TabsTrigger>
               <TabsTrigger
                 value="location"
                 className="rounded-lg text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                Location
+                {tr('الموقع', 'Location')}
               </TabsTrigger>
             </TabsList>
 
@@ -847,12 +917,15 @@ export default function CarDetailView() {
                 <div className="lg:col-span-2">
                   <Card className="border-border/60 shadow-sm">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-base">Description</CardTitle>
+                      <CardTitle className="text-base">{tr('الوصف', 'Description')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                         {car.description ||
-                          'No description provided for this vehicle. Contact the seller for more details.'}
+                          tr(
+                            'لا يوجد وصف لهذه المركبة. تواصل مع البائع لمزيد من التفاصيل.',
+                            'No description provided for this vehicle. Contact the seller for more details.'
+                          )}
                       </p>
                     </CardContent>
                   </Card>
@@ -862,20 +935,32 @@ export default function CarDetailView() {
                 <div>
                   <Card className="border-border/60 shadow-sm">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-base">Key Specifications</CardTitle>
+                      <CardTitle className="text-base">{tr('المواصفات الرئيسية', 'Key Specifications')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {[
-                        { label: 'Brand', value: car.brand },
-                        { label: 'Model', value: car.model },
-                        { label: 'Year', value: String(car.year) },
-                        { label: 'Condition', value: car.condition === 'new' ? 'New' : 'Used' },
-                        { label: 'Body Type', value: car.bodyType ? getBodyTypeLabel(car.bodyType) : 'N/A' },
-                        { label: 'Engine', value: car.engineSize || 'N/A' },
-                        { label: 'Horsepower', value: car.horsepower ? `${car.horsepower} HP` : 'N/A' },
-                        { label: 'Drivetrain', value: car.drivetrain?.toUpperCase() || 'N/A' },
-                        { label: 'Color', value: car.exteriorColor || 'N/A' },
-                        { label: 'Owners', value: `${car.ownershipCount}` },
+                        { label: tr('الماركة', 'Brand'), value: car.brand },
+                        { label: tr('الموديل', 'Model'), value: car.model },
+                        { label: tr('السنة', 'Year'), value: String(car.year) },
+                        {
+                          label: tr('الحالة', 'Condition'),
+                          value: car.condition === 'new' ? tr('جديدة', 'New') : tr('مستعملة', 'Used'),
+                        },
+                        {
+                          label: tr('نوع الهيكل', 'Body Type'),
+                          value: car.bodyType ? getBodyTypeLabel(car.bodyType) : na,
+                        },
+                        { label: tr('المحرك', 'Engine'), value: car.engineSize || na },
+                        {
+                          label: tr('القوة الحصانية', 'Horsepower'),
+                          value: car.horsepower ? `${car.horsepower} ${tr('حصان', 'HP')}` : na,
+                        },
+                        {
+                          label: tr('نظام الدفع', 'Drivetrain'),
+                          value: car.drivetrain?.toUpperCase() || na,
+                        },
+                        { label: tr('اللون', 'Color'), value: car.exteriorColor || na },
+                        { label: tr('الملاك السابقون', 'Owners'), value: `${car.ownershipCount}` },
                       ].map((item) => (
                         <div
                           key={item.label}
@@ -898,7 +983,7 @@ export default function CarDetailView() {
               {Object.keys(specsByGroup).length > 0 && (
                 <Card className="border-border/60 shadow-sm mt-6">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Detailed Specifications</CardTitle>
+                    <CardTitle className="text-base">{tr('المواصفات التفصيلية', 'Detailed Specifications')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {Object.entries(specsByGroup).map(([group, groupSpecs]) => (
@@ -961,7 +1046,10 @@ export default function CarDetailView() {
                 ))}
                 {Object.keys(specsByGroup).length === 0 && (
                   <p className="text-sm text-muted-foreground col-span-full text-center py-12">
-                    No detailed specifications available for this car.
+                    {tr(
+                      'لا توجد مواصفات تفصيلية لهذه السيارة.',
+                      'No detailed specifications available for this car.'
+                    )}
                   </p>
                 )}
               </div>
@@ -981,7 +1069,10 @@ export default function CarDetailView() {
                         <StarRating rating={Math.round(car.averageRating || 0)} />
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {(car.reviewCount || 0)} review{(car.reviewCount || 0) !== 1 ? 's' : ''}
+                        {tr(
+                          `${reviewCount} تقييم`,
+                          `${reviewCount} review${reviewCount !== 1 ? 's' : ''}`
+                        )}
                       </p>
                     </div>
                     <Separator orientation="vertical" className="h-16" />
@@ -999,7 +1090,7 @@ export default function CarDetailView() {
                                 style={{ width: `${pct}%` }}
                               />
                             </div>
-                            <span className="text-xs text-muted-foreground w-6 text-right">
+                            <span className={cn('text-xs text-muted-foreground w-6', isRTL ? 'text-left' : 'text-right')}>
                               {count}
                             </span>
                           </div>
@@ -1016,7 +1107,10 @@ export default function CarDetailView() {
                   ))}
                   {reviews.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-8">
-                      No reviews yet. Be the first to review this car!
+                      {tr(
+                        'لا توجد تقييمات بعد. كن أول من يقيّم هذه السيارة!',
+                        'No reviews yet. Be the first to review this car!'
+                      )}
                     </p>
                   )}
                 </div>
@@ -1034,9 +1128,9 @@ export default function CarDetailView() {
                         onClick={() => setView('auth')}
                         className="text-primary hover:underline font-medium"
                       >
-                        Sign in
+                        {tr('سجّل الدخول', 'Sign in')}
                       </button>{' '}
-                      to write a review.
+                      {tr('لكتابة تقييم.', 'to write a review.')}
                     </p>
                   </div>
                 )}
@@ -1068,7 +1162,7 @@ export default function CarDetailView() {
                       <div className="text-center">
                         <MapPin className="w-8 h-8 text-muted-foreground/30 mx-auto" />
                         <p className="text-xs text-muted-foreground mt-2">
-                          Map view coming soon
+                          {tr('عرض الخريطة قريبًا', 'Map view coming soon')}
                         </p>
                       </div>
                     </div>
@@ -1089,9 +1183,9 @@ export default function CarDetailView() {
           >
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">Similar Cars</h2>
+                <h2 className="text-lg font-semibold text-foreground">{tr('سيارات مشابهة', 'Similar Cars')}</h2>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  You might also be interested in these
+                  {tr('قد تهمك هذه أيضًا', 'You might also be interested in these')}
                 </p>
               </div>
               <Button
@@ -1100,8 +1194,12 @@ export default function CarDetailView() {
                 className="text-sm text-muted-foreground hover:text-foreground"
                 onClick={() => setView('listing', { brand: car.brand })}
               >
-                View all
-                <ChevronRight className="w-4 h-4 ml-1" />
+                {tr('عرض الكل', 'View all')}
+                {isRTL ? (
+                  <ChevronLeft className="w-4 h-4 ms-1" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 ms-1" />
+                )}
               </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

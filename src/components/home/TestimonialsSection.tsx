@@ -88,7 +88,7 @@ const slideVariants = {
   }),
 };
 
-export function TestimonialsSection() {
+export function TestimonialsSection({ cmsContent: _cmsContent }: { cmsContent?: unknown } = {}) {
   const { t, dirClasses, isRTL } = useTranslation();
   const [[page, direction], setPage] = useState([0, 0]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);

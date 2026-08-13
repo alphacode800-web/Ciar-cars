@@ -20,6 +20,20 @@ export const CAR_IMAGES = [
   'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=800&h=500&fit=crop&q=80',
 ] as const;
 
+/** Pexels photo IDs — each page title explicitly describes a motorcycle/scooter. */
+const MOTORCYCLE_PEXELS_IDS = [
+  35784533, 37400941, 10460841, 12992448, 30231922, 35455560, 36990109,
+  20674847, 36186467, 2116475, 35508381, 10937620, 29759668, 18218591,
+  7539829, 13177782,
+] as const;
+
+function pexelsMotorcycleUrl(id: number): string {
+  return `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=800&h=500&fit=crop`;
+}
+
+/** Curated motorcycle / scooter photography (Pexels) — reliable URLs, no car images. */
+export const MOTORCYCLE_IMAGES = MOTORCYCLE_PEXELS_IDS.map(pexelsMotorcycleUrl);
+
 export const PAGE_HERO_IMAGES = {
   about:
     'https://images.unsplash.com/photo-1485291571159-772bcfc10da5?w=1600&h=600&fit=crop&q=80',
@@ -40,10 +54,55 @@ export const TEAM_PORTRAITS = [
   'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&q=80',
 ] as const;
 
+export function hashIdToIndex(id: string, length: number): number {
+  const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return hash % length;
+}
+
 export function getCarImageById(id: string, primaryImage?: string | null): string {
   if (primaryImage) return primaryImage;
-  const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return CAR_IMAGES[hash % CAR_IMAGES.length];
+  return CAR_IMAGES[hashIdToIndex(id, CAR_IMAGES.length)];
+}
+
+export function getMotorcycleImageById(id: string, primaryImage?: string | null): string {
+  if (primaryImage && isMotorcycleImageUrl(primaryImage)) return primaryImage;
+  return MOTORCYCLE_IMAGES[hashIdToIndex(id, MOTORCYCLE_IMAGES.length)]!;
+}
+
+export function getVehicleImageById(
+  id: string,
+  vehicleType: string | undefined | null,
+  primaryImage?: string | null
+): string {
+  if (vehicleType === 'motorcycle') {
+    return getMotorcycleImageById(id, primaryImage);
+  }
+  return getCarImageById(id, primaryImage);
+}
+
+export function getMotorcycleImageByIndex(index: number): string {
+  return MOTORCYCLE_IMAGES[index % MOTORCYCLE_IMAGES.length]!;
+}
+
+export function isMotorcycleImageUrl(url: string): boolean {
+  if (url.includes('images.pexels.com/photos/')) {
+    return MOTORCYCLE_PEXELS_IDS.some((id) => url.includes(`/photos/${id}/`));
+  }
+  return MOTORCYCLE_IMAGES.some((img) => url.startsWith(img.split('?')[0]!));
+}
+
+export function resolveVehicleImageUrl(
+  carId: string,
+  vehicleType: string | undefined | null,
+  url: string | undefined | null,
+  index = 0
+): string {
+  if (vehicleType === 'motorcycle') {
+    if (url && isMotorcycleImageUrl(url)) return url;
+    return getMotorcycleImageByIndex(hashIdToIndex(carId, MOTORCYCLE_IMAGES.length) + index);
+  }
+  if (url) return url;
+  return getCarImageById(carId, null);
 }
 
 export function getCarImageByIndex(index: number): string {

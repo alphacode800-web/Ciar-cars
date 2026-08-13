@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Wallet,
@@ -8,26 +8,21 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   ArrowLeftRight,
-  ArrowRight,
   ArrowUpRight,
   ArrowDownLeft,
   RefreshCw,
   ShoppingBag,
   Gift,
   Loader2,
-  X,
-  CheckCircle,
   Filter,
   ChevronLeft,
   ChevronRight,
   CreditCard,
   Banknote,
-  TrendingUp,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
@@ -44,11 +39,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
 import { useAuthStore } from '@/store/auth-store';
+import { useTranslation } from '@/hooks/use-translation';
 import { CURRENCY, WALLET_TRANSACTION_TYPES, DEFAULT_PAGE_SIZE } from '@/lib/constants';
 import { cn } from '@/lib/utils';
-import type { WalletTransaction, WalletTransactionType, ApiResponse, PaginatedResponse } from '@/types';
+import type { WalletTransaction, WalletTransactionType } from '@/types';
 import { format, parseISO } from 'date-fns';
 
 // ============ Types ============
@@ -57,6 +52,8 @@ interface WalletData {
   balance: number;
   transactions: WalletTransaction[];
 }
+
+type TrFn = (ar: string, en: string) => string;
 
 // ============ Icon mapping ============
 
@@ -91,27 +88,20 @@ function getTransactionColor(type: WalletTransactionType) {
   }
 }
 
-function getTransactionBadgeVariant(type: WalletTransactionType): 'default' | 'secondary' | 'destructive' | 'outline' {
-  switch (type) {
-    case 'topup':
-    case 'earning':
-    case 'refund':
-      return 'default';
-    case 'purchase':
-    case 'withdrawal':
-      return 'destructive';
-    default:
-      return 'secondary';
-  }
-}
-
 function isPositiveAmount(type: WalletTransactionType): boolean {
   return ['topup', 'earning', 'refund'].includes(type);
 }
 
-function formatAmount(amount: number, type: WalletTransactionType): string {
-  const prefix = isPositiveAmount(type) ? '+' : '-';
-  return `${prefix} ${CURRENCY.symbol}${Math.abs(amount).toLocaleString('en-US')}`;
+function getTxTypeLabel(value: string, tr: TrFn): string {
+  const map: Record<string, [string, string]> = {
+    topup: ['شحن', 'Top-Up'],
+    purchase: ['شراء', 'Purchase'],
+    refund: ['استرداد', 'Refund'],
+    earning: ['أرباح', 'Earning'],
+    withdrawal: ['سحب', 'Withdrawal'],
+  };
+  const pair = map[value];
+  return pair ? tr(pair[0], pair[1]) : value;
 }
 
 // ============ Preset Amounts ============
@@ -131,6 +121,10 @@ function TopUpModal({
   balance: number;
   onSuccess: () => void;
 }) {
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
+
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<string>('card');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -139,7 +133,7 @@ function TopUpModal({
   const handleSubmit = useCallback(async () => {
     const numAmount = parseFloat(amount);
     if (!numAmount || numAmount < 1) {
-      setError('Please enter a valid amount');
+      setError(tr('يرجى إدخال مبلغ صالح', 'Please enter a valid amount'));
       return;
     }
 
@@ -158,42 +152,42 @@ function TopUpModal({
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Top-up failed');
+        throw new Error(data.error || tr('فشل الشحن', 'Top-up failed'));
       }
 
       onOpenChange(false);
       setAmount('');
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Top-up failed. Please try again.');
+      setError(err instanceof Error ? err.message : tr('فشل الشحن. يرجى المحاولة مرة أخرى.', 'Top-up failed. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }
-  }, [amount, paymentMethod, onOpenChange, onSuccess]);
+  }, [amount, paymentMethod, onOpenChange, onSuccess, tr]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" dir={isRTL ? 'rtl' : 'ltr'}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5 text-primary" />
-            Top Up Wallet
+            {tr('شحن المحفظة', 'Top Up Wallet')}
           </DialogTitle>
           <DialogDescription>
-            Add funds to your CIAR wallet
+            {tr('أضف رصيدًا إلى محفظة CIAR', 'Add funds to your CIAR wallet')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {/* Current Balance */}
           <div className="rounded-lg bg-muted/50 p-3">
-            <p className="text-xs text-muted-foreground">Current Balance</p>
+            <p className="text-xs text-muted-foreground">{tr('الرصيد الحالي', 'Current Balance')}</p>
             <p className="text-lg font-bold">{CURRENCY.symbol}{balance.toLocaleString('en-US')}</p>
           </div>
 
           {/* Preset Amounts */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Quick Amount</label>
+            <label className="text-sm font-medium">{tr('مبلغ سريع', 'Quick Amount')}</label>
             <div className="grid grid-cols-4 gap-2">
               {PRESET_AMOUNTS.map((preset) => (
                 <Button
@@ -211,9 +205,9 @@ function TopUpModal({
 
           {/* Custom Amount */}
           <div className="space-y-2">
-            <label htmlFor="topup-amount">Custom Amount ({CURRENCY.code})</label>
+            <label htmlFor="topup-amount">{tr('مبلغ مخصص', 'Custom Amount')} ({CURRENCY.code})</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                 {CURRENCY.symbol}
               </span>
               <Input
@@ -223,19 +217,19 @@ function TopUpModal({
                 min={1}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="pl-8"
+                className="ps-8"
               />
             </div>
           </div>
 
           {/* Payment Method */}
           <div className="space-y-2">
-            <label>Payment Method</label>
+            <label>{tr('طريقة الدفع', 'Payment Method')}</label>
             <div className="space-y-2">
               <button
                 onClick={() => setPaymentMethod('card')}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors',
+                  'flex w-full items-center gap-3 rounded-lg border p-3 text-start transition-colors',
                   paymentMethod === 'card'
                     ? 'border-primary bg-primary/5'
                     : 'border-input hover:bg-muted/50'
@@ -243,14 +237,14 @@ function TopUpModal({
               >
                 <CreditCard className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="text-sm font-medium">Credit / Debit Card</p>
-                  <p className="text-xs text-muted-foreground">Visa, Mastercard, Meza</p>
+                  <p className="text-sm font-medium">{tr('بطاقة ائتمان / خصم', 'Credit / Debit Card')}</p>
+                  <p className="text-xs text-muted-foreground">{tr('فيزا، ماستركارد، ميزة', 'Visa, Mastercard, Meza')}</p>
                 </div>
               </button>
               <button
                 onClick={() => setPaymentMethod('bank')}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors',
+                  'flex w-full items-center gap-3 rounded-lg border p-3 text-start transition-colors',
                   paymentMethod === 'bank'
                     ? 'border-primary bg-primary/5'
                     : 'border-input hover:bg-muted/50'
@@ -258,8 +252,8 @@ function TopUpModal({
               >
                 <Banknote className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="text-sm font-medium">Bank Transfer</p>
-                  <p className="text-xs text-muted-foreground">Direct bank deposit</p>
+                  <p className="text-sm font-medium">{tr('تحويل بنكي', 'Bank Transfer')}</p>
+                  <p className="text-xs text-muted-foreground">{tr('إيداع بنكي مباشر', 'Direct bank deposit')}</p>
                 </div>
               </button>
             </div>
@@ -273,7 +267,7 @@ function TopUpModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {tr('إلغاء', 'Cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
@@ -283,12 +277,12 @@ function TopUpModal({
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Processing...
+                {tr('جاري المعالجة...', 'Processing...')}
               </>
             ) : (
               <>
                 <Plus className="h-4 w-4" />
-                Confirm Top Up
+                {tr('تأكيد الشحن', 'Confirm Top Up')}
               </>
             )}
           </Button>
@@ -303,10 +297,10 @@ function TopUpModal({
 function TransactionRowSkeleton() {
   return (
     <tr className="border-b last:border-0">
-      <td className="py-3 pr-4"><Skeleton className="h-4 w-20" /></td>
-      <td className="py-3 pr-4"><Skeleton className="h-4 w-32" /></td>
-      <td className="py-3 pr-4 text-right"><Skeleton className="ml-auto h-4 w-24" /></td>
-      <td className="py-3 text-right"><Skeleton className="ml-auto h-4 w-20" /></td>
+      <td className="py-3 pe-4"><Skeleton className="h-4 w-20" /></td>
+      <td className="py-3 pe-4"><Skeleton className="h-4 w-32" /></td>
+      <td className="py-3 pe-4 text-end"><Skeleton className="ms-auto h-4 w-24" /></td>
+      <td className="py-3 text-end"><Skeleton className="ms-auto h-4 w-20" /></td>
     </tr>
   );
 }
@@ -315,6 +309,10 @@ function TransactionRowSkeleton() {
 
 export default function WalletView() {
   const { user } = useAuthStore();
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+  const tr = useCallback((ar: string, en: string) => (isAr ? ar : en), [isAr]);
+
   const [walletData, setWalletData] = useState<WalletData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -324,6 +322,8 @@ export default function WalletView() {
   const [totalPages, setTotalPages] = useState(1);
 
   const [topUpOpen, setTopUpOpen] = useState(false);
+  const trRef = useRef(tr);
+  trRef.current = tr;
 
   // ============ Fetch Wallet ============
 
@@ -349,10 +349,10 @@ export default function WalletView() {
           setTotalPages(data.pagination.totalPages);
         }
       } else {
-        setError(data.error || 'Failed to load wallet');
+        setError(data.error || trRef.current('فشل تحميل المحفظة', 'Failed to load wallet'));
       }
     } catch {
-      setError('Failed to load wallet data');
+      setError(trRef.current('فشل تحميل بيانات المحفظة', 'Failed to load wallet data'));
     } finally {
       setIsLoading(false);
     }
@@ -374,16 +374,16 @@ export default function WalletView() {
   // ============ Render ============
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 md:px-6">
+    <div className="mx-auto max-w-5xl px-4 py-6 md:px-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
-        <h1 className="text-2xl font-bold md:text-3xl">My Wallet</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">{tr('محفظتي', 'My Wallet')}</h1>
         <p className="mt-1 text-muted-foreground">
-          Manage your funds, transactions, and payments
+          {tr('إدارة أموالك ومعاملاتك ومدفوعاتك', 'Manage your funds, transactions, and payments')}
         </p>
       </motion.div>
 
@@ -397,13 +397,13 @@ export default function WalletView() {
         <Card className="overflow-hidden">
           <div className="relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-6 md:p-8">
             {/* Background decoration */}
-            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
-            <div className="absolute -bottom-4 -left-4 h-24 w-24 rounded-full bg-white/5" />
+            <div className="absolute -end-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
+            <div className="absolute -bottom-4 -start-4 h-24 w-24 rounded-full bg-white/5" />
 
             <div className="relative">
               <div className="flex items-center gap-2 text-primary-foreground/80">
                 <Wallet className="h-5 w-5" />
-                <span className="text-sm font-medium">Available Balance</span>
+                <span className="text-sm font-medium">{tr('الرصيد المتاح', 'Available Balance')}</span>
               </div>
               <h2 className="mt-2 text-4xl font-bold text-primary-foreground md:text-5xl">
                 {CURRENCY.symbol}{isLoading ? '...' : balance.toLocaleString('en-US')}
@@ -418,24 +418,24 @@ export default function WalletView() {
           <div className="grid grid-cols-3 gap-0 border-t">
             <button
               onClick={() => setTopUpOpen(true)}
-              className="flex flex-col items-center gap-2 border-r p-4 transition-colors hover:bg-muted/50"
+              className="flex flex-col items-center gap-2 border-e p-4 transition-colors hover:bg-muted/50"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                 <Plus className="h-5 w-5" />
               </div>
-              <span className="text-xs font-medium">Top Up</span>
+              <span className="text-xs font-medium">{tr('شحن', 'Top Up')}</span>
             </button>
-            <button className="flex flex-col items-center gap-2 border-r p-4 transition-colors hover:bg-muted/50">
+            <button className="flex flex-col items-center gap-2 border-e p-4 transition-colors hover:bg-muted/50">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-50 text-orange-600">
                 <ArrowUpFromLine className="h-5 w-5" />
               </div>
-              <span className="text-xs font-medium">Withdraw</span>
+              <span className="text-xs font-medium">{tr('سحب', 'Withdraw')}</span>
             </button>
             <button className="flex flex-col items-center gap-2 p-4 transition-colors hover:bg-muted/50">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-50 text-violet-600">
                 <ArrowLeftRight className="h-5 w-5" />
               </div>
-              <span className="text-xs font-medium">Transfer</span>
+              <span className="text-xs font-medium">{tr('تحويل', 'Transfer')}</span>
             </button>
           </div>
         </Card>
@@ -450,8 +450,8 @@ export default function WalletView() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle className="text-lg">Transaction History</CardTitle>
-              <CardDescription>Your recent wallet transactions</CardDescription>
+              <CardTitle className="text-lg">{tr('سجل المعاملات', 'Transaction History')}</CardTitle>
+              <CardDescription>{tr('أحدث معاملات محفظتك', 'Your recent wallet transactions')}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5">
@@ -461,10 +461,10 @@ export default function WalletView() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="all">{tr('كل الأنواع', 'All Types')}</SelectItem>
                     {WALLET_TRANSACTION_TYPES.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
-                        {t.label}
+                        {getTxTypeLabel(t.value, tr)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -477,7 +477,7 @@ export default function WalletView() {
               <div className="py-8 text-center">
                 <p className="text-sm text-destructive">{error}</p>
                 <Button variant="outline" className="mt-2" onClick={() => fetchWallet(page, filterType)}>
-                  Retry
+                  {tr('إعادة المحاولة', 'Retry')}
                 </Button>
               </div>
             ) : isLoading && !walletData ? (
@@ -492,10 +492,12 @@ export default function WalletView() {
                   <Wallet className="h-8 w-8 text-muted-foreground/50" />
                 </div>
                 <p className="mt-2 text-sm font-medium text-muted-foreground">
-                  No transactions found
+                  {tr('لا توجد معاملات', 'No transactions found')}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {filterType !== 'all' ? 'Try changing the filter' : 'Top up your wallet to get started'}
+                  {filterType !== 'all'
+                    ? tr('جرّب تغيير الفلتر', 'Try changing the filter')
+                    : tr('اشحن محفظتك للبدء', 'Top up your wallet to get started')}
                 </p>
               </div>
             ) : (
@@ -503,20 +505,18 @@ export default function WalletView() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b text-left text-xs font-medium text-muted-foreground">
-                        <th className="pb-3 pr-4">Date</th>
-                        <th className="pb-3 pr-4">Type</th>
-                        <th className="pb-3 pr-4">Description</th>
-                        <th className="pb-3 text-right">Amount</th>
-                        <th className="pb-3 text-right">Balance</th>
+                      <tr className="border-b text-start text-xs font-medium text-muted-foreground">
+                        <th className="pb-3 pe-4">{tr('التاريخ', 'Date')}</th>
+                        <th className="pb-3 pe-4">{tr('النوع', 'Type')}</th>
+                        <th className="pb-3 pe-4">{tr('الوصف', 'Description')}</th>
+                        <th className="pb-3 text-end">{tr('المبلغ', 'Amount')}</th>
+                        <th className="pb-3 text-end">{tr('الرصيد', 'Balance')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       <AnimatePresence>
                         {transactions.map((tx, idx) => {
-                          const typeLabel = WALLET_TRANSACTION_TYPES.find(
-                            (t) => t.value === tx.type
-                          )?.label || tx.type;
+                          const typeLabel = getTxTypeLabel(tx.type, tr);
 
                           return (
                             <motion.tr
@@ -526,7 +526,7 @@ export default function WalletView() {
                               transition={{ delay: idx * 0.03 }}
                               className="border-b last:border-0"
                             >
-                              <td className="py-3 pr-4 whitespace-nowrap text-muted-foreground">
+                              <td className="py-3 pe-4 whitespace-nowrap text-muted-foreground">
                                 {tx.createdAt
                                   ? format(
                                       typeof tx.createdAt === 'string'
@@ -536,7 +536,7 @@ export default function WalletView() {
                                     )
                                   : '-'}
                               </td>
-                              <td className="py-3 pr-4">
+                              <td className="py-3 pe-4">
                                 <div className="flex items-center gap-2">
                                   <div
                                     className={cn(
@@ -549,12 +549,12 @@ export default function WalletView() {
                                   <span className="text-xs font-medium capitalize">{typeLabel}</span>
                                 </div>
                               </td>
-                              <td className="py-3 pr-4 max-w-[200px] truncate">
+                              <td className="py-3 pe-4 max-w-[200px] truncate">
                                 {tx.description || '-'}
                               </td>
                               <td
                                 className={cn(
-                                  'py-3 pr-4 text-right font-semibold whitespace-nowrap',
+                                  'py-3 pe-4 text-end font-semibold whitespace-nowrap',
                                   isPositiveAmount(tx.type as WalletTransactionType)
                                     ? 'text-emerald-600'
                                     : 'text-destructive'
@@ -570,7 +570,7 @@ export default function WalletView() {
                                   {Math.abs(tx.amount).toLocaleString('en-US')}
                                 </span>
                               </td>
-                              <td className="py-3 text-right font-medium text-muted-foreground whitespace-nowrap">
+                              <td className="py-3 text-end font-medium text-muted-foreground whitespace-nowrap">
                                 {CURRENCY.symbol}{tx.balance.toLocaleString('en-US')}
                               </td>
                             </motion.tr>
@@ -591,8 +591,8 @@ export default function WalletView() {
                       onClick={() => setPage((p) => p - 1)}
                       className="gap-1"
                     >
-                      <ChevronLeft className="h-3.5 w-3.5" />
-                      Previous
+                      <ChevronLeft className={cn('h-3.5 w-3.5', isRTL && 'rotate-180')} />
+                      {tr('السابق', 'Previous')}
                     </Button>
                     <div className="flex items-center gap-1">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -626,8 +626,8 @@ export default function WalletView() {
                       onClick={() => setPage((p) => p + 1)}
                       className="gap-1"
                     >
-                      Next
-                      <ChevronRight className="h-3.5 w-3.5" />
+                      {tr('التالي', 'Next')}
+                      <ChevronRight className={cn('h-3.5 w-3.5', isRTL && 'rotate-180')} />
                     </Button>
                   </div>
                 )}

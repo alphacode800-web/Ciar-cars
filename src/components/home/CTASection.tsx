@@ -48,7 +48,7 @@ function Particle({
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export function CTASection() {
+export function CTASection({ cmsContent: _cmsContent }: { cmsContent?: unknown } = {}) {
   const { setView } = useAppStore();
   const { isAuthenticated } = useAuthStore();
   const { t } = useTranslation();

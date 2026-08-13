@@ -83,6 +83,7 @@ import {
   getUserDetail,
   type AdminUserFilters,
 } from '@/lib/admin-api';
+import { useAdminTranslation } from '@/hooks/use-admin-translation';
 import { CURRENCY } from '@/lib/constants';
 import { toast } from 'sonner';
 
@@ -220,6 +221,8 @@ const ROLES = [
 ];
 
 export default function UsersSection({ onNavigate: _onNavigate }: UsersSectionProps) {
+  const { t } = useAdminTranslation();
+
   // List state
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({
@@ -525,7 +528,7 @@ export default function UsersSection({ onNavigate: _onNavigate }: UsersSectionPr
         <div className="p-4 rounded-full bg-red-100 dark:bg-red-950/30 mb-4">
           <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">Failed to Load Users</h3>
+        <h3 className="text-lg font-semibold mb-2">{t('usersMgmt.loadError')}</h3>
         <p className="text-muted-foreground text-sm mb-6 max-w-md text-center">
           {error}
         </p>
@@ -533,8 +536,8 @@ export default function UsersSection({ onNavigate: _onNavigate }: UsersSectionPr
           onClick={() => fetchUsers(1)}
           className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
         >
-          <RefreshCcw className="w-4 h-4 mr-2" />
-          Try Again
+          <RefreshCcw className="w-4 h-4 me-2" />
+          {t('usersMgmt.tryAgain')}
         </Button>
       </motion.div>
     );
@@ -556,12 +559,12 @@ export default function UsersSection({ onNavigate: _onNavigate }: UsersSectionPr
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Users Management</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t('usersMgmt.title')}</h2>
           <p className="text-muted-foreground">
-            Manage all registered users on the platform.
+            {t('usersMgmt.subtitle')}
             {pagination.total > 0 && (
-              <span className="font-medium text-foreground ml-1">
-                {pagination.total} total users
+              <span className="font-medium text-foreground ms-1">
+                {pagination.total} {t('usersMgmt.totalUsers')}
               </span>
             )}
           </p>
@@ -578,7 +581,7 @@ export default function UsersSection({ onNavigate: _onNavigate }: UsersSectionPr
         <div className="relative flex-1 sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name or email..."
+            placeholder={t('usersMgmt.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-10"
@@ -587,7 +590,7 @@ export default function UsersSection({ onNavigate: _onNavigate }: UsersSectionPr
         <Select value={roleFilter} onValueChange={handleRoleFilterChange}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
-            <SelectValue placeholder="Filter by role" />
+            <SelectValue placeholder={t('usersMgmt.filterRole')} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Roles</SelectItem>
@@ -599,7 +602,7 @@ export default function UsersSection({ onNavigate: _onNavigate }: UsersSectionPr
         </Select>
         <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
           <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by status" />
+            <SelectValue placeholder={t('usersMgmt.filterStatus')} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>

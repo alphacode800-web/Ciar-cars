@@ -17,6 +17,7 @@ import {
   RefreshCcw,
   AlertCircle,
   Layers,
+  Sparkles,
 } from 'lucide-react';
 import {
   DndContext,
@@ -42,6 +43,7 @@ import {
   createHomepageSection,
   updateHomepageSection,
   deleteHomepageSection,
+  generateSeoAi,
 } from '@/lib/admin-api';
 
 import { Button } from '@/components/ui/button';
@@ -50,6 +52,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
@@ -76,6 +79,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useAdminTranslation } from '@/hooks/use-admin-translation';
+import { pickLocalized, type LocalizedString } from '@/lib/cms-content';
 
 // ============ TYPES ============
 
@@ -89,14 +94,16 @@ interface HomepageSection {
   isActive: boolean;
 }
 
-const SECTION_TYPES = [
-  { value: 'hero', label: 'Hero', icon: LayoutDashboard },
-  { value: 'featured_cars', label: 'Featured Cars', icon: Star },
-  { value: 'categories', label: 'Categories', icon: Grid3x3 },
-  { value: 'banner', label: 'Banner', icon: ImageIcon },
-  { value: 'testimonials', label: 'Testimonials', icon: MessageSquare },
-  { value: 'stats', label: 'Stats', icon: BarChart3 },
-  { value: 'cta', label: 'Call to Action', icon: Megaphone },
+const SECTION_TYPE_DEFS = [
+  { value: 'hero', icon: LayoutDashboard },
+  { value: 'banner', icon: ImageIcon },
+  { value: 'gallery', icon: Layers },
+  { value: 'featured_cars', icon: Star },
+  { value: 'categories', icon: Grid3x3 },
+  { value: 'stats', icon: BarChart3 },
+  { value: 'testimonials', icon: MessageSquare },
+  { value: 'payments', icon: Megaphone },
+  { value: 'cta', icon: Megaphone },
 ] as const;
 
 const SECTION_TYPE_COLORS: Record<string, string> = {
@@ -107,6 +114,8 @@ const SECTION_TYPE_COLORS: Record<string, string> = {
   testimonials: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
   stats: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
   cta: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  gallery: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+  payments: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
 };
 
 // ============ SECTION TYPE ICON COMPONENT ============
@@ -135,9 +144,27 @@ function SectionTypeIcon({ type, className }: { type: string; className?: string
 
 // ============ HELPERS ============
 
-function getSectionLabel(type: string): string {
-  const found = SECTION_TYPES.find((t) => t.value === type);
-  return found ? found.label : type.replace(/_/g, ' ');
+function getSectionTypeLabel(type: string, t: (key: string) => string): string {
+  const key = `homepage.types.${type}`;
+  const label = t(key);
+  return label === key ? type.replace(/_/g, ' ') : label;
+}
+
+function resolveSectionDisplay(
+  section: HomepageSection,
+  locale: string,
+  t: (key: string) => string
+): { title: string; subtitle: string } {
+  const content = (section.content && typeof section.content === 'object'
+    ? section.content
+    : {}) as { title?: LocalizedString; subtitle?: LocalizedString };
+  const title =
+    pickLocalized(content.title, locale) ||
+    section.title ||
+    getSectionTypeLabel(section.type, t);
+  const subtitle =
+    pickLocalized(content.subtitle, locale) || section.subtitle || '';
+  return { title, subtitle };
 }
 
 // ============ SORTABLE ITEM ============
@@ -148,12 +175,16 @@ function SortableSectionItem({
   onEdit,
   onDelete,
   toggleLoading,
+  t,
+  locale,
 }: {
   section: HomepageSection;
   onToggle: (section: HomepageSection) => void;
   onEdit: (section: HomepageSection) => void;
   onDelete: (section: HomepageSection) => void;
   toggleLoading: boolean;
+  t: (key: string) => string;
+  locale: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: section.id });
@@ -164,6 +195,8 @@ function SortableSectionItem({
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 10 : 0,
   };
+
+  const { title, subtitle } = resolveSectionDisplay(section, locale, t);
 
   return (
     <div
@@ -178,7 +211,7 @@ function SortableSectionItem({
         {...attributes}
         {...listeners}
         className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors touch-none"
-        aria-label="Drag to reorder"
+        aria-label={t('homepage.dragReorder')}
       >
         <GripVertical className="w-4 h-4" />
       </button>
@@ -195,20 +228,18 @@ function SortableSectionItem({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium truncate">
-            {section.title || getSectionLabel(section.type)}
-          </p>
+          <p className="text-sm font-medium truncate">{title}</p>
           {!section.isActive && (
             <Badge
               variant="secondary"
               className="text-[10px] bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
             >
-              Hidden
+              {t('homepage.hidden')}
             </Badge>
           )}
         </div>
-        {section.subtitle && (
-          <p className="text-xs text-muted-foreground truncate">{section.subtitle}</p>
+        {subtitle && (
+          <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
         )}
       </div>
 
@@ -225,7 +256,7 @@ function SortableSectionItem({
         checked={section.isActive}
         onCheckedChange={() => onToggle(section)}
         disabled={toggleLoading}
-        aria-label={`Toggle ${section.title || section.type}`}
+        aria-label={title}
       />
 
       {/* Actions */}
@@ -236,7 +267,7 @@ function SortableSectionItem({
         onClick={() => onEdit(section)}
       >
         <Edit className="w-3.5 h-3.5" />
-        <span className="sr-only">Edit</span>
+        <span className="sr-only">{t('common.save')}</span>
       </Button>
       <Button
         variant="ghost"
@@ -245,7 +276,7 @@ function SortableSectionItem({
         onClick={() => onDelete(section)}
       >
         <Trash2 className="w-3.5 h-3.5" />
-        <span className="sr-only">Delete</span>
+        <span className="sr-only">{t('common.delete')}</span>
       </Button>
     </div>
   );
@@ -290,6 +321,7 @@ interface SectionFormData {
   title: string;
   subtitle: string;
   isActive: boolean;
+  contentJson: string;
 }
 
 const EMPTY_FORM: SectionFormData = {
@@ -297,9 +329,12 @@ const EMPTY_FORM: SectionFormData = {
   title: '',
   subtitle: '',
   isActive: true,
+  contentJson: '{\n  "title": { "en": "", "ar": "" }\n}',
 };
 
 export default function HomepageBuilderSection() {
+  const { t, locale } = useAdminTranslation();
+
   // Data state
   const [sections, setSections] = useState<HomepageSection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -337,14 +372,14 @@ export default function HomepageBuilderSection() {
         );
         setSections(sorted);
       } else {
-        setError(res.error || 'Failed to load homepage sections');
+        setError(res.error || t('homepage.loadError'));
       }
     } catch {
-      setError('Network error. Please try again.');
+      setError(t('homepage.networkError'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchSections();
@@ -372,9 +407,9 @@ export default function HomepageBuilderSection() {
           updateHomepageSection({ id: s.id, order: s.order })
         )
       );
-      toast.success('Section order updated');
+      toast.success(t('homepage.reordered'));
     } catch {
-      toast.error('Failed to update order');
+      toast.error(t('homepage.networkError'));
       fetchSections();
     }
   };
@@ -395,17 +430,13 @@ export default function HomepageBuilderSection() {
         isActive: newActive,
       });
       if (res.success) {
-        toast.success(
-          newActive
-            ? `"${section.title || section.type}" enabled`
-            : `"${section.title || section.type}" disabled`
-        );
+        toast.success(t('homepage.updated'));
       } else {
-        toast.error(res.error || 'Failed to update section');
+        toast.error(res.error || t('homepage.networkError'));
         fetchSections();
       }
     } catch {
-      toast.error('Network error');
+      toast.error(t('homepage.networkError'));
       fetchSections();
     } finally {
       setActionLoading(null);
@@ -418,25 +449,33 @@ export default function HomepageBuilderSection() {
     setDialogLoading(true);
 
     try {
+      let content: unknown = {};
+      try {
+        content = JSON.parse(formData.contentJson || '{}');
+      } catch {
+        content = {};
+      }
+
       const payload: Parameters<typeof createHomepageSection>[0] = {
         type: formData.type,
         order: sections.length,
         isActive: formData.isActive,
+        content,
       };
       if (formData.title.trim()) payload.title = formData.title.trim();
       if (formData.subtitle.trim()) payload.subtitle = formData.subtitle.trim();
 
       const res = await createHomepageSection(payload);
       if (res.success) {
-        toast.success(`"${formData.title || getSectionLabel(formData.type)}" created`);
+        toast.success(t('homepage.created'));
         setAddOpen(false);
         setFormData(EMPTY_FORM);
         fetchSections();
       } else {
-        toast.error(res.error || 'Failed to create section');
+        toast.error(res.error || t('homepage.networkError'));
       }
     } catch {
-      toast.error('Network error');
+      toast.error(t('homepage.networkError'));
     } finally {
       setDialogLoading(false);
     }
@@ -448,28 +487,36 @@ export default function HomepageBuilderSection() {
     setDialogLoading(true);
 
     try {
+      let content: unknown = undefined;
+      try {
+        content = JSON.parse(formData.contentJson || '{}');
+      } catch {
+        toast.error(t('homepage.networkError'));
+        setDialogLoading(false);
+        return;
+      }
+
       const payload: Parameters<typeof updateHomepageSection>[0] = {
         id: editingSection.id,
         type: formData.type,
         isActive: formData.isActive,
+        title: formData.title.trim(),
+        subtitle: formData.subtitle.trim(),
+        content,
       };
-      if (formData.title.trim() !== (editingSection.title || ''))
-        payload.title = formData.title.trim();
-      if (formData.subtitle.trim() !== (editingSection.subtitle || ''))
-        payload.subtitle = formData.subtitle.trim();
 
       const res = await updateHomepageSection(payload);
       if (res.success) {
-        toast.success(`"${formData.title || getSectionLabel(formData.type)}" updated`);
+        toast.success(t('homepage.updated'));
         setEditOpen(false);
         setEditingSection(null);
         setFormData(EMPTY_FORM);
         fetchSections();
       } else {
-        toast.error(res.error || 'Failed to update section');
+        toast.error(res.error || t('homepage.networkError'));
       }
     } catch {
-      toast.error('Network error');
+      toast.error(t('homepage.networkError'));
     } finally {
       setDialogLoading(false);
     }
@@ -483,15 +530,15 @@ export default function HomepageBuilderSection() {
     try {
       const res = await deleteHomepageSection(deleteTarget.id);
       if (res.success) {
-        toast.success(`"${deleteTarget.title || deleteTarget.type}" deleted`);
+        toast.success(t('homepage.deleted'));
         setDeleteOpen(false);
         setDeleteTarget(null);
         fetchSections();
       } else {
-        toast.error(res.error || 'Failed to delete section');
+        toast.error(res.error || t('homepage.networkError'));
       }
     } catch {
-      toast.error('Network error');
+      toast.error(t('homepage.networkError'));
     } finally {
       setDialogLoading(false);
     }
@@ -505,6 +552,7 @@ export default function HomepageBuilderSection() {
       title: section.title || '',
       subtitle: section.subtitle || '',
       isActive: section.isActive,
+      contentJson: JSON.stringify(section.content ?? {}, null, 2),
     });
     setEditOpen(true);
   };
@@ -525,7 +573,7 @@ export default function HomepageBuilderSection() {
           className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
         >
           <RefreshCcw className="h-4 w-4" />
-          Retry
+          {t('common.retry')}
         </Button>
       </div>
     );
@@ -545,9 +593,9 @@ export default function HomepageBuilderSection() {
             <Layers className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Homepage Builder</h2>
+            <h2 className="text-lg font-semibold tracking-tight">{t('homepage.title')}</h2>
             <p className="text-muted-foreground text-xs">
-              {sections.length} section{sections.length !== 1 ? 's' : ''} configured
+              {sections.length} {t('homepage.sectionsConfigured')}
             </p>
           </div>
         </div>
@@ -559,15 +607,15 @@ export default function HomepageBuilderSection() {
             className="gap-1.5"
           >
             <RefreshCcw className="h-3.5 w-3.5" />
-            Refresh
+            {t('common.refresh')}
           </Button>
           <Button
             size="sm"
             onClick={() => setAddOpen(true)}
             className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
           >
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Add Section
+            <Plus className="h-3.5 w-3.5 me-1.5" />
+            {t('homepage.addSection')}
           </Button>
         </div>
       </div>
@@ -577,9 +625,9 @@ export default function HomepageBuilderSection() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Layers className="w-10 h-10 text-muted-foreground/50 mb-3" />
-            <p className="text-sm text-muted-foreground">No homepage sections yet</p>
+            <p className="text-sm text-muted-foreground">{t('homepage.noSections')}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Click &ldquo;Add Section&rdquo; to get started
+              {t('homepage.noSectionsHint')}
             </p>
           </CardContent>
         </Card>
@@ -607,6 +655,8 @@ export default function HomepageBuilderSection() {
                         setDeleteOpen(true);
                       }}
                       toggleLoading={actionLoading === section.id}
+                      t={t}
+                      locale={locale}
                     />
                   ))}
                 </div>
@@ -620,16 +670,16 @@ export default function HomepageBuilderSection() {
       <Dialog open={addOpen} onOpenChange={(open) => { if (!open) setAddOpen(false); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Homepage Section</DialogTitle>
+            <DialogTitle>{t('homepage.addTitle')}</DialogTitle>
             <DialogDescription>
-              Choose a section type and customize its content.
+              {t('homepage.addDesc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             {/* Type */}
             <div className="space-y-2">
-              <Label>Section Type *</Label>
+              <Label>{t('homepage.sectionTypeRequired')}</Label>
               <Select
                 value={formData.type}
                 onValueChange={(val) =>
@@ -637,14 +687,14 @@ export default function HomepageBuilderSection() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder={t('homepage.selectType')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {SECTION_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
+                  {SECTION_TYPE_DEFS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
                       <span className="flex items-center gap-2">
-                        <t.icon className="w-4 h-4" />
-                        {t.label}
+                        <item.icon className="w-4 h-4" />
+                        {getSectionTypeLabel(item.value, t)}
                       </span>
                     </SelectItem>
                   ))}
@@ -654,10 +704,10 @@ export default function HomepageBuilderSection() {
 
             {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="add-title">Title</Label>
+              <Label htmlFor="add-title">{t('homepage.titleLabel')}</Label>
               <Input
                 id="add-title"
-                placeholder="Section title..."
+                placeholder={t('homepage.titlePlaceholder')}
                 value={formData.title}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, title: e.target.value }))
@@ -667,10 +717,10 @@ export default function HomepageBuilderSection() {
 
             {/* Subtitle */}
             <div className="space-y-2">
-              <Label htmlFor="add-subtitle">Subtitle</Label>
+              <Label htmlFor="add-subtitle">{t('homepage.subtitleLabel')}</Label>
               <Input
                 id="add-subtitle"
-                placeholder="Section subtitle..."
+                placeholder={t('homepage.subtitlePlaceholder')}
                 value={formData.subtitle}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, subtitle: e.target.value }))
@@ -680,7 +730,7 @@ export default function HomepageBuilderSection() {
 
             {/* Active */}
             <div className="flex items-center justify-between">
-              <Label htmlFor="add-active">Active</Label>
+              <Label htmlFor="add-active">{t('homepage.active')}</Label>
               <Switch
                 id="add-active"
                 checked={formData.isActive}
@@ -697,14 +747,14 @@ export default function HomepageBuilderSection() {
               onClick={() => setAddOpen(false)}
               disabled={dialogLoading}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleCreate}
               disabled={dialogLoading || !formData.type}
               className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
             >
-              {dialogLoading ? 'Creating...' : 'Create Section'}
+              {dialogLoading ? t('homepage.creating') : t('homepage.create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -712,18 +762,18 @@ export default function HomepageBuilderSection() {
 
       {/* ============ EDIT SECTION DIALOG ============ */}
       <Dialog open={editOpen} onOpenChange={(open) => { if (!open) { setEditOpen(false); setEditingSection(null); } }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Section</DialogTitle>
+            <DialogTitle>{t('homepage.editTitle')}</DialogTitle>
             <DialogDescription>
-              Update section content and settings.
+              {t('homepage.editDesc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             {/* Type */}
             <div className="space-y-2">
-              <Label>Section Type</Label>
+              <Label>{t('homepage.sectionType')}</Label>
               <Select
                 value={formData.type}
                 onValueChange={(val) =>
@@ -731,14 +781,14 @@ export default function HomepageBuilderSection() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder={t('homepage.selectType')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {SECTION_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
+                  {SECTION_TYPE_DEFS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
                       <span className="flex items-center gap-2">
-                        <t.icon className="w-4 h-4" />
-                        {t.label}
+                        <item.icon className="w-4 h-4" />
+                        {getSectionTypeLabel(item.value, t)}
                       </span>
                     </SelectItem>
                   ))}
@@ -748,10 +798,10 @@ export default function HomepageBuilderSection() {
 
             {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="edit-title">Title</Label>
+              <Label htmlFor="edit-title">{t('homepage.titleLabel')}</Label>
               <Input
                 id="edit-title"
-                placeholder="Section title..."
+                placeholder={t('homepage.titlePlaceholder')}
                 value={formData.title}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, title: e.target.value }))
@@ -761,10 +811,10 @@ export default function HomepageBuilderSection() {
 
             {/* Subtitle */}
             <div className="space-y-2">
-              <Label htmlFor="edit-subtitle">Subtitle</Label>
+              <Label htmlFor="edit-subtitle">{t('homepage.subtitleLabel')}</Label>
               <Input
                 id="edit-subtitle"
-                placeholder="Section subtitle..."
+                placeholder={t('homepage.subtitlePlaceholder')}
                 value={formData.subtitle}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, subtitle: e.target.value }))
@@ -774,7 +824,7 @@ export default function HomepageBuilderSection() {
 
             {/* Active */}
             <div className="flex items-center justify-between">
-              <Label htmlFor="edit-active">Active</Label>
+              <Label htmlFor="edit-active">{t('homepage.active')}</Label>
               <Switch
                 id="edit-active"
                 checked={formData.isActive}
@@ -782,6 +832,52 @@ export default function HomepageBuilderSection() {
                   setFormData((prev) => ({ ...prev, isActive: checked }))
                 }
               />
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={async () => {
+                  const res = await generateSeoAi({
+                    target: 'section',
+                    id: editingSection?.id,
+                    locale: 'ar',
+                    title: formData.title,
+                    subtitle: formData.subtitle,
+                    contentHint: formData.contentJson.slice(0, 1500),
+                  });
+                  if (!res.success) {
+                    toast.error(res.error || t('aiSuite.error'));
+                    return;
+                  }
+                  const draft = res.data;
+                  setFormData((prev) => ({
+                    ...prev,
+                    title: draft.titleAr || draft.seoTitle || prev.title,
+                    subtitle: draft.descriptionAr || draft.seoDescription || prev.subtitle,
+                  }));
+                  toast.success(t('aiSuite.seoApply'));
+                }}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                {t('aiSuite.seoAssist')}
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-content">{t('homepage.contentJson')}</Label>
+              <Textarea
+                id="edit-content"
+                className="font-mono text-xs min-h-[220px]"
+                value={formData.contentJson}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, contentJson: e.target.value }))
+                }
+              />
+              <p className="text-xs text-muted-foreground">{t('homepage.contentJsonHint')}</p>
             </div>
           </div>
 
@@ -791,14 +887,14 @@ export default function HomepageBuilderSection() {
               onClick={() => { setEditOpen(false); setEditingSection(null); }}
               disabled={dialogLoading}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleUpdate}
               disabled={dialogLoading}
               className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
             >
-              {dialogLoading ? 'Saving...' : 'Save Changes'}
+              {dialogLoading ? t('homepage.updating') : t('homepage.update')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -812,24 +908,25 @@ export default function HomepageBuilderSection() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-600 dark:text-red-400">
-              Delete Section
+              {t('homepage.deleteTitle')}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete{' '}
-              <strong className="text-foreground">
-                &ldquo;{deleteTarget?.title || getSectionLabel(deleteTarget?.type || '')}&rdquo;
-              </strong>
-              ? This action cannot be undone.
+              {t('homepage.deleteDesc')}
+              {deleteTarget && (
+                <strong className="block mt-2 text-foreground">
+                  {resolveSectionDisplay(deleteTarget, locale, t).title}
+                </strong>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={dialogLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={dialogLoading}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={dialogLoading}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              {dialogLoading ? 'Deleting...' : 'Delete Section'}
+              {dialogLoading ? t('common.loading') : t('homepage.deleteConfirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
